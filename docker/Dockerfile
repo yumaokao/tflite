@@ -25,12 +25,12 @@ RUN apt-get update && \
     su - tflite -c /tmp/setup-android-sdk.sh && \
     # Removed unused parts to make a smaller Docker image:
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    cd /home/tflite/lib/android-ndk/ && \
-    rm -Rf toolchains/mips* && \
-    rm -Rf sources/cxx-stl/gabi++ sources/cxx-stl/llvm-libc++* sources/cxx-stl/system/ sources/cxx-stl/stlport && \
-    cd platforms && ls | grep -v android-21 | xargs rm -Rf && \
-    cd /home/tflite/lib/android-sdk/tools && rm -Rf emulator* lib* proguard templates
+    rm -rf /var/lib/apt/lists/*
+    # cd /home/tflite/lib/android-ndk/ && \
+    # rm -Rf toolchains/mips* && \
+    # rm -Rf sources/cxx-stl/gabi++ sources/cxx-stl/llvm-libc++* sources/cxx-stl/system/ sources/cxx-stl/stlport && \
+    # cd platforms && ls | grep -v android-21 | xargs rm -Rf && \
+    # cd /home/tflite/lib/android-sdk/tools && rm -Rf emulator* lib* proguard templates
 
 # We expect this to be mounted with '-v $PWD:/home/tflite/tensorflow':
 WORKDIR /home/tflite/tensorflow

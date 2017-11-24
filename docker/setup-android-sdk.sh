@@ -35,6 +35,7 @@ if [ ! -d $NDK ]; then
 	rm ndk.zip
 fi
 
-mkdir $ANDROID_HOME/licenses
-echo -e -n "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
-$ANDROID_HOME/tools/bin/sdkmanager "build-tools;25.0.3" "platforms;android-25"
+# mkdir $ANDROID_HOME/licenses
+# echo -e -n "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_HOME/licenses/android-sdk-license
+yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;26.0.1" "platforms;android-23" "extras;android;m2repository" "extras;google;m2repository"
