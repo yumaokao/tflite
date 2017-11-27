@@ -18,7 +18,7 @@ COPY ./setup-android-sdk.sh /tmp/setup-android-sdk.sh
 RUN apt-get update && \
     apt-get -yq upgrade && \
     apt-get install -yq sudo && \
-    adduser --disabled-password --shell /bin/bash --gecos "" tflite && \
+    adduser --disabled-password --uid 995 --shell /bin/bash --gecos "" tflite && \
     echo "tflite ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/tflite && \
     chmod 0440 /etc/sudoers.d/tflite && \
     su - tflite -c /tmp/setup-ubuntu.sh && \
