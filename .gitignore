@@ -37,3 +37,7 @@ tags
 
 # tensorflow
 tensorflow
+
+# ckpt
+sandbox/mnist/model.ckpt.*
+sandbox/mnist/checkpoint

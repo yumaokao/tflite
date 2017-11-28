@@ -19,6 +19,7 @@ docker start $CONTAINER_NAME > /dev/null 2> /dev/null || {
 	       --detach \
 	       --name $CONTAINER_NAME \
            --volume $PWD/tensorflow:/home/tflite/tensorflow \
+           --volume $PWD/sandbox:/home/tflite/sandbox \
            --publish 8888:8888 \
 	       --tty \
 	       $IMAGE_NAME

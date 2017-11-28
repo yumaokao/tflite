@@ -37,7 +37,36 @@ $ bazel build --cxxopt='--std=c++11' //tensorflow/contrib/lite/java/demo/app/src
 
 ## Build toco
 ```sh
-$ bazel build tensorflow/contrib/lite/toco:toco
+$ bazel build //tensorflow/contrib/lite/toco:toco
+```
+
+## Build cc_test, py_test
+```sh
+$ bazel build //tensorflow/contrib/lite:model_test
+Target //tensorflow/contrib/lite:model_test up-to-date:
+  bazel-bin/tensorflow/contrib/lite/model_test
+$ bazel-bin/tensorflow/contrib/lite/model_test
+
+$ bazel build //tensorflow/contrib/quantize:input_to_ops_test
+Target //tensorflow/contrib/quantize:input_to_ops_test up-to-date:
+  bazel-bin/tensorflow/contrib/quantize/input_to_ops_test
+$ bazel-bin/tensorflow/contrib/quantize/input_to_ops_test
+```
+
+## Build pip Package
+```sh
+$ bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package
+$ bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+$ ls /tmp/tensorflow_pkg/
+tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
+
+$ sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
+```
+
+# MNIST
+```sh
+$ cd /home/tflite/sandbox/mnist
+$ python mnist/mnist_deep.py
 ```
 
 
@@ -80,3 +109,27 @@ native.new_http_archive(
 
 in `/home/tflite/.cache/bazel/_bazel_tflite/f82e7d13eaeac899986b03b38680d292/external/tflite_mobilenet`
 here is where @tflite_mobilenet stores
+
+## dummy-quantization with graph visualize
+```sh
+$ curl https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_0.50_128_frozen.tgz \
+  | tar xzv -C /tmp
+$ bazel run --config=opt \
+  //tensorflow/contrib/lite/toco:toco -- \
+  --input_file=/tmp/mobilenet_v1_0.50_128/frozen_graph.pb \
+  --output_file=/tmp/foo.cc \
+  --input_format=TENSORFLOW_GRAPHDEF \
+  --output_format=TFLITE \
+  --inference_type=QUANTIZED_UINT8 \
+  --input_shape=1,128,128,3 \
+  --input_array=input \
+  --output_array=MobilenetV1/Predictions/Reshape_1 \
+  --default_ranges_min=0 \
+  --default_ranges_max=6 \
+  --mean_value=127.5 \
+  --std_value=127.5 \
+  --dump_graphviz=/home/tflite/sandbox/dots
+
+$ cd /home/tflite/sandbox/dots
+$ dot -Tpdf -O ./toco_*.dot
+```
