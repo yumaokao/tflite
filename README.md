@@ -40,6 +40,11 @@ $ bazel build --cxxopt='--std=c++11' //tensorflow/contrib/lite/java/demo/app/src
 $ bazel build //tensorflow/contrib/lite/toco:toco
 ```
 
+## Build freeze_graph
+```sh
+$ bazel build tensorflow/python/tools:freeze_graph
+```
+
 ## Build cc_test, py_test
 ```sh
 $ bazel build //tensorflow/contrib/lite:model_test
@@ -64,9 +69,38 @@ $ sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86
 ```
 
 # MNIST
+
+## train with saver and summary
 ```sh
 $ cd /home/tflite/sandbox/mnist
-$ python mnist/mnist_deep.py
+$ python ./mnist_deep.py
+test accuracy 0.9921
+Model saved in file: /home/tflite/sandbox/mnist/model.ckpt
+```
+
+## tensorboard
+```sh
+$ tensorboard --logdir=/home/tflite/sandbox/mnist/summary
+Open http://192.168.10.50:6006
+```
+
+## frozen MNIST
+```sh
+$ bazel-bin/tensorflow/python/tools/freeze_graph \
+    --input_graph=/home/tflite/sandbox/mnist/mnist.pb \
+    --input_checkpoint=/home/tflite/sandbox/mnist/model.ckpt \
+    --input_binary=true --output_graph=/home/tflite/sandbox/mnist/frozen_mnist.pb \
+    --output_node_names=loss/Reshape
+```
+
+## toco MNIST
+```sh
+$ bazel-bin/tensorflow/contrib/lite/toco/toco \
+  --input_file=/home/tflite/sandbox/mnist/frozen_mnist.pb \
+  --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+  --output_file=/tmp/mnist.lite --inference_type=FLOAT \
+  --influrence_input_type=FLOAT --input_arrays=reshape/Reshape \
+  --output_arrays=fc2/add --input_shapes=1,28,28,1
 ```
 
 
