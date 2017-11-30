@@ -44,3 +44,4 @@ sandbox/mnist/checkpoint
 sandbox/mnist/summary
 sandbox/mnist/*.pb
 sandbox/mnist/*.lite
+sandbox/*.apk

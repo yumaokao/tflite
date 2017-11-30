@@ -74,6 +74,8 @@ $ sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86
 ```sh
 $ cd /home/tflite/sandbox/mnist
 $ python ./mnist_deep.py
+# or
+$ python ./mnist_deep_nodropout.py
 test accuracy 0.9921
 Model saved in file: /home/tflite/sandbox/mnist/model.ckpt
 ```
@@ -101,6 +103,28 @@ $ bazel-bin/tensorflow/contrib/lite/toco/toco \
   --output_file=/tmp/mnist.lite --inference_type=FLOAT \
   --influrence_input_type=FLOAT --input_arrays=reshape/Reshape \
   --output_arrays=fc2/add --input_shapes=1,28,28,1
+```
+
+## toco MNIST dummy-quantization
+```sh
+$ bazel-bin/tensorflow/contrib/lite/toco/toco \
+  --input_file=/home/tflite/sandbox/mnist/frozen_mnist.pb \
+  --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+  --output_file=/tmp/mnist_quan.lite --inference_type=QUANTIZED_UINT8 \
+  --influrence_input_type=QUANTIZED_UINT8 --input_array=reshape/Reshape \
+  --output_array=fc2/add --input_shape=1,28,28,1 \
+  --default_ranges_min=0 --default_ranges_max=6 \
+  --mean_value=127.5 --std_value=127.5
+```
+
+## MNIST apks
+```sh
+# build
+$ bazel build --cxxopt='--std=c++11' //tensorflow/contrib/lite/java/demo/app/src/main:TfLiteCameraDemo
+$ rm -f ../sandbox/TfLiteCameraDemo.apk
+$ cp bazel-bin/tensorflow/contrib/lite/java/demo/app/src/main/TfLiteCameraDemo.apk ../sandbox/
+# install
+$ adb shell pm uninstall -k com.example.android.tflitecamerademo && adb install -f TfLiteCameraDemo.apk
 ```
 
 
