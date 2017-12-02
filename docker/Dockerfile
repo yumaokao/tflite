@@ -2,7 +2,10 @@
 # 	docker build -t yumaokao/tensorflow/lite:latest-devel .
 # Push to docker hub with:
 # 	docker push termux/package-builder
-FROM gcr.io/tensorflow/tensorflow:latest-devel
+ARG TAG_NAME=latest-devel
+FROM gcr.io/tensorflow/tensorflow:${TAG_NAME}
+ARG UID
+ARG TAG_NAME
 
 # Fix locale to avoid warnings:
 ENV LANG C.UTF-8
@@ -18,7 +21,7 @@ COPY ./setup-android-sdk.sh /tmp/setup-android-sdk.sh
 RUN apt-get update && \
     apt-get -yq upgrade && \
     apt-get install -yq sudo && \
-    adduser --disabled-password --uid 995 --shell /bin/bash --gecos "" tflite && \
+    adduser --disabled-password --uid $UID --shell /bin/bash --gecos "" tflite && \
     echo "tflite ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/tflite && \
     chmod 0440 /etc/sudoers.d/tflite && \
     su - tflite -c /tmp/setup-ubuntu.sh && \

@@ -1,8 +1,14 @@
 #!/bin/sh
 set -e -u
 
-IMAGE_NAME=yumaokao/tensorflow/lite:latest-devel
-CONTAINER_NAME=tflite-devel
+DEVICE=${CPU:=GPU}
+TAG_NAME=latest-devel
+DOCKER=docker
+[ $DEVICE == "GPU" ] && TAG_NAME=latest-devel-gpu
+[ $DEVICE == "GPU" ] && DOCKER=nvidia-docker
+
+IMAGE_NAME=yumaokao/tensorflow/lite:$TAG_NAME
+CONTAINER_NAME=tflite-$TAG_NAME
 
 echo "Cloning tensorflow for container '$CONTAINER_NAME'..."
 if [ -d ./tensorflow ]; then
@@ -11,11 +17,11 @@ else
     git clone https://github.com/tensorflow/tensorflow
 fi
 
-echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME'..."
+echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."
 
-docker start $CONTAINER_NAME > /dev/null 2> /dev/null || {
+$DOCKER start $CONTAINER_NAME > /dev/null 2> /dev/null || {
 	echo "Creating new container..."
-	docker run \
+	$DOCKER run \
 	       --detach \
 	       --name $CONTAINER_NAME \
            --volume $PWD/tensorflow:/home/tflite/tensorflow \
@@ -26,7 +32,7 @@ docker start $CONTAINER_NAME > /dev/null 2> /dev/null || {
 }
 
 if [ "$#" -eq  "0" ]; then
-	docker exec --interactive --tty --user tflite $CONTAINER_NAME bash
+	$DOCKER exec --interactive --tty --user tflite $CONTAINER_NAME bash
 else
-	docker exec --interactive --tty --user tflite $CONTAINER_NAME $@
+	$DOCKER exec --interactive --tty --user tflite $CONTAINER_NAME $@
 fi
