@@ -186,6 +186,15 @@ native.new_http_archive(
 in `/home/tflite/.cache/bazel/_bazel_tflite/f82e7d13eaeac899986b03b38680d292/external/tflite_mobilenet`
 here is where @tflite_mobilenet stores
 
+## print out exception backtrace
+```java
+try {
+tflite.run(imgData, labelProbArray);
+} catch (Exception e) {
+Log.e(TAG, "YMK Exception " + e);
+}
+```
+
 ## dummy-quantization with graph visualize
 ```sh
 $ curl https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_0.50_128_frozen.tgz \
