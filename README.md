@@ -11,7 +11,7 @@ $ ./build-docker.sh
 
 ## Run Docker
 ```sh
-./scripts/run-docker.sh
+$ ./scripts/run-docker.sh
 # This will also git clone a tensorflow if there is not exist
 ```
 
@@ -125,6 +125,20 @@ $ rm -f ../sandbox/TfLiteCameraDemo.apk
 $ cp bazel-bin/tensorflow/contrib/lite/java/demo/app/src/main/TfLiteCameraDemo.apk ../sandbox/
 # install
 $ adb shell pm uninstall -k com.example.android.tflitecamerademo && adb install -f TfLiteCameraDemo.apk
+```
+
+
+# nvidia-docker
+
+## tensorflow lastest-gpu docker image
+```sh
+$ nvidia-docker run -it tensorflow/tensorflow:latest-devel-gpu bash
+```
+
+## tensorflow lastest-gpu docker image
+```sh
+$ DEVICE=GPU scripts/run-docker.sh
+# This will also git clone a tensorflow if there is not exist
 ```
 
 
