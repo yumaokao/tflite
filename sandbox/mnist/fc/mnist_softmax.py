@@ -23,6 +23,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import os
 import sys
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -33,6 +34,9 @@ FLAGS = None
 
 
 def main(_):
+  # dirname
+  dirname = os.path.dirname(os.path.abspath(__file__))
+
   # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -65,7 +69,7 @@ def main(_):
   saver = tf.train.Saver()
 
   # summary
-  summary_writer = tf.summary.FileWriter("/home/tflite/sandbox/summary", graph=tf.get_default_graph())
+  summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"), graph=tf.get_default_graph())
 
   # Train
   for _ in range(1000):
@@ -79,9 +83,9 @@ def main(_):
   print(sess.run(accuracy, feed_dict={x: mnist.test.images,
                                       y_: mnist.test.labels}))
   print("YMK: save to pb and ckpt")
-  pb_path = tf.train.write_graph(sess.graph_def, "/home/tflite/sandbox/mnist/fc", "mnist.pb", False)
+  pb_path = tf.train.write_graph(sess.graph_def, dirname, "mnist.pb", False)
   print("  GraphDef saved in file: %s" % pb_path)
-  ckpt_path = saver.save(sess, "/home/tflite/sandbox/mnist/fc/model.ckpt")
+  ckpt_path = saver.save(sess, os.path.join(dirname, "model.ckpt"))
   print("  Model saved in file: %s" % ckpt_path)
 
   # print W

@@ -38,13 +38,12 @@ tags
 # tensorflow
 tensorflow
 
-# summary
-sandbox/summary
-
 # ckpt
 sandbox/mnist/*/model.ckpt.*
 sandbox/mnist/*/checkpoint
 sandbox/mnist/*/*.pb
 sandbox/mnist/*/*.lite
 sandbox/mnist/*/export
+sandbox/mnist/*/summary
+sandbox/mnist/*/dots
 sandbox/*.apk
