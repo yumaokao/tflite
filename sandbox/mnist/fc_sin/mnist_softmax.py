@@ -116,12 +116,12 @@ def main(_):
 
   # save to txt
   print(exportbase)
-  np.savetxt(os.path.join(exportbase, 'W.txt'), W.eval())
-  np.savetxt(os.path.join(exportbase, 'b.txt'), b.eval())
-  np.savetxt(os.path.join(exportbase, 'b0.txt'), b0.eval())
-  np.savetxt(os.path.join(exportbase, 'batch_xs.txt'), batch_xs)
-  np.savetxt(os.path.join(exportbase, 'batch_ys.txt'), batch_ys)
-  np.savetxt(os.path.join(exportbase, 'ys.txt'), ys)
+  np.savetxt(os.path.join(exportbase, 'W.txt'), W.eval(), newline='\n')
+  np.savetxt(os.path.join(exportbase, 'b.txt'), b.eval(), newline='\n')
+  np.savetxt(os.path.join(exportbase, 'b0.txt'), b0.eval(), newline='\n')
+  np.savetxt(os.path.join(exportbase, 'batch_xs.txt'), batch_xs, newline='\n')
+  np.savetxt(os.path.join(exportbase, 'batch_ys.txt'), batch_ys, newline='\n')
+  np.savetxt(os.path.join(exportbase, 'ys.txt'), ys, newline='\n')
 
 
 if __name__ == '__main__':
