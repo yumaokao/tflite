@@ -28,14 +28,16 @@ import sys
 
 from tensorflow.examples.tutorials.mnist import input_data
 
+import numpy as np
 import tensorflow as tf
 
 FLAGS = None
 
 
 def main(_):
-  # dirname
+  # dir base
   dirname = os.path.dirname(os.path.abspath(__file__))
+  exportbase = os.path.join(dirname, "export")
 
   # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
@@ -95,6 +97,8 @@ def main(_):
   print(W.eval())
   print("  b:")
   print(b.eval())
+  print("  b0:")
+  print(b0.eval())
 
   # Save a batch 10
   print("YMK: print mnist test first 10")
@@ -102,8 +106,22 @@ def main(_):
   batch_ys = mnist.test.labels[0:10]
   print("  batch_ys:")
   print(batch_ys)
+
+  # run test
+  print("  y:")
+  ys = sess.run(y, feed_dict={x: batch_xs, y_: batch_ys})
+  print(ys)
   # import ipdb
   # ipdb.set_trace()
+
+  # save to txt
+  print(exportbase)
+  np.savetxt(os.path.join(exportbase, 'W.txt'), W.eval())
+  np.savetxt(os.path.join(exportbase, 'b.txt'), b.eval())
+  np.savetxt(os.path.join(exportbase, 'b0.txt'), b0.eval())
+  np.savetxt(os.path.join(exportbase, 'batch_xs.txt'), batch_xs)
+  np.savetxt(os.path.join(exportbase, 'batch_ys.txt'), batch_ys)
+  np.savetxt(os.path.join(exportbase, 'ys.txt'), ys)
 
 
 if __name__ == '__main__':
