@@ -2,6 +2,7 @@
 
 ## Worked tensorflow commits
 - efbdc15b280374607895ab0ada467de4a0512e0c
+- 27c55e556b77fdc841fb54483dece48476645239
 
 ## Prepare Docker
 ```sh
