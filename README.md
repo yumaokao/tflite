@@ -1,5 +1,8 @@
 # Tensorflow Lite Develop Environment
 
+## Worked tensorflow commits
+- efbdc15b280374607895ab0ada467de4a0512e0c
+
 ## Prepare Docker
 ```sh
 $ cd docker
