@@ -27,6 +27,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import os
 import sys
 import tempfile
 
@@ -124,6 +125,10 @@ def bias_variable(shape):
 
 
 def main(_):
+  # dir base
+  dirname = os.path.dirname(os.path.abspath(__file__))
+  exportbase = os.path.join(dirname, "export")
+
   # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
@@ -157,10 +162,11 @@ def main(_):
   # Add ops to save and restore all the variables.
   saver = tf.train.Saver()
 
+  # summary
+  summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"), graph=tf.get_default_graph())
+
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    summary_writer = tf.summary.FileWriter("/home/tflite/sandbox/mnist/summary", graph=tf.get_default_graph())
-
     for i in range(20000):
       batch = mnist.train.next_batch(50)
       if i % 100 == 0:
@@ -172,9 +178,9 @@ def main(_):
     print('test accuracy %g' % accuracy.eval(feed_dict={
         x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
 
-    pb_path = tf.train.write_graph(sess.graph_def, "/home/tflite/sandbox/mnist", "mnist.pb", False)
+    pb_path = tf.train.write_graph(sess.graph_def, dirname, "mnist.pb", False)
     print("GraphDef saved in file: %s" % pb_path)
-    ckpt_path = saver.save(sess, "/home/tflite/sandbox/mnist/model.ckpt")
+    ckpt_path = saver.save(sess, os.path.join(dirname, "model.ckpt"))
     print("Model saved in file: %s" % ckpt_path)
 
 
