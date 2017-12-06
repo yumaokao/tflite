@@ -51,4 +51,5 @@ fc_sin:
 
 deep:
 	@ python deep/mnist_deep.py
-	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	@ python tools/drop_dropouts.py deep/frozen_mnist.pb
