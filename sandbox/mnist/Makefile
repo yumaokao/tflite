@@ -6,8 +6,8 @@ MNIST_BASE := /home/tflite/sandbox/mnist
 ## functions ##
 define mnist_freeze_graph
 	@ echo "freeze_graph"
-	@ echo MNIST_DIR [$1]
-	@ echo OUTPUT_NODE_NAMES $2
+	@ # echo MNIST_DIR [$1]
+	@ # echo OUTPUT_NODE_NAMES $2
 	$(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$1/mnist.pb \
 		--input_checkpoint=$1/model.ckpt \
@@ -18,19 +18,20 @@ endef
 
 define mnist_toco
 	@ echo "toco"
-	@ echo MNIST_DIR [$1]
-	@ echo OUTPUT_ARRAYS $2
-	@ echo $3
+	@ # echo MNIST_DIR [$1]
+	@ # echo MNIST_PB [$2]
+	@ # echo OUTPUT_ARRAYS $3
+	@ # echo $4
 	@ mkdir -p $1/export
 	@ mkdir -p $1/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
-		--input_file=$1/frozen_mnist.pb \
+		--input_file=$1/$2 \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
 		--inference_type=FLOAT \
 		--influrence_input_type=FLOAT --input_arrays=Placeholder \
-		--output_arrays=$2 --input_shapes=10,784 \
-		--dump_graphviz=$1/dots $3
+		--output_arrays=$3 --input_shapes=10,784 \
+		--dump_graphviz=$1/dots $4
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
 endef
 
@@ -42,16 +43,16 @@ fc:
 	@ python fc/mnist_softmax.py
 	@ echo "freeze_graph"
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
-	$(call mnist_toco,$(MNIST_BASE)/$@,add,)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add,)
 
 fc_sin:
 	@ python fc_sin/mnist_softmax.py
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add_1)
-	$(call mnist_toco,$(MNIST_BASE)/$@,add_1,--allow_custom_ops)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add_1,--allow_custom_ops)
 
 deep:
-	# @ python deep/mnist_deep.py
-	# $(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
-	# @ python tools/drop_dropouts.py deep/frozen_mnist.pb
-	@ python tools/save_summaries.py deep/frozen_mnist.pb
+	@ python deep/mnist_deep.py
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	@ python tools/drop_dropouts.py deep/frozen_mnist.pb
 	@ python tools/save_summaries.py deep/frozen_mnist-nodropout.pb
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)

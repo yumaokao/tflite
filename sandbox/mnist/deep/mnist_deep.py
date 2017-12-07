@@ -51,6 +51,10 @@ def deepnn(x):
     digits 0-9). keep_prob is a scalar placeholder for the probability of
     dropout.
   """
+
+  # return variables to save
+  variables = {}
+
   # Reshape to use within a convolutional neural net.
   # Last dimension is for "features" - there is only one here, since images are
   # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
@@ -59,8 +63,10 @@ def deepnn(x):
 
   # First convolutional layer - maps one grayscale image to 32 feature maps.
   with tf.name_scope('conv1'):
-    W_conv1 = weight_variable([5, 5, 1, 32])
-    b_conv1 = bias_variable([32])
+    W_conv1 = weight_variable([5, 5, 1, 32], name='W_conv1')
+    b_conv1 = bias_variable([32], name='b_conv1')
+    variables['W_conv1'] = W_conv1
+    variables['b_conv1'] = b_conv1
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
 
   # Pooling layer - downsamples by 2X.
@@ -69,8 +75,10 @@ def deepnn(x):
 
   # Second convolutional layer -- maps 32 feature maps to 64.
   with tf.name_scope('conv2'):
-    W_conv2 = weight_variable([5, 5, 32, 64])
-    b_conv2 = bias_variable([64])
+    W_conv2 = weight_variable([5, 5, 32, 64], name='W_conv2')
+    b_conv2 = bias_variable([64], name='b_conv2')
+    variables['W_conv2'] = W_conv2
+    variables['b_conv2'] = b_conv2
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
   # Second pooling layer.
@@ -80,9 +88,10 @@ def deepnn(x):
   # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
   # is down to 7x7x64 feature maps -- maps this to 1024 features.
   with tf.name_scope('fc1'):
-    W_fc1 = weight_variable([7 * 7 * 64, 1024])
-    b_fc1 = bias_variable([1024])
-
+    W_fc1 = weight_variable([7 * 7 * 64, 1024], name='W_fc1')
+    b_fc1 = bias_variable([1024], name='b_fc1')
+    variables['W_fc1'] = W_fc1
+    variables['b_fc1'] = b_fc1
     h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
@@ -94,11 +103,14 @@ def deepnn(x):
 
   # Map the 1024 features to 10 classes, one for each digit
   with tf.name_scope('fc2'):
-    W_fc2 = weight_variable([1024, 10])
-    b_fc2 = bias_variable([10])
+    W_fc2 = weight_variable([1024, 10], name='W_fc2')
+    b_fc2 = bias_variable([10], name='b_fc2')
+    variables['W_fc2'] = W_fc2
+    variables['b_fc2'] = b_fc2
 
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
-  return y_conv, keep_prob
+
+  return y_conv, keep_prob , variables
 
 
 def conv2d(x, W):
@@ -112,16 +124,22 @@ def max_pool_2x2(x):
                         strides=[1, 2, 2, 1], padding='SAME')
 
 
-def weight_variable(shape):
+def weight_variable(shape, name=None):
   """weight_variable generates a weight variable of a given shape."""
   initial = tf.truncated_normal(shape, stddev=0.1)
-  return tf.Variable(initial)
+  pnames = {}
+  if name is not None:
+    pnames['name'] = name
+  return tf.Variable(initial, **pnames)
 
 
-def bias_variable(shape):
+def bias_variable(shape, name=None):
   """bias_variable generates a bias variable of a given shape."""
   initial = tf.constant(0.1, shape=shape)
-  return tf.Variable(initial)
+  pnames = {}
+  if name is not None:
+    pnames['name'] = name
+  return tf.Variable(initial, **pnames)
 
 
 def main(_):
@@ -139,7 +157,7 @@ def main(_):
   y_ = tf.placeholder(tf.float32, [None, 10])
 
   # Build the graph for the deep net
-  y_conv, keep_prob = deepnn(x)
+  y_conv, keep_prob, variables = deepnn(x)
 
   with tf.name_scope('loss'):
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y_,
@@ -182,6 +200,9 @@ def main(_):
     print("GraphDef saved in file: %s" % pb_path)
     ckpt_path = saver.save(sess, os.path.join(dirname, "model.ckpt"))
     print("Model saved in file: %s" % ckpt_path)
+
+    print("  W_fc1:")
+    print(variables['W_fc1'].eval())
 
 
 if __name__ == '__main__':
