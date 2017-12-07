@@ -1,4 +1,4 @@
-.PHONY: all clean fc fc_sin deep deep_dummy deep_custom
+.PHONY: all clean fc fc_sin deep deep_dummy deep_custom deep_lrn
 
 TF_BASE := /home/tflite/tensorflow
 MNIST_BASE := /home/tflite/sandbox/mnist
@@ -98,3 +98,11 @@ deep_custom:
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	@ python tools/rename_ops.py $@/frozen_mnist-nodropout.pb -r Conv2D,CustomConv2D
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout-custom.pb,fc2/add,--allow_custom_ops)
+
+deep_lrn:
+	@ mkdir -p $@/export
+	@ python $@/mnist_deep_lrn.py
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
+	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
