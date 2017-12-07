@@ -50,6 +50,8 @@ fc_sin:
 	$(call mnist_toco,$(MNIST_BASE)/$@,add_1,--allow_custom_ops)
 
 deep:
-	@ python deep/mnist_deep.py
-	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
-	@ python tools/drop_dropouts.py deep/frozen_mnist.pb
+	# @ python deep/mnist_deep.py
+	# $(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	# @ python tools/drop_dropouts.py deep/frozen_mnist.pb
+	@ python tools/save_summaries.py deep/frozen_mnist.pb
+	@ python tools/save_summaries.py deep/frozen_mnist-nodropout.pb
