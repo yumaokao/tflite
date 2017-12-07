@@ -93,4 +93,5 @@ deep_custom:
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
+	@ python tools/rename_ops.py $@/frozen_mnist-nodropout.pb -r Conv2D,CustomConv2D
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout-custom.pb,fc2/add,--allow_custom_ops)
