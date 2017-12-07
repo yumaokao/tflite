@@ -1,4 +1,4 @@
-.PHONY: all fc fc_sin deep deep_dummy deep_custom
+.PHONY: all clean fc fc_sin deep deep_dummy deep_custom
 
 TF_BASE := /home/tflite/tensorflow
 MNIST_BASE := /home/tflite/sandbox/mnist
@@ -57,6 +57,9 @@ endef
 
 all:
 	@ echo "Do nothing"
+
+clean:
+	@ rm -rf */summary */dots */export
 
 fc:
 	@ mkdir -p $@/export
