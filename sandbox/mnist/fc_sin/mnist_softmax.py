@@ -44,9 +44,9 @@ def main(_):
 
   # Create the model
   x = tf.placeholder(tf.float32, [None, 784])
-  W = tf.Variable(tf.zeros([784, 10]))
-  b = tf.Variable(tf.zeros([10]))
-  b0 = tf.Variable(tf.zeros([10]))
+  W = tf.Variable(tf.zeros([784, 10]), name='W')
+  b = tf.Variable(tf.zeros([10]), name='b')
+  b0 = tf.Variable(tf.zeros([10]), name='b0')
   y = tf.sin(tf.matmul(x, W) + b) + b0
 
   # Define loss and optimizer
@@ -116,12 +116,12 @@ def main(_):
 
   # save to txt
   print(exportbase)
-  np.savetxt(os.path.join(exportbase, 'W.txt'), W.eval(), newline='\n')
-  np.savetxt(os.path.join(exportbase, 'b.txt'), b.eval(), newline='\n')
-  np.savetxt(os.path.join(exportbase, 'b0.txt'), b0.eval(), newline='\n')
-  np.savetxt(os.path.join(exportbase, 'batch_xs.txt'), batch_xs, newline='\n')
-  np.savetxt(os.path.join(exportbase, 'batch_ys.txt'), batch_ys, newline='\n')
-  np.savetxt(os.path.join(exportbase, 'ys.txt'), ys, newline='\n')
+  np.save(os.path.join(exportbase, 'W.npy'), W.eval())
+  np.save(os.path.join(exportbase, 'b.npy'), b.eval())
+  np.save(os.path.join(exportbase, 'b0.npy'), b0.eval())
+  np.save(os.path.join(exportbase, 'batch_xs.npy'), batch_xs)
+  np.save(os.path.join(exportbase, 'batch_ys.npy'), batch_ys)
+  np.save(os.path.join(exportbase, 'ys.npy'), ys)
 
 
 if __name__ == '__main__':
