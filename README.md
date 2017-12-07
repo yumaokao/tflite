@@ -49,6 +49,22 @@ $ bazel build //tensorflow/contrib/lite/toco:toco
 $ bazel build tensorflow/python/tools:freeze_graph
 ```
 
+## Build nnapi_example
+- It's need to add linkopts to make it compiled.
+cc_binary(
+    name = "nnapi_example",
+    ...,
+    linkopts = [
+        "-lm",
+    ],
+)
+```sh
+$ bazel build -s //tensorflow/contrib/lite/testing:nnapi_example
+$ bazel build //tensorflow/contrib/lite/testing:generate_examples
+$ bazel-bin/tensorflow/contrib/lite/testing/nnapi_example
+```
+
+
 ## Build cc_test, py_test
 ```sh
 $ bazel build //tensorflow/contrib/lite:model_test

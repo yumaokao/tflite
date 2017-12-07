@@ -14,7 +14,7 @@ echo "Cloning tensorflow for container '$CONTAINER_NAME'..."
 if [ -d ./tensorflow ]; then
     :
 else
-    git clone https://github.com/tensorflow/tensorflow
+    git clone https://yumaokao@github.com/yumaokao/tensorflow
 fi
 
 echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."
