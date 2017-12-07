@@ -33,6 +33,7 @@ import tempfile
 
 from tensorflow.examples.tutorials.mnist import input_data
 
+import numpy as np
 import tensorflow as tf
 
 FLAGS = None
@@ -145,7 +146,6 @@ def bias_variable(shape, name=None):
 def main(_):
   # dir base
   dirname = os.path.dirname(os.path.abspath(__file__))
-  exportbase = os.path.join(dirname, "export")
 
   # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
@@ -201,8 +201,19 @@ def main(_):
     ckpt_path = saver.save(sess, os.path.join(dirname, "model.ckpt"))
     print("Model saved in file: %s" % ckpt_path)
 
-    print("  W_fc1:")
-    print(variables['W_fc1'].eval())
+    # save a batch of 10
+    batch_xs = mnist.test.images[0:10]
+    batch_ys = mnist.test.labels[0:10]
+    ys = sess.run(y_conv, feed_dict={x: batch_xs, y_: batch_ys, keep_prob: 1.0})
+    exportbase = os.path.join(dirname, "export")
+    np.save(os.path.join(exportbase, 'batch_xs.npy'), batch_xs)
+    np.save(os.path.join(exportbase, 'batch_ys.npy'), batch_ys)
+    np.save(os.path.join(exportbase, 'ys.npy'), ys)
+
+    # save all variables into npy
+    for k in variables:
+        v = variables[k]
+        np.save(os.path.join(exportbase, '{}.npy'.format(k)), v.eval())
 
 
 if __name__ == '__main__':
