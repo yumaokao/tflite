@@ -1,4 +1,4 @@
-.PHONY: all clean fc fc_sin deep deep_dummy deep_custom deep_lrn
+.PHONY: all clean fc fc_sin deep deep_dummy deep_custom deep_lrn deep_lrn_dummy
 
 TF_BASE := /home/tflite/tensorflow
 MNIST_BASE := /home/tflite/sandbox/mnist
@@ -82,7 +82,7 @@ deep:
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
 
-deep_dummy: deep
+deep_dummy:
 	@ mkdir -p $@/export
 	@ python $@/mnist_deep.py
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
@@ -106,3 +106,11 @@ deep_lrn:
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
+
+deep_lrn_dummy:
+	@ mkdir -p $@/export
+	@ python $@/mnist_deep_lrn.py
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
+	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
+	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
