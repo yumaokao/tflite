@@ -10,7 +10,7 @@ define mnist_freeze_graph
 	@ # echo OUTPUT_NODE_NAMES $2
 	$(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$1/mnist.pb \
-		--input_checkpoint=$1/model.ckpt \
+		--input_checkpoint=$1/ckpts/model.ckpt \
 		--input_binary=true \
 		--output_graph=$1/frozen_mnist.pb \
 		--output_node_names=$2
@@ -59,7 +59,7 @@ all:
 	@ echo "Do nothing"
 
 clean:
-	@ rm -rf */summary */dots */export
+	@ rm -rf */summary */dots */export */ckpts */*.pb
 
 fc:
 	@ mkdir -p $@/export

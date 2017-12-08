@@ -198,7 +198,7 @@ def main(_):
 
     pb_path = tf.train.write_graph(sess.graph_def, dirname, "mnist.pb", False)
     print("GraphDef saved in file: %s" % pb_path)
-    ckpt_path = saver.save(sess, os.path.join(dirname, "model.ckpt"))
+    ckpt_path = saver.save(sess, os.path.join(dirname, "ckpts", "model.ckpt"))
     print("Model saved in file: %s" % ckpt_path)
 
     # save a batch of 10
