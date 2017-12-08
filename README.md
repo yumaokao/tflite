@@ -1,6 +1,8 @@
 # Tensorflow Lite Develop Environment
 
 ## Worked tensorflow commits
+- 5723904ef8402093001a6b90fcf6675258be096b
+  - with bugfixs with 'std::isnan'
 - efbdc15b280374607895ab0ada467de4a0512e0c
 - 27c55e556b77fdc841fb54483dece48476645239
 
@@ -62,6 +64,7 @@ cc_binary(
 $ bazel build -s //tensorflow/contrib/lite/testing:nnapi_example
 $ bazel build //tensorflow/contrib/lite/testing:generate_examples
 $ bazel-bin/tensorflow/contrib/lite/testing/nnapi_example
+$ bazel-bin/tensorflow/contrib/lite/testing/generate_examples
 ```
 
 
