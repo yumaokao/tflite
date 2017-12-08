@@ -61,12 +61,20 @@ cc_binary(
     ],
 )
 ```sh
-$ bazel build -s //tensorflow/contrib/lite/testing:nnapi_example
+# generate_examples
 $ bazel build //tensorflow/contrib/lite/testing:generate_examples
-$ bazel-bin/tensorflow/contrib/lite/testing/nnapi_example
-$ bazel-bin/tensorflow/contrib/lite/testing/generate_examples
-```
+$ bazel-bin/tensorflow/contrib/lite/testing/generate_examples \
+	--zip_to_output mul.zip \
+	--toco bazel-bin/tensorflow/contrib/lite/toco/toco \
+	tensorflow/contrib/lite/testing/generated_examples zipped
 
+# nnapi_example
+$ # bazel build -s //tensorflow/contrib/lite/testing:nnapi_example
+$ # bazel-bin/tensorflow/contrib/lite/testing/nnapi_example
+
+# new added: read_tflife
+$ bazel build //tensorflow/contrib/lite/testing:read_tflite
+```
 
 ## Build cc_test, py_test
 ```sh
