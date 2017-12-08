@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e -u
 
-DEVICE=${CPU:=GPU}
+DEVICE=${CPU:=CPU}
 TAG_NAME=latest-devel
 DOCKER=docker
 [ $DEVICE == "GPU" ] && TAG_NAME=latest-devel-gpu
