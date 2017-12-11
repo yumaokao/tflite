@@ -1,4 +1,6 @@
-.PHONY: all clean fc fc_sin deep deep_dummy deep_custom deep_lrn deep_lrn_dummy
+.PHONY: all clean
+.PHONY: fc fc_sin fc_fake
+.PHONY: deep deep_dummy deep_custom deep_lrn deep_lrn_dummy
 
 TF_BASE := /home/tflite/tensorflow
 MNIST_BASE := /home/tflite/sandbox/mnist
@@ -61,19 +63,30 @@ all:
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
 
+# simple a fully connected network
 fc:
 	@ mkdir -p $@/export
-	@ python fc/mnist_softmax.py
+	@ python $@/mnist_softmax.py
 	@ echo "freeze_graph"
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add,)
 
+# a fully connected network with fakequant
+fc_fake:
+	@ mkdir -p $@/export
+	@ python $@/mnist_softmax.py
+	@ echo "freeze_graph"
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
+	# $(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add,)
+
+# simple a fully connected network and a sin op
 fc_sin:
 	@ mkdir -p $@/export
-	@ python fc_sin/mnist_softmax.py
+	@ python $@/mnist_softmax.py
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add_1)
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add_1,--allow_custom_ops)
 
+# lenet
 deep:
 	@ mkdir -p $@/export
 	@ python $@/mnist_deep.py
@@ -82,6 +95,7 @@ deep:
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
 
+# lenet with dummy quant
 deep_dummy:
 	@ mkdir -p $@/export
 	@ python $@/mnist_deep.py
@@ -90,6 +104,7 @@ deep_dummy:
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
 
+# lenet with Conv2D -> CustomConv2D
 deep_custom:
 	@ mkdir -p $@/export
 	@ python $@/mnist_deep.py
@@ -99,6 +114,7 @@ deep_custom:
 	@ python tools/rename_ops.py $@/frozen_mnist-nodropout.pb -r Conv2D,CustomConv2D
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout-custom.pb,fc2/add,--allow_custom_ops)
 
+# lenet with a lrn between conv1 and conv2
 deep_lrn:
 	@ mkdir -p $@/export
 	@ python $@/mnist_deep_lrn.py
@@ -107,6 +123,7 @@ deep_lrn:
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
 
+# lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
 deep_lrn_dummy:
 	@ mkdir -p $@/export
 	@ python $@/mnist_deep_lrn.py
