@@ -15,6 +15,7 @@ if [ -d ./tensorflow ]; then
     :
 else
     git clone https://yumaokao@github.com/yumaokao/tensorflow
+    git checkout origin/lite-utils -b lite-utils
 fi
 
 echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."
