@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e -u
 
-DEVICE=${CPU:=CPU}
+DEVICE=${DEVICE:=CPU}
 TAG_NAME=latest-devel
 DOCKER=docker
 [ $DEVICE == "GPU" ] && TAG_NAME=latest-devel-gpu
@@ -15,7 +15,7 @@ if [ -d ./tensorflow ]; then
     :
 else
     git clone https://yumaokao@github.com/yumaokao/tensorflow
-    git checkout origin/lite-utils -b lite-utils
+    cd tensorflow && git checkout origin/lite-utils -b lite-utils && cd -
 fi
 
 echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."
