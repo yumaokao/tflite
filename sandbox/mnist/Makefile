@@ -22,17 +22,18 @@ define mnist_toco
 	@ echo "toco"
 	@ # echo MNIST_DIR [$1]
 	@ # echo MNIST_PB [$2]
-	@ # echo OUTPUT_ARRAYS $3
-	@ # echo $4
+	@ # echo INPUT_ARRAYS $3
+	@ # echo OUTPUT_ARRAYS $4
+	@ # echo $5
 	@ mkdir -p $1/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$1/$2 \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=Placeholder \
-		--output_arrays=$3 --input_shapes=10,784 \
-		--dump_graphviz=$1/dots $4
+		--influrence_input_type=FLOAT --input_arrays=$3 \
+		--output_arrays=$4 --input_shapes=10,784 \
+		--dump_graphviz=$1/dots $5
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
 endef
 
@@ -40,19 +41,39 @@ define mnist_toco_dummy_quant
 	@ echo "toco"
 	@ # echo MNIST_DIR [$1]
 	@ # echo MNIST_PB [$2]
-	@ # echo OUTPUT_ARRAYS $3
-	@ # echo $4
+	@ # echo INPUT_ARRAYS $3
+	@ # echo OUTPUT_ARRAYS $4
+	@ # echo $5
 	@ mkdir -p $1/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$1/$2 \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
 		--inference_type=QUANTIZED_UINT8 \
-		--influrence_input_type=QUANTIZED_UINT8 --input_arrays=Placeholder \
-		--output_arrays=$3 --input_shapes=10,784 \
+		--influrence_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
+		--output_arrays=$4 --input_shapes=10,784 \
 		--default_ranges_min=0 --default_ranges_max=6 \
 		--mean_values=127.5 --std_values=127.5 \
-		--dump_graphviz=$1/dots $4
+		--dump_graphviz=$1/dots $5
+	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
+endef
+
+define mnist_toco_quant
+	@ echo "toco"
+	@ # echo MNIST_DIR [$1]
+	@ # echo MNIST_PB [$2]
+	@ # echo INPUT_ARRAYS $3
+	@ # echo OUTPUT_ARRAYS $4
+	@ # echo $5
+	@ mkdir -p $1/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$1/$2 \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$1/export/mnist.lite \
+		--inference_type=QUANTIZED_UINT8 \
+		--influrence_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
+		--output_arrays=$4 --input_shapes=10,784 \
+		--dump_graphviz=$1/dots $5
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
 endef
 
@@ -69,22 +90,22 @@ fc:
 	@ python $@/mnist_softmax.py
 	@ echo "freeze_graph"
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add,)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,Placeholder,add,)
 
 # a fully connected network with fakequant
 fc_fake:
 	@ mkdir -p $@/export
 	@ python $@/mnist_softmax.py
 	@ echo "freeze_graph"
-	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
-	# $(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add,)
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,y_q)
+	$(call mnist_toco_quant,$(MNIST_BASE)/$@,frozen_mnist.pb,x_q,y_q,)
 
 # simple a fully connected network and a sin op
 fc_sin:
 	@ mkdir -p $@/export
 	@ python $@/mnist_softmax.py
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add_1)
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,add_1,--allow_custom_ops)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist.pb,Placeholder,add_1,--allow_custom_ops)
 
 # lenet
 deep:
@@ -93,7 +114,7 @@ deep:
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,)
 
 # lenet with dummy quant
 deep_dummy:
@@ -102,7 +123,7 @@ deep_dummy:
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
+	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,)
 
 # lenet with Conv2D -> CustomConv2D
 deep_custom:
@@ -112,7 +133,7 @@ deep_custom:
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	@ python tools/rename_ops.py $@/frozen_mnist-nodropout.pb -r Conv2D,CustomConv2D
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout-custom.pb,fc2/add,--allow_custom_ops)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout-custom.pb,Placeholder,fc2/add,--allow_custom_ops)
 
 # lenet with a lrn between conv1 and conv2
 deep_lrn:
@@ -121,7 +142,7 @@ deep_lrn:
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,)
 
 # lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
 deep_lrn_dummy:
@@ -130,4 +151,4 @@ deep_lrn_dummy:
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,fc2/add,)
+	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,)

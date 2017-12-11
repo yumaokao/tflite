@@ -42,15 +42,29 @@ def main(_):
   # Import data
   mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
-  # Create the model
+  # Create fake quant the model
   x = tf.placeholder(tf.float32, [None, 784])
-  W = tf.Variable(tf.zeros([784, 10]), name='W')
-  b = tf.Variable(tf.zeros([10]), name='b')
-  y_fc = tf.matmul(x, W) + b
+  x_min = tf.Variable(0.0, name='x_min')
+  x_max = tf.Variable(6.0, name='x_max')
+  x_q = tf.fake_quant_with_min_max_vars(x, x_min, x_max, name='x_q')
 
-  q_min = tf.Variable(0.0, name='q_min')
-  q_max = tf.Variable(6.0, name='q_max')
-  y = tf.fake_quant_with_min_max_vars(y_fc, q_min, q_max)
+  W = tf.Variable(tf.zeros([784, 10]), name='W')
+  W_min = tf.Variable(0.0, name='W_min')
+  W_max = tf.Variable(6.0, name='W_max')
+  W_q = tf.fake_quant_with_min_max_vars(W, W_min, W_max, name='W_q')
+
+  b = tf.Variable(tf.zeros([10]), name='b')
+  b_min = tf.Variable(0.0, name='b_min')
+  b_max = tf.Variable(6.0, name='b_max')
+  b_q = tf.fake_quant_with_min_max_vars(b, b_min, b_max, name='b_q')
+
+  # y_fc = tf.matmul(x, W) + b
+  y_fc = tf.matmul(x_q, W_q) + b_q
+
+  # fake_quant
+  y_min = tf.Variable(0.0, name='q_min')
+  y_max = tf.Variable(6.0, name='q_max')
+  y = tf.fake_quant_with_min_max_vars(y_fc, y_min, y_max, name='y_q')
 
   # Define loss and optimizer
   y_ = tf.placeholder(tf.float32, [None, 10])
@@ -98,19 +112,19 @@ def main(_):
   print("YMK: print details")
   print("  W:")
   print(W.eval())
+  print("  W_min:")
+  print(W_min.eval())
+  print("  W_max:")
+  print(W_max.eval())
   print("  b:")
   print(b.eval())
-  print("  q_min:")
-  print(q_min.eval())
-  print("  q_max:")
-  print(q_max.eval())
 
   # Save a batch 10
   batch_xs = mnist.test.images[0:10]
   batch_ys = mnist.test.labels[0:10]
   # print("YMK: print mnist test first 10")
-  # print("  batch_ys:")
-  # print(batch_ys)
+  # print("  batch_xs:")
+  # print(batch_xs)
 
   # run test
   ys = sess.run(y, feed_dict={x: batch_xs, y_: batch_ys})
