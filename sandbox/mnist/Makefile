@@ -147,8 +147,8 @@ deep_lrn:
 # lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
 deep_lrn_dummy:
 	@ mkdir -p $@/export
-	@ python $@/mnist_deep_lrn.py
-	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
-	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
-	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,)
+	@ # python $@/mnist_deep_lrn.py
+	# $(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	@ # python tools/drop_dropouts.py $@/frozen_mnist.pb
+	@ # python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
+	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,--partial_quant --allow_custom_ops)

@@ -103,6 +103,13 @@ tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
 $ sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
 ```
 
+## Build schema_generated.h from schema.fbs
+```sh
+$ bazel build @flatbuffers//:flatc
+$ bazel-bin/external/flatbuffers/flatc --cpp --gen-object-api tensorflow/contrib/lite/schema/schema.fbs
+$ vimdiff schema_generated.h tensorflow/contrib/lite/schema/schema_generated.h
+```
+
 # MNIST
 
 ## train with saver and summary
