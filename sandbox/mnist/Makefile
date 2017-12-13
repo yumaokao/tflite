@@ -132,7 +132,7 @@ deep_custom:
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	@ python tools/rename_ops.py $@/frozen_mnist-nodropout.pb -r Conv2D,CustomConv2D
+	@ python tools/rename_ops.py $@/frozen_mnist-nodropout.pb -i 15,CustomConv2D
 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout-custom.pb,Placeholder,fc2/add,--allow_custom_ops)
 
 # lenet with a lrn between conv1 and conv2
@@ -147,8 +147,8 @@ deep_lrn:
 # lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
 deep_lrn_dummy:
 	@ mkdir -p $@/export
-	@ # python $@/mnist_deep_lrn.py
-	# $(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
-	@ # python tools/drop_dropouts.py $@/frozen_mnist.pb
-	@ # python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
+	@ python $@/mnist_deep_lrn.py
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,fc2/add)
+	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
+	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,--partial_quant --allow_custom_ops)
