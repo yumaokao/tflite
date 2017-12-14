@@ -38,10 +38,17 @@ tags
 # tensorflow
 tensorflow
 
-# ckpts
+# mnist ckpts
 sandbox/mnist/*/*.pb
 sandbox/mnist/*/ckpts
 sandbox/mnist/*/export
 sandbox/mnist/*/summary
 sandbox/mnist/*/dots
 sandbox/*.apk
+
+# float-ops ckpts
+sandbox/float-ops/*/*.pb
+sandbox/float-ops/*/ckpts
+sandbox/float-ops/*/export
+sandbox/float-ops/*/summary
+sandbox/float-ops/*/dots
