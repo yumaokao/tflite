@@ -1,6 +1,6 @@
 .PHONY: all clean
 .PHONY: fully_connected
-.PHONY: average_pool_2d relu softmax
+.PHONY: average_pool_2d relu softmax sigmoid
 
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/float-ops
@@ -53,7 +53,7 @@ fully_connected:
 	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,add,)
 	$(call compare_tflite,$(OPS_BASE)/$@)
 
-average_pool_2d relu softmax:
+average_pool_2d relu softmax sigmoid:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
