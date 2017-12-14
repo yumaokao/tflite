@@ -1,5 +1,5 @@
 .PHONY: all clean
-.PHONY: fullyconnected
+.PHONY: fully_connected average_pool_2d
 
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/float-ops
@@ -45,7 +45,7 @@ clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
 
 # simple a fully connected network
-fullyconnected:
+fully_connected average_pool_2d:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call freeze_graph,$(OPS_BASE)/$@,add)
