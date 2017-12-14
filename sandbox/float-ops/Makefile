@@ -45,9 +45,15 @@ clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
 
 # simple a fully connected network
-fully_connected average_pool_2d:
+fully_connected:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call freeze_graph,$(OPS_BASE)/$@,add)
 	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,add,)
+	$(call compare_tflite,$(OPS_BASE)/$@)
+
+average_pool_2d:
+	@ mkdir -p $@/export
+	@ python $@/$@.py
+	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,AvgPool)
 	$(call compare_tflite,$(OPS_BASE)/$@)
