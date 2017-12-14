@@ -4,7 +4,7 @@ TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/float-ops
 
 VARIABLE_TARGETS := fully_connected
-FIXED_TARGETS := average_pool_2d relu softmax sigmoid tanh l2_normalize
+FIXED_TARGETS := average_pool_2d relu softmax sigmoid tanh l2_normalize relu6
 
 .PHONY: $(VARIABLE_TARGETS)
 .PHONY: $(FIXED_TARGETS)
