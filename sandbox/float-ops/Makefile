@@ -1,9 +1,13 @@
 .PHONY: all clean
-.PHONY: fully_connected
-.PHONY: average_pool_2d relu softmax sigmoid
 
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/float-ops
+
+VARIABLE_TARGETS := fully_connected
+FIXED_TARGETS := average_pool_2d relu softmax sigmoid tanh l2_normalize
+
+.PHONY: $(VARIABLE_TARGETS)
+.PHONY: $(FIXED_TARGETS)
 
 ## functions ##
 define freeze_graph
@@ -46,14 +50,14 @@ clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
 
 # simple a fully connected network
-fully_connected:
+$(VARIABLE_TARGETS):
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call freeze_graph,$(OPS_BASE)/$@,add)
 	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,add,)
 	$(call compare_tflite,$(OPS_BASE)/$@)
 
-average_pool_2d relu softmax sigmoid:
+$(FIXED_TARGETS):
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
