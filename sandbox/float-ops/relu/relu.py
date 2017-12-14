@@ -41,9 +41,7 @@ def main(_):
 
   # Create the model
   x = tf.placeholder(tf.float32, [None, 784])
-  x_2d = tf.reshape(x, [-1, 28, 28, 1])
-  y = tf.nn.avg_pool(x_2d, ksize=[1, 2, 2, 1],
-                     strides=[1, 2, 2, 1], padding='SAME', name='ys')
+  y = tf.nn.relu(x, name='ys')
 
   # variables initializer
   sess = tf.InteractiveSession()
