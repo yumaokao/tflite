@@ -25,6 +25,7 @@ from __future__ import print_function
 import argparse
 import os
 import sys
+import imp
 
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -34,60 +35,54 @@ import tensorflow as tf
 FLAGS = None
 
 
-def model(x):
-  # return variables to save
-  variables = {}
-  x_2d = tf.reshape(x, [-1, 28, 28, 1])
-  y = tf.nn.avg_pool(x_2d, ksize=[1, 2, 2, 1],
-                     strides=[1, 2, 2, 1], padding='SAME', name='ys')
-  return y, variables
-
-
-def main(_):
-  # dir base
+def main(args, op):
   dirname = os.path.dirname(os.path.abspath(__file__))
+  dirname = os.path.join(dirname, op)
   exportbase = os.path.join(dirname, "export")
+  if not os.path.isdir(dirname):
+    raise NameError('could not find dir {}'.format(dirname))
+
+  # import
+  plugin_name = os.path.join(dirname, '{}.py'.format(op))
+  if not os.path.isfile(plugin_name):
+    raise NameError('could not find file {}'.format(plugin_name))
+  plugin = imp.load_source('model', plugin_name)
 
   # Create the model
   x = tf.placeholder(tf.float32, [None, 784])
-  y, variables = model(x)
-  # x_2d = tf.reshape(x, [-1, 28, 28, 1])
-  # y = tf.nn.avg_pool(x_2d, ksize=[1, 2, 2, 1],
-  #                    strides=[1, 2, 2, 1], padding='SAME', name='ys')
+  y = plugin.model(x)
 
-  # variables initializer
+  # Variables initializer
   sess = tf.InteractiveSession()
   tf.global_variables_initializer().run()
 
-  # Add ops to save and restore all the variables.
+  # Summary
+  summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"),
+                                         graph=tf.get_default_graph())
+
+  # Saver
   # saver = tf.train.Saver()
 
-  # summary
-  summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"), graph=tf.get_default_graph())
-
-  # Test initialed model
+  # Save GraphDef
   pb_path = tf.train.write_graph(sess.graph_def, dirname, "model.pb", False)
   print("  GraphDef saved in file: %s" % pb_path)
+
+  # Save Checkpoints
   # ckpt_path = saver.save(sess, os.path.join(dirname, "ckpts", "model.ckpt"))
   # print("  Model saved in file: %s" % ckpt_path)
 
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
+  mnist = input_data.read_data_sets(args.data_dir, one_hot=True)
 
   # Save a batch 10
   batch_xs = mnist.test.images[0:10]
   batch_ys = mnist.test.labels[0:10]
-  # print("  batch_ys:")
-  # print(batch_ys)
 
-  # run test
-  # print("  y:")
+  # Run test
   ys = sess.run(y, feed_dict={x: batch_xs})
-  # print(ys.shape)
 
-  # save to npy
+  # Save to npy
   np.save(os.path.join(exportbase, 'batch_xs.npy'), batch_xs)
-  np.save(os.path.join(exportbase, 'batch_ys.npy'), batch_ys)
   np.save(os.path.join(exportbase, 'ys.npy'), ys)
 
 
@@ -95,5 +90,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('--data_dir', type=str, default='/tmp/tensorflow/mnist/input_data',
                       help='Directory for storing input data')
-  FLAGS, unparsed = parser.parse_known_args()
-  tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+  parser.add_argument('operations', type=str, nargs='+', help='operations to run')
+  args, unparsed = parser.parse_known_args()
+
+  for op in args.operations:
+    main(args, op)

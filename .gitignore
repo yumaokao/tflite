@@ -52,3 +52,4 @@ sandbox/float-ops/*/ckpts
 sandbox/float-ops/*/export
 sandbox/float-ops/*/summary
 sandbox/float-ops/*/dots
+sandbox/float-ops/*/*.pyc
