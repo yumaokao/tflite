@@ -60,6 +60,6 @@ $(VARIABLE_TARGETS):
 
 $(FIXED_TARGETS):
 	@ mkdir -p $@/export
-	@ python $@/$@.py
+	@ python float-ops.py $@
 	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
 	$(call compare_tflite,$(OPS_BASE)/$@)
