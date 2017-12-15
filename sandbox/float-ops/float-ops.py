@@ -52,11 +52,12 @@ def main(args, op):
     print("  Model saved in file: %s" % ckpt_path)
 
   # Import data
-  mnist = input_data.read_data_sets(args.data_dir, one_hot=True)
-
-  # Save a batch 10
-  batch_xs = mnist.test.images[0:10]
-  batch_ys = mnist.test.labels[0:10]
+  if args.mnist:
+    mnist = input_data.read_data_sets(args.mnist_dir, one_hot=True)
+    batch_xs = mnist.test.images[0:10]
+  else:
+    batch_xs = (np.random.rand(10, 784) - 0.5) * 4
+    batch_xs = batch_xs.astype('float32')
 
   # Run test
   ys = sess.run(y, feed_dict={x: batch_xs})
@@ -73,8 +74,9 @@ def main(args, op):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
-  parser.add_argument('--data_dir', type=str, default='/tmp/tensorflow/mnist/input_data',
+  parser.add_argument('--mnist_dir', type=str, default='/tmp/tensorflow/mnist/input_data',
                       help='Directory for storing input data')
+  parser.add_argument('--mnist', action='store_true', help='use mnist test data')
   parser.add_argument('operations', type=str, nargs='+', help='operations to run')
   args, unparsed = parser.parse_known_args()
 
