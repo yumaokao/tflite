@@ -50,10 +50,10 @@ all:
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
 
-# simple a fully connected network
+
 $(VARIABLE_TARGETS):
 	@ mkdir -p $@/export
-	@ python $@/$@.py
+	@ python float-ops.py $@
 	$(call freeze_graph,$(OPS_BASE)/$@,add)
 	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,add,)
 	$(call compare_tflite,$(OPS_BASE)/$@)

@@ -40,16 +40,16 @@ def main(args, op):
   summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"),
                                          graph=tf.get_default_graph())
 
-  # Saver
-  # saver = tf.train.Saver()
 
   # Save GraphDef
   pb_path = tf.train.write_graph(sess.graph_def, dirname, "model.pb", False)
   print("  GraphDef saved in file: %s" % pb_path)
 
   # Save Checkpoints
-  # ckpt_path = saver.save(sess, os.path.join(dirname, "ckpts", "model.ckpt"))
-  # print("  Model saved in file: %s" % ckpt_path)
+  if len(variables) > 0:
+    saver = tf.train.Saver()
+    ckpt_path = saver.save(sess, os.path.join(dirname, "ckpts", "model.ckpt"))
+    print("  Model saved in file: %s" % ckpt_path)
 
   # Import data
   mnist = input_data.read_data_sets(args.data_dir, one_hot=True)
@@ -64,6 +64,11 @@ def main(args, op):
   # Save to npy
   np.save(os.path.join(exportbase, 'batch_xs.npy'), batch_xs)
   np.save(os.path.join(exportbase, 'ys.npy'), ys)
+
+  # Save weights to npy
+  for k in variables:
+    v = variables[k]
+    np.save(os.path.join(exportbase, '{}.npy'.format(k)), v.eval())
 
 
 if __name__ == '__main__':
