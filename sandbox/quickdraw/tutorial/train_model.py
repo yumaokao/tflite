@@ -36,6 +36,8 @@ import sys
 
 import tensorflow as tf
 
+tf.logging.set_verbosity(tf.logging.INFO)
+
 
 def get_num_classes():
   classes = []
