@@ -13,6 +13,7 @@ Project: https://github.com/aymericdamien/TensorFlow-Examples/
 
 from __future__ import print_function
 
+import os
 import tensorflow as tf
 from tensorflow.contrib import rnn
 
@@ -50,6 +51,9 @@ biases = {
     'out': tf.Variable(tf.random_normal([num_classes]))
 }
 
+# dir base
+dirname = os.path.dirname(os.path.abspath(__file__))
+
 
 def RNN(x, weights, biases):
 
@@ -63,8 +67,11 @@ def RNN(x, weights, biases):
     # Define a lstm cell with tensorflow
     lstm_cell = rnn.BasicLSTMCell(num_hidden, forget_bias=1.0)
 
+    # Get initial_state
+    initial_state = lstm_cell.zero_state(batch_size, tf.float32)
+
     # Get lstm cell output
-    outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
+    outputs, states = rnn.static_rnn(lstm_cell, x, initial_state=initial_state, dtype=tf.float32)
 
     # Linear activation, using rnn inner loop last output
     return tf.matmul(outputs[-1], weights['out']) + biases['out']
@@ -84,6 +91,12 @@ accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
+
+# Add ops to save and restore all the variables.
+saver = tf.train.Saver()
+
+# summary
+summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"), graph=tf.get_default_graph())
 
 # Start training
 with tf.Session() as sess:
@@ -113,3 +126,8 @@ with tf.Session() as sess:
     test_label = mnist.test.labels[:test_len]
     print("Testing Accuracy:", \
         sess.run(accuracy, feed_dict={X: test_data, Y: test_label}))
+
+    pb_path = tf.train.write_graph(sess.graph_def, dirname, "mnist.pb", False)
+    print("GraphDef saved in file: %s" % pb_path)
+    ckpt_path = saver.save(sess, os.path.join(dirname, "ckpts", "model.ckpt"))
+    print("Model saved in file: %s" % ckpt_path)
