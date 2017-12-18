@@ -1,6 +1,7 @@
 .PHONY: all clean
 .PHONY: fc fc_sin fc_fake
 .PHONY: deep deep_dummy deep_custom deep_lrn deep_lrn_dummy
+.PHONY: lstm
 
 TF_BASE := /home/tflite/tensorflow
 MNIST_BASE := /home/tflite/sandbox/mnist
@@ -152,3 +153,12 @@ deep_lrn_dummy:
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
 	$(call mnist_toco_dummy_quant,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,fc2/add,--partial_quant --allow_custom_ops)
+
+# lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
+lstm:
+	@ mkdir -p $@/export
+	@ # python $@/mnist_lstm.py
+	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
+	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
+	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
+	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,add,)
