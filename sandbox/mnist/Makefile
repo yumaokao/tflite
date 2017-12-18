@@ -158,7 +158,8 @@ deep_lrn_dummy:
 lstm:
 	@ mkdir -p $@/export
 	@ # python $@/mnist_lstm.py
-	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
-	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
-	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,add,)
+	@ python $@/recurrent_network.py
+#	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
+	@ # python tools/drop_dropouts.py $@/frozen_mnist.pb
+	@ # python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
+# 	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,add,)
