@@ -11,7 +11,7 @@ define mnist_freeze_graph
 	@ echo "freeze_graph"
 	@ # echo MNIST_DIR [$1]
 	@ # echo OUTPUT_NODE_NAMES $2
-	$(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
+	@ $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$1/mnist.pb \
 		--input_checkpoint=$1/ckpts/model.ckpt \
 		--input_binary=true \

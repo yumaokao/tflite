@@ -65,7 +65,7 @@ def RNN(x, weights, biases):
     # x = tf.unstack(x, timesteps, 1)
 
     # Define a lstm cell with tensorflow
-    lstm_cell = rnn.BasicLSTMCell(num_hidden, forget_bias=1.0)
+    lstm_cell = rnn.BasicLSTMCell(num_hidden, forget_bias=0.0)
 
     # Get initial_state
     state = lstm_cell.zero_state(batch_size, tf.float32)
@@ -73,9 +73,10 @@ def RNN(x, weights, biases):
     # Get lstm cell output
     # outputs, states = rnn.static_rnn(lstm_cell, x, initial_state=initial_state, dtype=tf.float32)
     output, state = lstm_cell(x, state)
+    output_1, state = lstm_cell(x, state)
 
     # Linear activation, using rnn inner loop last output
-    return tf.matmul(output, weights['out']) + biases['out']
+    return tf.matmul(output_1, weights['out']) + biases['out']
 
 logits = RNN(X, weights, biases)
 prediction = tf.nn.softmax(logits)
