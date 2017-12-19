@@ -2,6 +2,7 @@
 .PHONY: fc fc_sin fc_fake
 .PHONY: deep deep_dummy deep_custom deep_lrn deep_lrn_dummy
 .PHONY: lstm
+.PHONY: speakerid
 
 TF_BASE := /home/tflite/tensorflow
 MNIST_BASE := /home/tflite/sandbox/mnist
@@ -27,7 +28,7 @@ define mnist_toco
 	@ # echo OUTPUT_ARRAYS $4
 	@ # echo $5
 	@ mkdir -p $1/dots
-	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$1/$2 \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
@@ -157,8 +158,32 @@ deep_lrn_dummy:
 # lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
 lstm:
 	@ mkdir -p $@/export
-	@ python $@/recurrent_network.py
+	@ # python $@/recurrent_network.py
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
-	$(call mnist_toco,$(MNIST_BASE)/$@,frozen_mnist-nodropout.pb,Placeholder,add,--allow_custom_ops)
+	@ mkdir -p $(MNIST_BASE)/$@/dots
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(MNIST_BASE)/$@/frozen_mnist-nodropout.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(MNIST_BASE)/$@/export/mnist.lite \
+		--inference_type=FLOAT \
+		--influrence_input_type=FLOAT --input_arrays=Placeholder \
+		--output_arrays=add --input_shapes=10,784 \
+		--dump_graphviz=$(MNIST_BASE)/$@/dots --allow_custom_ops \
+		--rnn_states="mnist"
+
+speakerid:
+	@ mkdir -p $@/export
+	@ [ -f $@/export/speakerid.tflite ] || \
+		wget https://storage.googleapis.com/download.tensorflow.org/models/tflite/speech_speakerid_model_2017_11_14.tflite \
+		-O $@/export/speakerid.tflite
+	@ mkdir -p $(MNIST_BASE)/$@/dots
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(MNIST_BASE)/$@/export/speakerid.tflite \
+		--input_format=TFLITE --output_format=GRAPHVIZ_DOT \
+		--output_file=$(MNIST_BASE)/$@/export/mnist.dot \
+		--inference_type=FLOAT \
+		--influrence_input_type=FLOAT --input_arrays=Placeholder \
+		--output_arrays=add --input_shapes=10,784 \
+		--dump_graphviz=$(MNIST_BASE)/$@/dots --allow_custom_ops
