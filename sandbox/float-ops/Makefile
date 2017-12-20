@@ -1,10 +1,10 @@
-.PHONY: all clean
+.PHONY: all build clean
 
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/float-ops
 
-VARIABLE_TARGETS := fully_connected
-FIXED_TARGETS := avg_pool max_pool concat l2_pool
+VARIABLE_TARGETS := fully_connected concat
+FIXED_TARGETS := avg_pool max_pool l2_pool
 FIXED_TARGETS += relu softmax sigmoid tanh l2_normalize relu6
 
 .PHONY: $(VARIABLE_TARGETS)
@@ -50,12 +50,18 @@ all:
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
 
+build:
+	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
+
 
 $(VARIABLE_TARGETS):
 	@ mkdir -p $@/export
 	@ python float-ops.py $@
-	$(call freeze_graph,$(OPS_BASE)/$@,add)
-	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,add,)
+	$(call freeze_graph,$(OPS_BASE)/$@,ys)
+	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,ys,)
 	$(call compare_tflite,$(OPS_BASE)/$@)
 
 $(FIXED_TARGETS):
