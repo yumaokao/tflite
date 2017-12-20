@@ -158,7 +158,7 @@ deep_lrn_dummy:
 # lenet with a lrn between conv1 and conv2, and dummy quant (will failed)
 lstm:
 	@ mkdir -p $@/export
-	@ # python $@/recurrent_network_orig.py
+	@ # python $@/recurrent_network.py
 	$(call mnist_freeze_graph,$(MNIST_BASE)/$@,add)
 	@ python tools/drop_dropouts.py $@/frozen_mnist.pb
 	@ python tools/save_summaries.py $@/frozen_mnist-nodropout.pb
@@ -168,10 +168,10 @@ lstm:
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(MNIST_BASE)/$@/export/mnist.lite \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=Placeholder \
-		--output_arrays=add --input_shapes=10,784 \
+		--influrence_input_type=FLOAT --input_arrays=Placeholder,BasicLSTMCellZeroState/zeros_1	\
+		--output_arrays=add --input_shapes=10,784:64,128 \
 		--dump_graphviz=$(MNIST_BASE)/$@/dots --allow_custom_ops \
-		--rnn_states="mnist1"
+		--rnn_states="mnist"
 
 speakerid:
 	@ mkdir -p $@/export
