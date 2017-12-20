@@ -6,6 +6,7 @@ OPS_BASE := /home/tflite/sandbox/float-ops
 VARIABLE_TARGETS := fully_connected concat
 FIXED_TARGETS := avg_pool max_pool l2_pool
 FIXED_TARGETS += relu softmax sigmoid tanh l2_normalize relu6
+FIXED_TARGETS += resize_bilinear
 
 .PHONY: $(VARIABLE_TARGETS)
 .PHONY: $(FIXED_TARGETS)
