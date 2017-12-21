@@ -7,7 +7,7 @@ VARIABLE_TARGETS := fully_connected concat
 FIXED_TARGETS := avg_pool max_pool l2_pool
 FIXED_TARGETS += relu softmax sigmoid tanh l2_normalize relu6
 FIXED_TARGETS += resize_bilinear
-FIXED_TARGETS += space_to_depth
+FIXED_TARGETS += space_to_depth depth_to_space
 
 # float-ops not passed with compare_tflite
 # input all 0 in interpreter invoke: avg_pool, max_pool, l2_pool, sapce_to_depth
