@@ -53,3 +53,11 @@ sandbox/float-ops/*/export
 sandbox/float-ops/*/summary
 sandbox/float-ops/*/dots
 sandbox/float-ops/*/*.pyc
+
+# quant-ops ckpts
+sandbox/quant-ops/*/*.pb
+sandbox/quant-ops/*/ckpts
+sandbox/quant-ops/*/export
+sandbox/quant-ops/*/summary
+sandbox/quant-ops/*/dots
+sandbox/quant-ops/*/*.pyc
