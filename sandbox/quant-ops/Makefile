@@ -3,7 +3,7 @@
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/quant-ops
 
-.PHONY: dequantize
+.PHONY: dequantize quantize_v2
 
 ## functions ##
 define freeze_graph
@@ -69,4 +69,10 @@ dequantize:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call toco_dequantize,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
+	$(call compare_tflite,$(OPS_BASE)/$@)
+
+quantize_v2:
+	@ mkdir -p $@/export
+	@ python $@/$@.py
+	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
 	$(call compare_tflite,$(OPS_BASE)/$@)
