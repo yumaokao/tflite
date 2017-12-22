@@ -5,12 +5,15 @@ OPS_BASE := /home/tflite/sandbox/float-ops
 
 VARIABLE_TARGETS := fully_connected concat
 FIXED_TARGETS := avg_pool max_pool l2_pool
-FIXED_TARGETS += relu softmax sigmoid tanh l2_normalize relu6
+FIXED_TARGETS += relu relu6 sigmoid tanh softmax
 FIXED_TARGETS += resize_bilinear
 FIXED_TARGETS += space_to_depth depth_to_space
+FIXED_TARGETS += l2_normalize local_response_normalization
 
 # float-ops not passed with compare_tflite
-# input all 0 in interpreter invoke: avg_pool, max_pool, l2_pool, sapce_to_depth
+# input all 0 in interpreter invoke:
+# 	avg_pool, max_pool, l2_pool, sapce_to_depth,
+# 	local_response_normalization
 
 .PHONY: $(VARIABLE_TARGETS)
 .PHONY: $(FIXED_TARGETS)
