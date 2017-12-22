@@ -107,7 +107,11 @@ $ sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86
 ```sh
 $ bazel build @flatbuffers//:flatc
 $ bazel-bin/external/flatbuffers/flatc --cpp --gen-object-api tensorflow/contrib/lite/schema/schema.fbs
-$ vimdiff schema_generated.h tensorflow/contrib/lite/schema/schema_generated.h
+$ clang-format schema_generated.h --style=google > schema_generated_f.h
+$ vimdiff schema_generated_f.h tensorflow/contrib/lite/schema/schema_generated.h
+# add explicit to OperatorOptionBuilder
+# need to install clang-format to make diff easier
+$ sudo apt-get install clang-format
 ```
 
 # MNIST
@@ -143,7 +147,7 @@ $ bazel-bin/tensorflow/contrib/lite/toco/toco \
   --input_file=/home/tflite/sandbox/mnist/frozen_mnist.pb \
   --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
   --output_file=/tmp/mnist.lite --inference_type=FLOAT \
-  --influrence_input_type=FLOAT --input_arrays=reshape/Reshape \
+  --inference_input_type=FLOAT --input_arrays=reshape/Reshape \
   --output_arrays=fc2/add --input_shapes=1,28,28,1
 ```
 
@@ -153,7 +157,7 @@ $ bazel-bin/tensorflow/contrib/lite/toco/toco \
   --input_file=/home/tflite/sandbox/mnist/frozen_mnist.pb \
   --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
   --output_file=/tmp/mnist_quan.lite --inference_type=QUANTIZED_UINT8 \
-  --influrence_input_type=QUANTIZED_UINT8 --input_array=reshape/Reshape \
+  --inference_input_type=QUANTIZED_UINT8 --input_array=reshape/Reshape \
   --output_array=fc2/add --input_shape=1,28,28,1 \
   --default_ranges_min=0 --default_ranges_max=6 \
   --mean_value=127.5 --std_value=127.5

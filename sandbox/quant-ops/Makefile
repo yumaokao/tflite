@@ -24,7 +24,21 @@ define toco
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/model.lite \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=$3 \
+		--inference_input_type=FLOAT --input_arrays=$3 \
+		--output_arrays=$4 --input_shapes=10,784 \
+		--dump_graphviz=$1/dots $5
+	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
+endef
+
+define toco_dequantize
+	@ echo "toco"
+	@ mkdir -p $1/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$1/$2 \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$1/export/model.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
@@ -54,5 +68,5 @@ build:
 dequantize:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
-	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
+	$(call toco_dequantize,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
 	$(call compare_tflite,$(OPS_BASE)/$@)

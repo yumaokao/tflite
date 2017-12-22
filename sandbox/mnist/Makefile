@@ -33,7 +33,7 @@ define mnist_toco
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=$3 \
+		--inference_input_type=FLOAT --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
@@ -52,7 +52,7 @@ define mnist_toco_dummy_quant
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
 		--inference_type=QUANTIZED_UINT8 \
-		--influrence_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--default_ranges_min=0 --default_ranges_max=6 \
 		--mean_values=127.5 --std_values=127.5 \
@@ -73,7 +73,7 @@ define mnist_toco_quant
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/mnist.lite \
 		--inference_type=QUANTIZED_UINT8 \
-		--influrence_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
@@ -168,7 +168,7 @@ lstm:
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(MNIST_BASE)/$@/export/mnist.lite \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=Placeholder,BasicLSTMCellZeroState/zeros_1	\
+		--inference_input_type=FLOAT --input_arrays=Placeholder,BasicLSTMCellZeroState/zeros_1	\
 		--output_arrays=add --input_shapes=10,784:64,128 \
 		--dump_graphviz=$(MNIST_BASE)/$@/dots --allow_custom_ops \
 		--rnn_states="mnist"
@@ -184,6 +184,6 @@ speakerid:
 		--input_format=TFLITE --output_format=GRAPHVIZ_DOT \
 		--output_file=$(MNIST_BASE)/$@/export/mnist.dot \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=Placeholder \
+		--inference_input_type=FLOAT --input_arrays=Placeholder \
 		--output_arrays=add --input_shapes=10,784 \
 		--dump_graphviz=$(MNIST_BASE)/$@/dots --allow_custom_ops

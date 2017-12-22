@@ -43,7 +43,7 @@ define toco
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$1/export/model.lite \
 		--inference_type=FLOAT \
-		--influrence_input_type=FLOAT --input_arrays=$3 \
+		--inference_input_type=FLOAT --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=8,16,3 \
 		--dump_graphviz=$1/dots $5
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
