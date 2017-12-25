@@ -61,3 +61,11 @@ sandbox/quant-ops/*/export
 sandbox/quant-ops/*/summary
 sandbox/quant-ops/*/dots
 sandbox/quant-ops/*/*.pyc
+
+# rnn-ops ckpts
+sandbox/rnn-ops/*/*.pb
+sandbox/rnn-ops/*/ckpts
+sandbox/rnn-ops/*/export
+sandbox/rnn-ops/*/summary
+sandbox/rnn-ops/*/dots
+sandbox/rnn-ops/*/*.pyc
