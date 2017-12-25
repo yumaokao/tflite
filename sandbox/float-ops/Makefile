@@ -59,8 +59,8 @@ define compare_tflite
 endef
 
 
-all:
-	@ echo "Do nothing"
+all: $(VARIABLE_TARGETS) $(FIXED_TARGETS)
+	@ echo "all float-ops"
 
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb

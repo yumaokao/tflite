@@ -34,7 +34,7 @@ def main(args, op):
 
   # Variables initializer
   sess = tf.InteractiveSession()
-  tf.global_variables_initializer().run()
+  sess.run(tf.global_variables_initializer())
 
   # Summary
   summary_writer = tf.summary.FileWriter(os.path.join(dirname, "summary"),
