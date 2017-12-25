@@ -52,6 +52,7 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:run_tflite
 
 basic_lstm_cell:
 	@ mkdir -p $@/export
