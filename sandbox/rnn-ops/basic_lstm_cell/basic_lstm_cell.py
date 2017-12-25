@@ -130,7 +130,7 @@ with tf.Session() as sess:
     print("Testing Accuracy:", \
         sess.run(accuracy, feed_dict={X: test_data, Y: test_label}))
 
-    pb_path = tf.train.write_graph(sess.graph_def, dirname, "mnist.pb", False)
+    pb_path = tf.train.write_graph(sess.graph_def, dirname, "model.pb", False)
     print("GraphDef saved in file: %s" % pb_path)
     ckpt_path = saver.save(sess, os.path.join(dirname, "ckpts", "model.ckpt"))
     print("Model saved in file: %s" % ckpt_path)
