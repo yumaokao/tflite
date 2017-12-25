@@ -3,7 +3,8 @@
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/quant-ops
 
-.PHONY: dequantize quantize_v2 quantize
+QUANT_TARGETS := dequantize quantize_v2 quantize
+.PHONY: $(QUANT_TARGETS)
 
 ## functions ##
 define freeze_graph
@@ -54,7 +55,8 @@ endef
 
 
 all:
-	@ echo "Do nothing"
+	@ echo "all quant-ops"
+	@ echo $(QUANT_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
 
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb

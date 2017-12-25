@@ -60,8 +60,10 @@ define compare_tflite
 endef
 
 
-all: $(VARIABLE_TARGETS) $(FIXED_TARGETS)
+all:
 	@ echo "all float-ops"
+	@ echo $(VARIABLE_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	@ echo $(FIXED_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
 
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
