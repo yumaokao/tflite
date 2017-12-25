@@ -68,3 +68,20 @@ basic_lstm_cell:
 		--dump_graphviz=$(OPS_BASE)/$@/dots --allow_custom_ops \
 		--rnn_states="mnist"
 #	$(call compare_tflite,$(OPS_BASE)/$@)
+
+
+# speakerid to trace and compare
+speakerid:
+	@ mkdir -p $@/export
+	@ [ -f $@/export/speakerid.tflite ] || \
+		wget https://storage.googleapis.com/download.tensorflow.org/models/tflite/speech_speakerid_model_2017_11_14.tflite \
+		-O $@/export/speakerid.tflite
+	@ mkdir -p $(OPS_BASE)/$@/dots
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(OPS_BASE)/$@/export/speakerid.tflite \
+		--input_format=TFLITE --output_format=GRAPHVIZ_DOT \
+		--output_file=$(OPS_BASE)/$@/export/mnist.dot \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=Placeholder \
+		--output_arrays=add --input_shapes=10,784 \
+		--dump_graphviz=$(OPS_BASE)/$@/dots --allow_custom_ops
