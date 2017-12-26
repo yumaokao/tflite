@@ -19,8 +19,8 @@ FIXED_TARGETS += l2_normalize local_response_normalization
 #    2. no tflite kernels:
 # 	floor
 #
-#    3. throwing an instance of 'std::bad_alloc'
-#	resize_bilinear
+#    3. --allow_custom_ops:
+#       conv2d_transpose -> TransposeConv
 
 
 .PHONY: $(VARIABLE_TARGETS)
