@@ -4,7 +4,7 @@ TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/float-ops
 
 VARIABLE_TARGETS := fully_connected concat multiply
-VARIABLE_TARGETS += conv2d depthwise_conv2d
+VARIABLE_TARGETS += conv2d depthwise_conv2d conv2d_transpose
 FIXED_TARGETS := avg_pool max_pool l2_pool
 FIXED_TARGETS += relu relu6 sigmoid tanh softmax floor
 FIXED_TARGETS += resize_bilinear
