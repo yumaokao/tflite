@@ -3,8 +3,8 @@
 TF_BASE := /home/tflite/tensorflow
 OPS_BASE := /home/tflite/sandbox/rnn-ops
 
-LSTM_TARGETS := basic_lstm_cell
-.PHONY: $(LSTM_TARGETS)
+RNN_TARGETS := basic_lstm_cell gru_cell
+.PHONY: $(RNN_TARGETS)
 
 ## functions ##
 define freeze_graph
@@ -42,7 +42,7 @@ endef
 
 all:
 	@ echo "all rnn-ops"
-	@ echo $(LSTM_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	@ echo $(RNN_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
 
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
@@ -55,6 +55,22 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:run_tflite
 
 basic_lstm_cell:
+	@ mkdir -p $@/export
+	@ python $@/$@.py
+	$(call freeze_graph,$(OPS_BASE)/$@,add)
+	@ mkdir -p $(OPS_BASE)/$@/dots
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(OPS_BASE)/$@/frozen_mnist-nodropout.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(OPS_BASE)/$@/export/mnist.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=Placeholder,BasicLSTMCellZeroState/zeros_1	\
+		--output_arrays=add --input_shapes=10,784:64,128 \
+		--dump_graphviz=$(OPS_BASE)/$@/dots --allow_custom_ops \
+		--rnn_states="mnist"
+#	$(call compare_tflite,$(OPS_BASE)/$@)
+
+gru_cell:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call freeze_graph,$(OPS_BASE)/$@,add)
