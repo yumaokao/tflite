@@ -48,6 +48,7 @@ def main(args):
 
     # sess.run
     batch_xs = (np.random.rand(10, 224, 224, 3) - 0.5) * 4
+    batch_xs = batch_xs.astype('float32')
     ys = sess.run(y, feed_dict={x: batch_xs})
 
   np.save(os.path.join(exportbase, 'batch_xs.npy'), batch_xs)
