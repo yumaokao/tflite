@@ -62,10 +62,11 @@ mobilenet_1.0:
 #	MobilenetV1/MobilenetV1/Conv2d_0/convolution 		OK
 #	MobilenetV1/MobilenetV1/Conv2d_0/Relu6			OK
 #	MobilenetV1/MobilenetV1/Conv2d_1_depthwise/depthwise	OK
-#	MobilenetV1/MobilenetV1/Conv2d_1_pointwise/convolution	Failed
+#	MobilenetV1/MobilenetV1/Conv2d_1_depthwise/Relu6	OK
+#	MobilenetV1/MobilenetV1/Conv2d_1_pointwise/convolution	Failed	(ANN OK)
 #	MobilenetV1/MobilenetV1/Conv2d_1_pointwise/Relu6	Falied
 #	...
 # 	MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd 		Failed
-	@ python $@/$@.py $@/frozen-nodropout.pb --y MobilenetV1/MobilenetV1/Conv2d_1_pointwise/convolution
-	$(call toco,$(MODELS_BASE)/$@,frozen-nodropout.pb,input,MobilenetV1/MobilenetV1/Conv2d_1_pointwise/convolution,)
+	@ python $@/$@.py $@/frozen-nodropout.pb --y MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd
+	$(call toco,$(MODELS_BASE)/$@,frozen-nodropout.pb,input,MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd,)
 	$(call compare_tflite,$(MODELS_BASE)/$@,--ignore 1)
