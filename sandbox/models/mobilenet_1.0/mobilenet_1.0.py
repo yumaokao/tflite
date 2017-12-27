@@ -39,8 +39,8 @@ def main(args):
     #   print(op)
 
     # get x and y
-    x = graph.get_tensor_by_name('import/input:0')
-    y = graph.get_tensor_by_name('import/MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd:0')
+    x = graph.get_tensor_by_name('import/{}:0'.format(args.x))
+    y = graph.get_tensor_by_name('import/{}:0'.format(args.y))
 
     # Summary
     summary_writer = tf.summary.FileWriter(summarydir)
@@ -56,6 +56,11 @@ def main(args):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
+  parser.add_argument('--x', type=str, default='input',
+                      help='input tensor name')
+  parser.add_argument('--y', type=str,
+                      default='MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd',
+                      help='output tensor name')
   parser.add_argument('frozen_pb', type=str, nargs=1, help='Frozen graph file (.pb) to run')
   args, unparsed = parser.parse_known_args()
 
