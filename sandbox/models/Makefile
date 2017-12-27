@@ -59,8 +59,11 @@ mobilenet_1.0:
 	@ mkdir -p $@/export
 	@ cp backbone/mobilenet_1.0/mobilenet_v1_1.0_224_frozen.pb $@/frozen.pb
 	@ python $(TOOLS_BASE)/drop_dropouts.py $@/frozen.pb
-#	MobilenetV1/MobilenetV1/Conv2d_0/convolution: 	OK
-# 	MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd: 	Failed
-	@ python $@/$@.py $@/frozen-nodropout.pb --y MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd
-	$(call toco,$(MODELS_BASE)/$@,frozen-nodropout.pb,input,MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd,)
+#	MobilenetV1/MobilenetV1/Conv2d_0/convolution 		OK
+#	MobilenetV1/MobilenetV1/Conv2d_0/Relu6			OK
+#	MobilenetV1/MobilenetV1/Conv2d_1_depthwise/depthwise	OK
+#	...
+# 	MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd 		Failed
+	@ python $@/$@.py $@/frozen-nodropout.pb --y MobilenetV1/MobilenetV1/Conv2d_1_depthwise/depthwise
+	$(call toco,$(MODELS_BASE)/$@,frozen-nodropout.pb,input,MobilenetV1/MobilenetV1/Conv2d_1_depthwise/depthwise,)
 	$(call compare_tflite,$(MODELS_BASE)/$@,--ignore 1)
