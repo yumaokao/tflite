@@ -1,4 +1,4 @@
-.PHONY: all build clean
+.PHONY: all build clean images
 
 TF_BASE := /home/tflite/tensorflow
 MODELS_BASE := /home/tflite/sandbox/models
@@ -53,6 +53,20 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
+
+images:
+	@ mkdir -p $@
+	@ wget "http://blogs.vault.com/media/3782983/sleeping_cat.jpg" -O $@/cat_0.jpg
+	@ wget "http://itchmo.com/wp-content/uploads/2007/06/cat-facts.jpg" -O $@/cat_1.jpg
+	@ wget "https://pbs.twimg.com/media/CEp7EgeWIAM-L8Q.jpg" -O $@/cat_2.jpg
+	@ wget "https://404store.com/2017/05/06/worlds-most-beautiful-cats-52-57fc9cb29d61b__700.jpg" -O $@/cat_3.jpg
+	@ wget "https://i.imgur.com/IGtpDrt.jpg" -O $@/cat_4.jpg
+	@ wget "https://cdn.theatlantic.com/assets/media/img/mt/2017/04/GettyImages_138468381/lead_960.jpg" -O $@/cat_5.jpg
+	@ wget "http://216.243.143.215/images/uploads/calico%20kitten.jpg" -O $@/cat_6.jpg
+	@ wget "http://www.lifewithcats.tv/wp-content/uploads/2011/08/storm.jpg" -O $@/cat_7.jpg
+	@ wget "https://pbs.twimg.com/media/BdpQBgkIEAAt_X-.jpg" -O $@/cat_8.jpg
+	@ wget "http://www.lifewithcats.tv/wp-content/uploads/2013/03/528280_549595008418823_1073077699_n.jpg" -O $@/cat_9.jpg
+
 
 # need to download backbone.tgz and extracted
 mobilenet_1.0:

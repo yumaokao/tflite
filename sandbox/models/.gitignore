@@ -2,6 +2,9 @@
 backbone
 backbone.tgz
 
+# images
+images
+
 # ckpts
 */*.pb
 */export
