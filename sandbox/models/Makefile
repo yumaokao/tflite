@@ -54,7 +54,7 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
 
-
+# need to download backbone.tgz and extracted
 mobilenet_1.0:
 	@ mkdir -p $@/export
 	@ cp backbone/mobilenet_1.0/mobilenet_v1_1.0_224_frozen.pb $@/frozen.pb
