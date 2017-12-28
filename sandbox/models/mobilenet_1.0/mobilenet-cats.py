@@ -34,6 +34,14 @@ def load_cats_dataset(catsdir):
   return dataset
 
 
+def load_graph_def(pb):
+  # read pb
+  with tf.gfile.GFile(args.frozen_pb[0], "rb") as f:
+    graph_def = tf.GraphDef()
+    graph_def.ParseFromString(f.read())
+  return graph_def
+
+
 def main(args):
   dirname = os.path.dirname(os.path.abspath(__file__))
   exportbase = os.path.join(dirname, "export")
@@ -41,6 +49,8 @@ def main(args):
   if not os.path.isdir(dirname):
     raise NameError('could not find dir {}'.format(dirname))
 
+  # load graph
+  graph_def = load_graph_def(args.frozen_pb[0])
 
   dataset = load_cats_dataset(args.catsdir)
   batched_dataset = dataset.batch(10)
@@ -48,8 +58,24 @@ def main(args):
   next_element = iterator.get_next()
 
   with tf.Session() as sess:
-    aimg = sess.run(next_element)
-    print(aimg.shape)
+    tf.import_graph_def(graph_def)
+    graph = sess.graph
+
+    # get x and y
+    x = graph.get_tensor_by_name('import/{}:0'.format(args.x))
+    y = graph.get_tensor_by_name('import/{}:0'.format(args.y))
+
+    # Summary
+    summary_writer = tf.summary.FileWriter(summarydir)
+    summary_writer.add_graph(sess.graph)
+
+    # sess.run
+    batch_xs = sess.run(next_element)
+    ys = sess.run(y, feed_dict={x: batch_xs})
+
+    import ipdb
+    ipdb.set_trace()
+    print(ys)
 
 
 if __name__ == '__main__':

@@ -31,7 +31,6 @@ def main(args):
   # load graph
   graph_def = load_graph_def(args.frozen_pb[0])
 
-
   with tf.Session() as sess:
     tf.import_graph_def(graph_def)
     graph = sess.graph
@@ -41,6 +40,9 @@ def main(args):
     # get x and y
     x = graph.get_tensor_by_name('import/{}:0'.format(args.x))
     y = graph.get_tensor_by_name('import/{}:0'.format(args.y))
+
+    # weights = graph.get_tensor_by_name('import/MobilenetV1/Conv2d_0/weights/read:0')
+    # weights.eval()
 
     # Summary
     summary_writer = tf.summary.FileWriter(summarydir)
