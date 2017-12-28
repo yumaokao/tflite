@@ -13,22 +13,23 @@ FLAGS = None
 
 
 def load_cats_dataset(catsdir):
-  def _parse_function(filename):
+  def _parse_function(filename, label):
     image_string = tf.read_file(filename)
     image_decoded = tf.image.decode_jpeg(image_string, channels=3)
     image_resized = tf.image.resize_images(image_decoded, [224, 224])
-    return image_resized
+    return image_resized, label
 
-  def _preprocess_function(image):
+  def _preprocess_function(image, label):
     image_preprocess = image;
     image_preprocess /= 255;
     image_preprocess -= 0.5;
     image_preprocess *= 2.0;
-    return image_preprocess
+    return image_preprocess, label
 
   filenames = [os.path.join('images', 'cat_{}.jpg'.format(i)) for i in range(10)]
   filenames = tf.constant(filenames)
-  dataset = tf.data.Dataset.from_tensor_slices(filenames)
+  labels = tf.constant([282 for i in range(10)])
+  dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
   dataset = dataset.map(_parse_function)
   dataset = dataset.map(_preprocess_function)
   return dataset
@@ -41,6 +42,15 @@ def load_graph_def(pb):
     graph_def.ParseFromString(f.read())
   return graph_def
 
+
+def calulate_accuray(y, y_):
+  with tf.name_scope('accuracy'):
+    top_1 = tf.argmax(tf.squeeze(y), 1)
+    top_1 = tf.cast(top_1, tf.int32)
+    correct_prediction = tf.equal(top_1, y_)
+    correct_prediction = tf.cast(correct_prediction, tf.float32)
+  accuracy = tf.reduce_mean(correct_prediction)
+  return accuracy
 
 def main(args):
   dirname = os.path.dirname(os.path.abspath(__file__))
@@ -70,12 +80,16 @@ def main(args):
     summary_writer.add_graph(sess.graph)
 
     # sess.run
-    batch_xs = sess.run(next_element)
+    batch_xs, batch_ys = sess.run(next_element)
     ys = sess.run(y, feed_dict={x: batch_xs})
 
-    import ipdb
-    ipdb.set_trace()
-    print(ys)
+    y_ = tf.placeholder(tf.int32, [None, 1])
+    accuracy = calulate_accuray(y, y_)
+    cat_accuracy = accuracy.eval(feed_dict={x: batch_xs, y_: batch_ys.reshape(10, 1)})
+    print(cat_accuracy)
+
+  np.save(os.path.join(exportbase, 'batch_xs.npy'), batch_xs)
+  np.save(os.path.join(exportbase, 'ys.npy'), ys)
 
 
 if __name__ == '__main__':
