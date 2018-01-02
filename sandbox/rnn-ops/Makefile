@@ -71,7 +71,7 @@ basic_lstm_cell:
 		--rnn_states="mnist"
 #	$(call compare_tflite,$(OPS_BASE)/$@)
 
-gru_cell basic_rnn_cell:
+basic_rnn_cell:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call freeze_graph,$(OPS_BASE)/$@,add)
@@ -84,6 +84,22 @@ gru_cell basic_rnn_cell:
 		--output_file=$(OPS_BASE)/$@/export/mnist.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=Placeholder,BasicLSTMCellZeroState/zeros_1	\
+		--output_arrays=add --input_shapes=10,784:64,128 \
+		--dump_graphviz=$(OPS_BASE)/$@/dots --allow_custom_ops
+
+gru_cell:
+	@ mkdir -p $@/export
+	@ python $@/$@.py
+	$(call freeze_graph,$(OPS_BASE)/$@,add)
+	@ python $(TOOLS_BASE)/drop_dropouts.py $@/frozen.pb
+	@ python $(TOOLS_BASE)/save_summaries.py $@/frozen-nodropout.pb
+	@ mkdir -p $(OPS_BASE)/$@/dots
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(OPS_BASE)/$@/frozen-nodropout.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(OPS_BASE)/$@/export/mnist.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=Placeholder,GRUCellZeroState/zeros \
 		--output_arrays=add --input_shapes=10,784:64,128 \
 		--dump_graphviz=$(OPS_BASE)/$@/dots --allow_custom_ops
 
