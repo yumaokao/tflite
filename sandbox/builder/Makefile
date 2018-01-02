@@ -1,0 +1,20 @@
+.PHONY: all build clean configure
+TF_BASE := /home/tflite/tensorflow
+
+all:
+	@ echo "all models"
+
+clean:
+	@ cd $(TF_BASE) && bazel clean
+
+configure:
+	@ cd $(TF_BASE) && ./configure
+
+build:
+	@ cd $(TF_BASE) && bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+	@ cd $(TF_BASE) && sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86_64.whl
+	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
