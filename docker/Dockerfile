@@ -35,5 +35,4 @@ RUN apt-get update && \
     # cd platforms && ls | grep -v android-21 | xargs rm -Rf && \
     # cd /home/tflite/lib/android-sdk/tools && rm -Rf emulator* lib* proguard templates
 
-# We expect this to be mounted with '-v $PWD:/home/tflite/tensorflow':
-WORKDIR /home/tflite/tensorflow
+WORKDIR /home/tflite
