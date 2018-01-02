@@ -27,7 +27,7 @@ build_lite_utils:
 
 # datasets
 dataset_imagenet:
-	@ cd $(TF_MODELS_BASE) && bazel build slim/download_and_preprocess_imagenet
+	@ cd $(TF_MODELS_BASE)/research/slim && bazel build download_and_convert_imagenet
 	@ DATA_DIR=$(DATASET_BASE)/imagenet \
-		&& cd $(TF_MODELS_BASE) \
-		&& $PWD/bazel-bin/download_and_convert_imagenet "${DATA_DIR}"
+		&& cd $(TF_MODELS_BASE)/research/slim \
+		&& $(TF_MODELS_BASE)/research/slim/bazel-bin/download_and_convert_imagenet "$(DATASET_BASE)/imagenet"
