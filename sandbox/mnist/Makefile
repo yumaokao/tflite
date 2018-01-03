@@ -4,8 +4,12 @@
 .PHONY: lstm
 .PHONY: speakerid
 
-TF_BASE := /home/tflite/tensorflow
-MNIST_BASE := /home/tflite/sandbox/mnist
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+MNIST_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist
 
 ## functions ##
 define mnist_freeze_graph

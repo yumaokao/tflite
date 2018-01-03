@@ -2,10 +2,14 @@
 .PHONY: train_cifarnet
 .PHONY: eval_cifarnet
 
-TF_BASE := /home/tflite/tensorflow
-TF_SLIM_BASE := /home/tflite/models/research/slim
-DATASET_BASE := /home/tflite/datasets
-QUANTOR_BASE := /home/tflite/sandbox/quantor
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
+DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
+QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
 
 all:
 	@ echo "all models"

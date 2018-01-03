@@ -1,8 +1,12 @@
 .PHONY: all build clean
 
-TF_BASE := /home/tflite/tensorflow
-OPS_BASE := /home/tflite/sandbox/rnn-ops
-TOOLS_BASE := /home/tflite/sandbox/mnist/tools
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/rnn-ops
+TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 RNN_TARGETS := basic_lstm_cell gru_cell basic_rnn_cell
 .PHONY: $(RNN_TARGETS)

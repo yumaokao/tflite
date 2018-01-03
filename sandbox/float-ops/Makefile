@@ -1,7 +1,11 @@
 .PHONY: all build clean
 
-TF_BASE := /home/tflite/tensorflow
-OPS_BASE := /home/tflite/sandbox/float-ops
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/float-ops
 
 VARIABLE_TARGETS := fully_connected concat multiply
 VARIABLE_TARGETS += conv2d depthwise_conv2d conv2d_transpose

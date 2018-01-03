@@ -1,8 +1,12 @@
 .PHONY: all build clean images
 
-TF_BASE := /home/tflite/tensorflow
-MODELS_BASE := /home/tflite/sandbox/models
-TOOLS_BASE := /home/tflite/sandbox/mnist/tools
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+MODELS_BASE := $(TFLITE_ROOT_PATH)/sandbox/models
+TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 VARIABLE_TARGETS := mobilenet_1.0
 

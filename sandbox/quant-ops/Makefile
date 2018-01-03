@@ -1,7 +1,11 @@
 .PHONY: all build clean
 
-TF_BASE := /home/tflite/tensorflow
-OPS_BASE := /home/tflite/sandbox/quant-ops
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/quant-ops
 
 QUANT_TARGETS := dequantize quantize_v2 quantize
 .PHONY: $(QUANT_TARGETS)

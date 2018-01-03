@@ -1,7 +1,11 @@
 .PHONY: all clean configure
 .PHONY: build_tf_pip_gpu build_tf_pip_cpu build_lite_utils
 
-TF_BASE := /home/tflite/tensorflow
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
 
 all:
 	@ echo "all models"

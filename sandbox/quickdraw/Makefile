@@ -1,8 +1,12 @@
 .PHONY: all clean
 .PHONY: datasets
 
-TF_BASE := /home/tflite/tensorflow
-QUICKDRAW_BASE := /home/tflite/sandbox/quickdraw
+ifeq ($(TFLITE_ROOT_PATH),)
+TFLITE_ROOT_PATH := /home/tflite
+endif
+
+TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+QUICKDRAW_BASE := $(TFLITE_ROOT_PATH)/sandbox/quickdraw
 
 QUICKDRAW_TARGETS := tutorial-lstm-1k tutorial-cudnn_lstm-10k
 .PHONY: $(QUICKDRAW_TARGETS)
