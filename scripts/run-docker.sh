@@ -6,6 +6,7 @@ TAG_NAME=latest-devel
 DOCKER=docker
 [ $DEVICE == "GPU" ] && TAG_NAME=latest-devel-gpu
 [ $DEVICE == "GPU" ] && DOCKER=nvidia-docker
+DATASETS_DIR=${DATASETS_DIR:=/home/yumaokao/mnts/sda2/yumaokao/datasets}
 
 IMAGE_NAME=yumaokao/tensorflow/lite:$TAG_NAME
 CONTAINER_NAME=tflite-$TAG_NAME
@@ -17,6 +18,11 @@ else
     git clone https://yumaokao@github.com/yumaokao/tensorflow
     cd tensorflow && git checkout origin/lite-utils -b lite-utils && cd -
 fi
+if [ -d ./models ]; then
+    :
+else
+    git clone https://github.com/tensorflow/models
+fi
 
 echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."
 
@@ -27,7 +33,8 @@ $DOCKER start $CONTAINER_NAME > /dev/null 2> /dev/null || {
 	       --name $CONTAINER_NAME \
            --volume $PWD/tensorflow:/home/tflite/tensorflow \
            --volume $PWD/sandbox:/home/tflite/sandbox \
-           --publish 6006:6006 \
+           --volume $PWD/models:/home/tflite/models \
+           --volume $DATASETS_DIR:/home/tflite/datasets \
 	       --tty \
 	       $IMAGE_NAME
 }

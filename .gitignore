@@ -37,6 +37,7 @@ tags
 
 # tensorflow
 tensorflow
+models
 
 # mnist ckpts
 sandbox/mnist/*/*.pb
