@@ -2,6 +2,7 @@
 .PHONY: build_tf_pip build_lite_utils dataset_imagenet
 TF_BASE := /home/tflite/tensorflow
 TF_MODELS_BASE := /home/tflite/models
+TF_SLIM_BASE := /home/tflite/models/research/slim
 DATASET_BASE := /home/tflite/datasets
 
 all:
@@ -27,7 +28,19 @@ build_lite_utils:
 
 # datasets
 dataset_imagenet:
-	@ cd $(TF_MODELS_BASE)/research/slim && bazel build download_and_convert_imagenet
+	@ cd $(TF_SLIM_BASE) && bazel build download_and_convert_imagenet
 	@ DATA_DIR=$(DATASET_BASE)/imagenet \
-		&& cd $(TF_MODELS_BASE)/research/slim \
-		&& $(TF_MODELS_BASE)/research/slim/bazel-bin/download_and_convert_imagenet "$(DATASET_BASE)/imagenet"
+		&& cd $(TF_SLIM_BASE) \
+		&& $(TF_SLIM_BASE)/bazel-bin/download_and_convert_imagenet "$(DATASET_BASE)/imagenet"
+
+dataset_cifar10:
+	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
+		--dataset_name=cifar10 --dataset_dir="$(DATASET_BASE)/cifar10"
+
+dataset_flowers:
+	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
+		--dataset_name=flowers --dataset_dir="$(DATASET_BASE)/flowers"
+
+dataset_mnist:
+	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
+		--dataset_name=mnist --dataset_dir="$(DATASET_BASE)/mnist"
