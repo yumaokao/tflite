@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: all clean build
 .PHONY: dataset_imagenet dataset_cifar10 dataset_flowers dataset_mnist
 .PHONY: train_cifarnet eval_cifarnet freeze_graph
 
@@ -6,6 +6,8 @@ TF_BASE := /home/tflite/tensorflow
 TF_SLIM_BASE := /home/tflite/models/research/slim
 DATASET_BASE := /home/tflite/datasets
 QUANTOR_BASE := /home/tflite/sandbox/quantor
+TOOLS_BASE := /home/tflite/sandbox/mnist/tools
+
 
 all:
 	@ echo "all models"
@@ -13,6 +15,9 @@ all:
 build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
+
+clean:
+	@ rm -rf $(QUANTOR_BASE)/cifarnet
 
 
 # datasets
@@ -33,6 +38,7 @@ dataset_flowers:
 dataset_mnist:
 	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
 		--dataset_name=mnist --dataset_dir="$(DATASET_BASE)/mnist"
+
 
 # slim cifarnet
 #   add --clone_on_cpu to run training on cpu
@@ -55,12 +61,13 @@ eval_cifarnet:
 
 freeze_cifarnet:
 	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
-		--alsologtostderr --model_name=cfiarnet \
+		--alsologtostderr --model_name=cifarnet \
 		--output_file=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
+	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
 		--in_graph=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+	cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb \
-		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/model.ckpt \
+		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/model.ckpt-100000 \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
 		--output_node_names=CifarNet/Predictions/Reshape
