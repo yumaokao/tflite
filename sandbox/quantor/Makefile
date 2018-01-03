@@ -35,6 +35,7 @@ dataset_mnist:
 		--dataset_name=mnist --dataset_dir="$(DATASET_BASE)/mnist"
 
 # slim cifarnet
+#   add --clone_on_cpu to run training on cpu
 train_cifarnet:
 	@ cd $(TF_SLIM_BASE) && python train_image_classifier.py \
 		--train_dir=$(QUANTOR_BASE)/cifarnet --dataset_name=cifar10 \
