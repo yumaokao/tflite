@@ -74,8 +74,10 @@ freeze_cifarnet:
 		--output_node_names=CifarNet/Predictions/Reshape
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
 
+# eval frozen
 eval_cifarnet_frozen:
 	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/eval_frozen.py \
 		--checkpoint_path=$(QUANTOR_BASE)/cifarnet --eval_dir=$(QUANTOR_BASE)/cifarnet \
 		--dataset_name=cifar10 --dataset_split_name=test \
-		--dataset_dir=$(DATASET_BASE)/cifar10 --model_name=cifarnet
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
