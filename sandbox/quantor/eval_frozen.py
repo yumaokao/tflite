@@ -114,12 +114,12 @@ def main(_):
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
 
-    tf.import_graph_def(graph_def)
+    tf.import_graph_def(graph_def, name='')
     graph = sess.graph
 
     # get x and y
-    x = graph.get_tensor_by_name('import/{}:0'.format('input'))
-    y = graph.get_tensor_by_name('import/{}:0'.format('CifarNet/Predictions/Reshape'))
+    x = graph.get_tensor_by_name('{}:0'.format('input'))
+    y = graph.get_tensor_by_name('{}:0'.format('CifarNet/Predictions/Reshape'))
 
     for step in range(num_batches):
       images, labels = sess.run(next_batch)

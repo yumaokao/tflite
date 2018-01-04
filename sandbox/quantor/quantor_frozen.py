@@ -31,6 +31,9 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'frozen_pb', None, 'The GraphDef file are stored with quantized_graph.')
 
+tf.app.flags.DEFINE_string(
+    'output_dir', None, 'The directory to save quantized graph and checkpoints.')
+
 FLAGS = tf.app.flags.FLAGS
 
 def prepare_cifar10_dataset(filenames):
@@ -74,6 +77,8 @@ def main(_):
     raise ValueError('You must supply the dataset directory with --dataset_dir')
   if not FLAGS.frozen_pb:
     raise ValueError('You must supply the frozen pb with --frozen_pb')
+  if not FLAGS.output_dir:
+    raise ValueError('You must supply the output directory with --output_dir')
 
   # tf.logging.set_verbosity(tf.logging.INFO)
   tfrecord_pattern = os.path.join(FLAGS.dataset_dir, '{}_{}.tfrecord'.format(
@@ -91,8 +96,9 @@ def main(_):
 
   tf.logging.info('Quantize Graph')
   with tf.Session() as sess:
-    tf.import_graph_def(graph_def)
+    tf.import_graph_def(graph_def, name='')
     quantized_graph = qg.create_training_graph(sess.graph)
+    quantized_inf_graph = qg.create_eval_graph(sess.graph)
 
   # Initialize `iterator` with training data.
   with tf.Session(graph=quantized_graph) as sess:
@@ -110,6 +116,9 @@ def main(_):
       accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
       tf.summary.scalar('accuracy', accuracy)
 
+    tf.logging.info('Prepare Saver')
+    saver = tf.train.Saver()
+
     if FLAGS.summary_dir:
       tf.logging.info('Prepare summary writer')
       summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
@@ -118,11 +127,12 @@ def main(_):
     sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
+
     graph = sess.graph
 
     # get x and y
-    x = graph.get_tensor_by_name('import/{}:0'.format('input'))
-    y = graph.get_tensor_by_name('import/{}:0'.format('CifarNet/Predictions/Reshape'))
+    x = graph.get_tensor_by_name('{}:0'.format('input'))
+    y = graph.get_tensor_by_name('{}:0'.format('CifarNet/Predictions/Reshape'))
 
     # summary all min/max variables
     # print(graph.get_collection('variables')[3].eval())
@@ -141,6 +151,11 @@ def main(_):
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
     if FLAGS.summary_dir:
       summary_writer.add_graph(graph)
+
+    # save graph and ckpts
+    saver.save(sess, os.path.join(FLAGS.output_dir, "model.ckpt"))
+    # tf.train.write_graph(graph, FLAGS.output_dir, 'quantor.pb', as_text=False)
+    tf.train.write_graph(quantized_inf_graph, FLAGS.output_dir, 'quantor.pb', as_text=False)
 
 
 if __name__ == '__main__':
