@@ -6,6 +6,8 @@ import os
 import math
 import tensorflow as tf
 
+import tensorflow.contrib.quantize as qg
+
 
 tf.app.flags.DEFINE_integer(
     'batch_size', 50, 'The number of samples in each batch.')
@@ -27,7 +29,7 @@ tf.app.flags.DEFINE_string(
     'summary_dir', None, 'The directory where summaries save.')
 
 tf.app.flags.DEFINE_string(
-    'frozen_pb', None, 'The GraphDef file are stored with freeze_graph.')
+    'frozen_pb', None, 'The GraphDef file are stored with quantized_graph.')
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -73,7 +75,7 @@ def main(_):
   if not FLAGS.frozen_pb:
     raise ValueError('You must supply the frozen pb with --frozen_pb')
 
-  tf.logging.set_verbosity(tf.logging.INFO)
+  # tf.logging.set_verbosity(tf.logging.INFO)
   tfrecord_pattern = os.path.join(FLAGS.dataset_dir, '{}_{}.tfrecord'.format(
                                   FLAGS.dataset_name, FLAGS.dataset_split_name))
   tf.logging.info('Import Dataset from tfrecord {}'.format(tfrecord_pattern))
@@ -84,42 +86,49 @@ def main(_):
     num_records = len(list(tf.python_io.tf_record_iterator(tfrecord_pattern)))
     num_batches = int(math.ceil(num_records / float(FLAGS.batch_size)))
 
-  #  for example in tf.python_io.tf_record_iterator(tfrecord_pattern):
-	#  result = tf.train.Example.FromString(example)
-	#  print(result)
-	#  break
-
-  filenames = tf.placeholder(tf.string, shape=[None])
-  dataset = prepare_cifar10_dataset(filenames)
-  iterator = dataset.make_initializable_iterator()
-  next_batch = iterator.get_next()
-
   tf.logging.info('Load GraphDef from frozen_pb {}'.format(FLAGS.frozen_pb))
   graph_def = load_graph_def(FLAGS.frozen_pb)
 
-  tf.logging.info('Prepare metrics')
-  with tf.name_scope("metrics"):
-    lbls = tf.placeholder(tf.int32, [None, 1])
-    preds = tf.placeholder(tf.int32, [None, 10])
-    accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
-    tf.summary.scalar('accuracy', accuracy)
-
-  if FLAGS.summary_dir:
-    tf.logging.info('Prepare summary writer')
-    summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
-    summaries = tf.summary.merge_all()
+  tf.logging.info('Quantize Graph')
+  with tf.Session() as sess:
+    tf.import_graph_def(graph_def)
+    quantized_graph = qg.create_training_graph(sess.graph)
 
   # Initialize `iterator` with training data.
-  with tf.Session() as sess:
+  with tf.Session(graph=quantized_graph) as sess:
+    tf.logging.info('Prepare dataset')
+    with tf.name_scope("dataset"):
+      filenames = tf.placeholder(tf.string, shape=[None])
+      dataset = prepare_cifar10_dataset(filenames)
+      iterator = dataset.make_initializable_iterator()
+      next_batch = iterator.get_next()
+
+    tf.logging.info('Prepare metrics')
+    with tf.name_scope("metrics"):
+      lbls = tf.placeholder(tf.int32, [None, 1])
+      preds = tf.placeholder(tf.int32, [None, 10])
+      accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
+      tf.summary.scalar('accuracy', accuracy)
+
+    if FLAGS.summary_dir:
+      tf.logging.info('Prepare summary writer')
+      summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
+
+    # initialize
+    sess.run(tf.global_variables_initializer())
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
-
-    tf.import_graph_def(graph_def)
     graph = sess.graph
 
     # get x and y
     x = graph.get_tensor_by_name('import/{}:0'.format('input'))
     y = graph.get_tensor_by_name('import/{}:0'.format('CifarNet/Predictions/Reshape'))
+
+    # summary all min/max variables
+    # print(graph.get_collection('variables')[3].eval())
+    for var in graph.get_collection('variables'):
+      tf.summary.scalar(var.name, var)
+    summaries = tf.summary.merge_all()
 
     for step in range(num_batches):
       images, labels = sess.run(next_batch)
@@ -130,11 +139,8 @@ def main(_):
         summary_writer.add_summary(summary, step)
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
-    # import ipdb
-    # ipdb.set_trace()
     if FLAGS.summary_dir:
-      summary_writer.add_graph(sess.graph)
-
+      summary_writer.add_graph(graph)
 
 
 if __name__ == '__main__':
