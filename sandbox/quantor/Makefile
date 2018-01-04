@@ -1,6 +1,6 @@
 .PHONY: all clean build
 .PHONY: dataset_imagenet dataset_cifar10 dataset_flowers dataset_mnist
-.PHONY: train_cifarnet eval_cifarnet freeze_graph
+.PHONY: train_cifarnet eval_cifarnet freeze_graph eval_cifarnet_frozen
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -64,13 +64,31 @@ eval_cifarnet:
 
 freeze_cifarnet:
 	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
-		--alsologtostderr --model_name=cifarnet \
+		--alsologtostderr \
+		--model_name=cifarnet --dataset_name=cifar10 \
 		--output_file=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
 		--in_graph=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
-	cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/model.ckpt-100000 \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
 		--output_node_names=CifarNet/Predictions/Reshape
+	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
+
+# eval frozen
+eval_cifarnet_frozen:
+	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/eval_frozen.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
+
+# quantor frozen
+quantor_cifarnet_frozen:
+	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/quantor_frozen.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
