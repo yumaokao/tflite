@@ -77,7 +77,15 @@ freeze_cifarnet:
 # eval frozen
 eval_cifarnet_frozen:
 	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/eval_frozen.py \
-		--checkpoint_path=$(QUANTOR_BASE)/cifarnet --eval_dir=$(QUANTOR_BASE)/cifarnet \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
+
+# quantor frozen
+quantor_cifarnet_frozen:
+	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/quantor_frozen.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb

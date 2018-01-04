@@ -28,6 +28,9 @@ tf.app.flags.DEFINE_string(
     'dataset_dir', None, 'The directory where the dataset files are stored.')
 
 tf.app.flags.DEFINE_string(
+    'summary_dir', None, 'The directory where summaries save.')
+
+tf.app.flags.DEFINE_string(
     'frozen_pb', None, 'The GraphDe file are stored with freeze_graph.')
 
 FLAGS = tf.app.flags.FLAGS
@@ -62,7 +65,6 @@ def prepare_cifar10_dataset(filenames):
 
 
 def load_graph_def(pb):
-  # read pb
   with tf.gfile.GFile(pb, "rb") as f:
     graph_def = tf.GraphDef()
     graph_def.ParseFromString(f.read())
@@ -99,38 +101,44 @@ def main(_):
   tf.logging.info('Load GraphDef from frozen_pb {}'.format(FLAGS.frozen_pb))
   graph_def = load_graph_def(FLAGS.frozen_pb)
 
-  tf.logging.info('Prepare metrics'.format())
+  tf.logging.info('Prepare metrics')
   with tf.name_scope("metrics"):
     lbls = tf.placeholder(tf.int32, [None, 1])
     preds = tf.placeholder(tf.int32, [None, 10])
     accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
+    tf.summary.scalar('accuracy', accuracy)
 
+  if FLAGS.summary_dir:
+    tf.logging.info('Prepare summary writer')
+    summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
+    summaries = tf.summary.merge_all()
 
   # Initialize `iterator` with training data.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
 
-    # import ipdb
-    # ipdb.set_trace()
-    # print(images)
-
     tf.import_graph_def(graph_def)
     graph = sess.graph
+
     # get x and y
     x = graph.get_tensor_by_name('import/{}:0'.format('input'))
     y = graph.get_tensor_by_name('import/{}:0'.format('CifarNet/Predictions/Reshape'))
-
-    # y_ = tf.placeholder(tf.int32, [None, 1])
-    # accuracy, acc_update_op = tf.metrics.accuracy(y_, tf.argmax(y,1))
-    # test_fetches = {'accuracy': accuracy, 'acc_op': acc_update_op}
 
     for step in range(num_batches):
       images, labels = sess.run(next_batch)
       ys = sess.run(y, feed_dict={x: images})
       sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
+      summary = sess.run(summaries)
+      if FLAGS.summary_dir:
+        summary_writer.add_summary(summary, step)
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
+    # import ipdb
+    # ipdb.set_trace()
+    if FLAGS.summary_dir:
+      summary_writer.add_graph(sess.graph)
+
 
 
 if __name__ == '__main__':
