@@ -79,16 +79,27 @@ freeze_cifarnet:
 
 # eval frozen
 eval_cifarnet_frozen:
-	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/eval_frozen.py \
+	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
 
-# quantor frozen
 quantor_cifarnet_frozen:
-	@ PYTHONPATH=$(TF_SLIM_BASE) python $(QUANTOR_BASE)/quantor_frozen.py \
+	@ python $(QUANTOR_BASE)/quantor_frozen.py \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
-		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
+		--output_dir=$(QUANTOR_BASE)/cifarnet/quantor
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+		--input_graph=$(QUANTOR_BASE)/cifarnet/quantor/quantor.pb \
+		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/quantor/model.ckpt \
+		--input_binary=true --output_graph=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb \
+		--output_node_names=CifarNet/Predictions/Reshape
+	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
+	@ python $(QUANTOR_BASE)/eval_frozen.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
