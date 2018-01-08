@@ -16,6 +16,7 @@ all:
 build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 
 clean:
 	@ rm -rf $(QUANTOR_BASE)/cifarnet
@@ -112,3 +113,4 @@ toco_quantor_cifarnet:
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
+#	--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops\
