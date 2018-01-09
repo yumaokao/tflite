@@ -1,6 +1,7 @@
 .PHONY: all clean build
 .PHONY: dataset_imagenet dataset_cifar10 dataset_flowers dataset_mnist
 .PHONY: train_cifarnet eval_cifarnet freeze_graph eval_cifarnet_frozen
+.PHONY: toco_quantor_cifarnet
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -103,3 +104,14 @@ quantor_cifarnet_frozen:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
+
+toco_quantor_cifarnet:
+	@ mkdir -p $(QUANTOR_BASE)/cifarnet/quantor/dots
+	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
+		--inference_type=QUANTIZED_UINT8 \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
+		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots

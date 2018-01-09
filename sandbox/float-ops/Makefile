@@ -16,14 +16,10 @@ FIXED_TARGETS += space_to_depth depth_to_space
 FIXED_TARGETS += l2_normalize local_response_normalization
 
 # float-ops not passed with compare_tflite
-#    1. input all 0 in interpreter invoke:
-# 	avg_pool, max_pool, l2_pool, sapce_to_depth,
-# 	local_response_normalization, multiply
-#
-#    2. no tflite kernels:
+#    1. no tflite kernels:
 # 	floor
 #
-#    3. --allow_custom_ops:
+#    2. --allow_custom_ops:
 #       conv2d_transpose -> TransposeConv
 
 
