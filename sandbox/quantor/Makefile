@@ -123,7 +123,8 @@ toco_quantor_cifarnet:
 
 eval_inceptionV3:
 	@ cd $(TF_SLIM_BASE) && python eval_image_classifier.py \
-		--checkpoint_path=$(QUANTOR_BASE)/inceptionV3 --eval_dir=$(QUANTOR_BASE)/inceptionV3 \
+		--checkpoint_path=$(QUANTOR_BASE)/inceptionV3/inception_v3.ckpt \
+		--eval_dir=$(QUANTOR_BASE)/inceptionV3 \
 		--dataset_name=imagenet --dataset_split_name=validation \
 		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=inception_v3
 
