@@ -44,12 +44,14 @@ def prepare_imagenet_dataset(filenames):
     return image_decoded, label
 
   def _preprocessing(image, label):
-    tf.summary.image('image', tf.expand_dims(image, 0))
-    image = tf.to_float(image)
-    image = tf.image.resize_image_with_crop_or_pad(image, 299, 299)
-    tf.summary.image('resized_image', tf.expand_dims(image, 0))
-    image = tf.image.per_image_standardization(image)
-    tf.summary.image('std_image', tf.expand_dims(image, 0))
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [299, 299],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
+    image = tf.subtract(image, 0.5)
+    image = tf.multiply(image, 2.0)
     return image, label
 
   # tf.Dataset
