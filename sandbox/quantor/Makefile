@@ -44,9 +44,10 @@ dataset_mnist:
 	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
 		--dataset_name=mnist --dataset_dir="$(DATASET_BASE)/mnist"
 
-
+########################################################
 # slim cifarnet
 #   add --clone_on_cpu to run training on cpu
+########################################################
 train_cifarnet:
 	@ cd $(TF_SLIM_BASE) && python train_image_classifier.py \
 		--train_dir=$(QUANTOR_BASE)/cifarnet --dataset_name=cifar10 \
@@ -106,6 +107,7 @@ quantor_cifarnet_frozen:
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
 
+# TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
 toco_quantor_cifarnet:
 	@ mkdir -p $(QUANTOR_BASE)/cifarnet/quantor/dots
 	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -115,12 +117,13 @@ toco_quantor_cifarnet:
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
+		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
-#	--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops\
 
 
+########################################################
 # for inceptionV3
-
+########################################################
 eval_inceptionV3:
 	@ cd $(TF_SLIM_BASE) && python eval_image_classifier.py \
 		--checkpoint_path=$(QUANTOR_BASE)/inceptionV3/inception_v3.ckpt \
