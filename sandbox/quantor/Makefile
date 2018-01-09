@@ -63,6 +63,12 @@ eval_cifarnet:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 --model_name=cifarnet
 
+eval_inceptionV3:
+	@ cd $(TF_SLIM_BASE) && python eval_image_classifier.py \
+		--checkpoint_path=$(QUANTOR_BASE)/inceptionV3 --eval_dir=$(QUANTOR_BASE)/inceptionV3 \
+		--dataset_name=imagenet --dataset_split_name=validation \
+		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=inception_v3
+
 freeze_cifarnet:
 	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
 		--alsologtostderr \
@@ -78,6 +84,21 @@ freeze_cifarnet:
 		--output_node_names=CifarNet/Predictions/Reshape
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
 
+freeze_inceptionV3:
+	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
+		--alsologtostderr \
+		--model_name=inception_v3 --dataset_name=imagenet \
+		--output_file=$(QUANTOR_BASE)/inceptionV3/inceptionV3_inf_graph.pb
+	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inceptionV3/inceptionV3_inf_graph.pb
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+		--input_graph=$(QUANTOR_BASE)/inceptionV3/inceptionV3_inf_graph.pb \
+		--input_checkpoint=$(QUANTOR_BASE)/inceptionV3/inception_v3.ckpt \
+		--input_binary=true --output_graph=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb \
+		--output_node_names=InceptionV3/Predictions/Reshape
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
+		--in_graph=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb
+	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb
+
 # eval frozen
 eval_cifarnet_frozen:
 	@ python $(QUANTOR_BASE)/eval_frozen.py \
@@ -85,6 +106,13 @@ eval_cifarnet_frozen:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
+
+eval_inceptionV3_frozen:
+	@ python $(QUANTOR_BASE)/eval_frozen_imagenet.py \
+		--summary_dir=$(QUANTOR_BASE)/inceptionV3/summary/$@ \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb
 
 quantor_cifarnet_frozen:
 	@ python $(QUANTOR_BASE)/quantor_frozen.py \
