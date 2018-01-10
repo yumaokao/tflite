@@ -4,6 +4,9 @@ from __future__ import print_function
 
 import os
 import math
+import tempfile
+import subprocess
+import numpy as np
 import tensorflow as tf
 
 
@@ -27,6 +30,7 @@ tf.app.flags.DEFINE_string(
     'tflite_model', None, 'The TFLite model file is stored with toco.')
 
 FLAGS = tf.app.flags.FLAGS
+
 
 def prepare_cifar10_dataset(filenames):
   def _read_tfrecord(example_proto):
@@ -62,7 +66,7 @@ def prepare_cifar10_dataset(filenames):
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
   dataset = dataset.map(_read_tfrecord)
-  dataset = dataset.map(_preprocessing_cifarnet)
+  dataset = dataset.map(_preprocessing_imagenet)
   dataset = dataset.batch(FLAGS.batch_size)
   return dataset
 
@@ -72,6 +76,13 @@ def load_graph_def(pb):
     graph_def = tf.GraphDef()
     graph_def.ParseFromString(f.read())
   return graph_def
+
+
+def prepare_run_tflite_commands(eval_dir, tflite_model):
+  return ['/home/tflite/tensorflow/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
+          '--tflite_file={}'.format(tflite_model),
+          '--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npy')),
+          '--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npy'))]
 
 
 def main(_):
@@ -101,8 +112,12 @@ def main(_):
   iterator = dataset.make_initializable_iterator()
   next_batch = iterator.get_next()
 
-  # tf.logging.info('Load GraphDef from frozen_pb {}'.format(FLAGS.frozen_pb))
-  # graph_def = load_graph_def(FLAGS.frozen_pb)
+  tf.logging.info('Prepare run_tflite')
+  eval_dir = os.path.dirname(FLAGS.tflite_model)
+  eval_dir = os.path.join(eval_dir, 'eval_tflite')
+  if not os.path.exists(eval_dir):
+    os.makedirs(eval_dir)
+  cmds = prepare_run_tflite_commands(eval_dir, FLAGS.tflite_model)
 
   tf.logging.info('Prepare metrics')
   with tf.name_scope("metrics"):
@@ -111,7 +126,7 @@ def main(_):
     accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
     tf.summary.scalar('accuracy', accuracy)
 
-  # Initialize `iterator` with training data.
+  # Initialize `iterator` with dataset.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
@@ -120,8 +135,11 @@ def main(_):
       if (step % 1000) == 0:
         print('{}/{}'.format(step, num_batches))
       images, labels = sess.run(next_batch)
-      # ys = sess.run(y, feed_dict={x: images})
-      # sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
+
+      np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
+      subprocess.check_output(cmds)
+      ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
+      sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
 
