@@ -1,7 +1,7 @@
 .PHONY: all clean build
 .PHONY: dataset_imagenet dataset_cifar10 dataset_flowers dataset_mnist
 .PHONY: train_cifarnet eval_cifarnet freeze_graph eval_cifarnet_frozen
-.PHONY: toco_quantor_cifarnet
+.PHONY: toco_quantor_cifarnet eval_cifarnet_tflite
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -20,6 +20,7 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:run_tflite
 
 clean:
 	@ rm -rf $(QUANTOR_BASE)/cifarnet
@@ -119,6 +120,13 @@ toco_quantor_cifarnet:
 		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
 		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
+
+eval_cifarnet_tflite:
+	@ python $(QUANTOR_BASE)/eval_tflite.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--tflite_model=$(QUANTOR_BASE)/cifarnet/quantor/model.lite
 
 
 ########################################################
