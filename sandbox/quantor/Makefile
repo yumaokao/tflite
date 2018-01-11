@@ -293,13 +293,13 @@ toco_quantor_inceptionV3:
 run_tflite_inceptionV3_float:
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/utils/run_tflite \
 		--tflite_file=$(QUANTOR_BASE)/inceptionV3/quantor/model_float.lite \
-	  --batch_xs=$(QUANTOR_BASE)/inceptionV3/inceptionV3_input.npy \
-		--batch_ys=$(QUANTOR_BASE)/inceptionV3/inceptionV3_output.npy \
-		--use_nnapi=false
+	  --batch_xs=$(QUANTOR_BASE)/inceptionV3/inceptionV3_input_float.npy \
+		--batch_ys=$(QUANTOR_BASE)/inceptionV3/inceptionV3_output_float.npy \
+		--use_nnapi=false --inference_type=float
 
 run_tflite_inceptionV3:
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/utils/run_tflite \
 		--tflite_file=$(QUANTOR_BASE)/inceptionV3/quantor/model.lite \
 	  --batch_xs=$(QUANTOR_BASE)/inceptionV3/inceptionV3_input.npy \
 		--batch_ys=$(QUANTOR_BASE)/inceptionV3/inceptionV3_output.npy \
-		--use_nnapi=false
+		--use_nnapi=false --inference_type=uint8
