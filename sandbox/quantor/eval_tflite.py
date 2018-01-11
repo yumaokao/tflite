@@ -29,10 +29,14 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'tflite_model', None, 'The TFLite model file is stored with toco.')
 
+tf.app.flags.DEFINE_string(
+    'inference_type', 'float', 'The inference type to run the tflie model')
+
+
 FLAGS = tf.app.flags.FLAGS
 
 
-def prepare_cifar10_dataset(filenames):
+def prepare_cifar10_dataset(filenames, inference_type):
   def _read_tfrecord(example_proto):
     feature_to_type = {
         "image/class/label": tf.FixedLenFeature([1], dtype=tf.int64),
@@ -66,7 +70,8 @@ def prepare_cifar10_dataset(filenames):
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
   dataset = dataset.map(_read_tfrecord)
-  dataset = dataset.map(_preprocessing_imagenet)
+  if inference_type == 'float':
+    dataset = dataset.map(_preprocessing_imagenet)
   dataset = dataset.batch(FLAGS.batch_size)
   return dataset
 
@@ -78,11 +83,12 @@ def load_graph_def(pb):
   return graph_def
 
 
-def prepare_run_tflite_commands(eval_dir, tflite_model):
+def prepare_run_tflite_commands(eval_dir, tflite_model, inference_type):
   return ['/home/tflite/tensorflow/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
           '--tflite_file={}'.format(tflite_model),
           '--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npy')),
-          '--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npy'))]
+          '--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npy')),
+          '--inference_type={}'.format(inference_type)]
 
 
 def main(_):
@@ -90,6 +96,8 @@ def main(_):
     raise ValueError('You must supply the dataset directory with --dataset_dir')
   if not FLAGS.tflite_model:
     raise ValueError('You must supply the frozen pb with --tflite_model')
+  if FLAGS.inference_type != 'float' and FLAGS.inference_type != 'uint8':
+    raise ValueError('--inference_type must be one of float or uint8')
 
   tf.logging.set_verbosity(tf.logging.INFO)
   tfrecord_pattern = os.path.join(FLAGS.dataset_dir, '{}_{}.tfrecord'.format(
@@ -108,7 +116,7 @@ def main(_):
 	#  break
 
   filenames = tf.placeholder(tf.string, shape=[None])
-  dataset = prepare_cifar10_dataset(filenames)
+  dataset = prepare_cifar10_dataset(filenames, FLAGS.inference_type)
   iterator = dataset.make_initializable_iterator()
   next_batch = iterator.get_next()
 
@@ -117,12 +125,16 @@ def main(_):
   eval_dir = os.path.join(eval_dir, 'eval_tflite')
   if not os.path.exists(eval_dir):
     os.makedirs(eval_dir)
-  cmds = prepare_run_tflite_commands(eval_dir, FLAGS.tflite_model)
+  cmds = prepare_run_tflite_commands(eval_dir,
+                                     FLAGS.tflite_model, FLAGS.inference_type)
 
   tf.logging.info('Prepare metrics')
   with tf.name_scope("metrics"):
     lbls = tf.placeholder(tf.int32, [None, 1])
-    preds = tf.placeholder(tf.int32, [None, 10])
+    if FLAGS.inference_type == 'float':
+      preds = tf.placeholder(tf.int32, [None, 10])
+    elif FLAGS.inference_type == 'uint8':
+      preds = tf.placeholder(tf.uint8, [None, 10])
     accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
     tf.summary.scalar('accuracy', accuracy)
 
@@ -134,6 +146,8 @@ def main(_):
     for step in range(num_batches):
       if (step % 1000) == 0:
         print('{}/{}'.format(step, num_batches))
+        # print(' '.join(cmds))
+        print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)
 
       np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
