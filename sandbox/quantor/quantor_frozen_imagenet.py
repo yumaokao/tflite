@@ -34,6 +34,12 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'output_dir', None, 'The directory to save quantized graph and checkpoints.')
 
+tf.app.flags.DEFINE_string(
+    'output_node_names', None, 'The name of the output node.')
+
+tf.app.flags.DEFINE_integer(
+    'input_size', 299, 'The width/height of the input image.')
+
 FLAGS = tf.app.flags.FLAGS
 
 def prepare_imagenet_dataset(filenames):
@@ -52,7 +58,7 @@ def prepare_imagenet_dataset(filenames):
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.expand_dims(image, 0)
-    image = tf.image.resize_bilinear(image, [299, 299],
+    image = tf.image.resize_bilinear(image, [FLAGS.input_size, FLAGS.input_size],
                                      align_corners=False)
     image = tf.squeeze(image, [0])
     image = tf.subtract(image, 0.5)
@@ -134,7 +140,7 @@ def main(_):
 
     # get x and y
     x = graph.get_tensor_by_name('{}:0'.format('input'))
-    y = graph.get_tensor_by_name('{}:0'.format('InceptionV3/Predictions/Reshape'))
+    y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_names))
 
     # summary all min/max variables
     # print(graph.get_collection('variables')[3].eval())
