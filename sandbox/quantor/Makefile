@@ -1,7 +1,7 @@
 .PHONY: all clean build
 .PHONY: dataset_imagenet dataset_cifar10 dataset_flowers dataset_mnist
 .PHONY: train_cifarnet eval_cifarnet freeze_graph eval_cifarnet_frozen
-.PHONY: toco_quantor_cifarnet toco_cifarnet eval_cifarnet_tflite
+.PHONY: toco_quantor_cifarnet toco_cifarnet eval_cifarnet_tflite eval_quantor_cifarnet_tflite
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -130,6 +130,14 @@ toco_cifarnet:
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
 		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3
+
+eval_quantor_cifarnet_tflite:
+	@ python $(QUANTOR_BASE)/eval_tflite.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--tflite_model=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
+		--inference_type=uint8
 
 eval_cifarnet_tflite:
 	@ python $(QUANTOR_BASE)/eval_tflite.py \
