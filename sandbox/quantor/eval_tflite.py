@@ -4,11 +4,14 @@ from __future__ import print_function
 
 import os
 import math
+import tempfile
+import subprocess
+import numpy as np
 import tensorflow as tf
 
 
 tf.app.flags.DEFINE_integer(
-    'batch_size', 50, 'The number of samples in each batch.')
+    'batch_size', 1, 'The number of samples in each batch.')
 
 tf.app.flags.DEFINE_integer(
     'max_num_batches', None,
@@ -24,12 +27,10 @@ tf.app.flags.DEFINE_string(
     'dataset_dir', None, 'The directory where the dataset files are stored.')
 
 tf.app.flags.DEFINE_string(
-    'summary_dir', None, 'The directory where summaries save.')
-
-tf.app.flags.DEFINE_string(
-    'frozen_pb', None, 'The GraphDef file are stored with freeze_graph.')
+    'tflite_model', None, 'The TFLite model file is stored with toco.')
 
 FLAGS = tf.app.flags.FLAGS
+
 
 def prepare_cifar10_dataset(filenames):
   def _read_tfrecord(example_proto):
@@ -77,11 +78,18 @@ def load_graph_def(pb):
   return graph_def
 
 
+def prepare_run_tflite_commands(eval_dir, tflite_model):
+  return ['/home/tflite/tensorflow/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
+          '--tflite_file={}'.format(tflite_model),
+          '--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npy')),
+          '--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npy'))]
+
+
 def main(_):
   if not FLAGS.dataset_dir:
     raise ValueError('You must supply the dataset directory with --dataset_dir')
-  if not FLAGS.frozen_pb:
-    raise ValueError('You must supply the frozen pb with --frozen_pb')
+  if not FLAGS.tflite_model:
+    raise ValueError('You must supply the frozen pb with --tflite_model')
 
   tf.logging.set_verbosity(tf.logging.INFO)
   tfrecord_pattern = os.path.join(FLAGS.dataset_dir, '{}_{}.tfrecord'.format(
@@ -104,8 +112,12 @@ def main(_):
   iterator = dataset.make_initializable_iterator()
   next_batch = iterator.get_next()
 
-  tf.logging.info('Load GraphDef from frozen_pb {}'.format(FLAGS.frozen_pb))
-  graph_def = load_graph_def(FLAGS.frozen_pb)
+  tf.logging.info('Prepare run_tflite')
+  eval_dir = os.path.dirname(FLAGS.tflite_model)
+  eval_dir = os.path.join(eval_dir, 'eval_tflite')
+  if not os.path.exists(eval_dir):
+    os.makedirs(eval_dir)
+  cmds = prepare_run_tflite_commands(eval_dir, FLAGS.tflite_model)
 
   tf.logging.info('Prepare metrics')
   with tf.name_scope("metrics"):
@@ -114,37 +126,22 @@ def main(_):
     accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
     tf.summary.scalar('accuracy', accuracy)
 
-  if FLAGS.summary_dir:
-    tf.logging.info('Prepare summary writer')
-    summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
-    summaries = tf.summary.merge_all()
-
-  # Initialize `iterator` with training data.
+  # Initialize `iterator` with dataset.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
 
-    tf.import_graph_def(graph_def, name='')
-    graph = sess.graph
-
-    # get x and y
-    x = graph.get_tensor_by_name('{}:0'.format('input'))
-    y = graph.get_tensor_by_name('{}:0'.format('CifarNet/Predictions/Reshape'))
-
     for step in range(num_batches):
+      if (step % 1000) == 0:
+        print('{}/{}'.format(step, num_batches))
       images, labels = sess.run(next_batch)
-      ys = sess.run(y, feed_dict={x: images})
+
+      np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
+      subprocess.check_output(cmds)
+      ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
       sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
-      summary = sess.run(summaries)
-      if FLAGS.summary_dir:
-        summary_writer.add_summary(summary, step)
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
-    # import ipdb
-    # ipdb.set_trace()
-    if FLAGS.summary_dir:
-      summary_writer.add_graph(sess.graph)
-
 
 
 if __name__ == '__main__':

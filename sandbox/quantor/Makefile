@@ -1,7 +1,7 @@
 .PHONY: all clean build
 .PHONY: dataset_imagenet dataset_cifar10 dataset_flowers dataset_mnist
 .PHONY: train_cifarnet eval_cifarnet freeze_graph eval_cifarnet_frozen
-.PHONY: toco_quantor_cifarnet
+.PHONY: toco_quantor_cifarnet toco_cifarnet eval_cifarnet_tflite
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -121,6 +121,24 @@ toco_quantor_cifarnet:
 		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
 
+toco_cifarnet:
+	@ mkdir -p $(QUANTOR_BASE)/cifarnet/quantor/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(QUANTOR_BASE)/cifarnet/float_model.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=input \
+		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3
+
+eval_cifarnet_tflite:
+	@ python $(QUANTOR_BASE)/eval_tflite.py \
+		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
+		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite
+
+
 ########################################################
 # for mobilenetV1_224
 ########################################################
@@ -184,6 +202,7 @@ quantor_mobilenetV1_224_frozen:
 		--input_size=224 \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/quantor/summary/$@
+
 
 ########################################################
 # for mobilenetV1_128

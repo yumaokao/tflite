@@ -92,10 +92,10 @@ def main(_):
     #num_records = len(list(tf.python_io.tf_record_iterator(tfrecord_pattern)))
     num_batches = int(math.ceil(num_records / float(FLAGS.batch_size)))
 
-  #  for example in tf.python_io.tf_record_iterator(tfrecord_pattern):
-	#  result = tf.train.Example.FromString(example)
-	#  print(result)
-	#  break
+  # for example in tf.python_io.tf_record_iterator(tfrecord_pattern[0]):
+	# result = tf.train.Example.FromString(example)
+	# print(result)
+	# break
 
   filenames = tf.placeholder(tf.string, shape=[None])
   dataset = prepare_imagenet_dataset(filenames)
