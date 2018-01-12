@@ -48,7 +48,7 @@ def prepare_cifar10_dataset(filenames):
     image_decoded = tf.image.decode_png(rawpng, channels=3)
     return image_decoded, label
 
-  def _preprocessing(image, label):
+  def _preprocessing_cifarnet(image, label):
     tf.summary.image('image', tf.expand_dims(image, 0))
     image = tf.to_float(image)
     image = tf.image.resize_image_with_crop_or_pad(image, 32, 32)
@@ -57,10 +57,20 @@ def prepare_cifar10_dataset(filenames):
     tf.summary.image('std_image', tf.expand_dims(image, 0))
     return image, label
 
+  # YMK: use _preprocessing_imagenet [-1, 1) is easier
+  #      for toco with --mean_value=127.5 --std_value=127.5
+  def _preprocessing_imagenet(image, label):
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.expand_dims(image, 0)
+    image = tf.squeeze(image, [0])
+    image = tf.subtract(image, 0.5)
+    image = tf.multiply(image, 2.0)
+    return image, label
+
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
   dataset = dataset.map(_read_tfrecord)
-  dataset = dataset.map(_preprocessing)
+  dataset = dataset.map(_preprocessing_imagenet)
   dataset = dataset.batch(FLAGS.batch_size)
   return dataset
 
