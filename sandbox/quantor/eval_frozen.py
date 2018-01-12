@@ -199,7 +199,6 @@ def main(_):
 
     # get x and y
     x = graph.get_tensor_by_name('{}:0'.format(FLAGS.input_node_name))
-    # y = graph.get_tensor_by_name('{}:0'.format('CifarNet/Predictions/Reshape'))
     y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
 
     for step in range(num_batches):

@@ -95,9 +95,10 @@ quantor_cifarnet_frozen:
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--output_node_name=CifarNet/Predictions/Reshape \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
 		--output_dir=$(QUANTOR_BASE)/cifarnet/quantor
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/cifarnet/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb \
@@ -116,7 +117,7 @@ quantor_cifarnet_frozen:
 #   CifarNet/Predictions/Reshape
 toco_quantor_cifarnet:
 	@ mkdir -p $(QUANTOR_BASE)/cifarnet/quantor/dots
-	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
@@ -196,15 +197,15 @@ eval_mobilenetV1_224_frozen:
 
 #5.04%
 quantor_mobilenetV1_224_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen_imagenet.py \
+	@ python $(QUANTOR_BASE)/quantor_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb \
-		--output_node_names=MobilenetV1/Predictions/Reshape \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
 		--input_size=224 \
 		--output_dir=$(QUANTOR_BASE)/mobilenetV1_224/quantor --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/summary/$@
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/mobilenetV1_224/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/mobilenetV1_224/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb \
@@ -258,15 +259,15 @@ eval_inceptionV3_frozen:
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/summary/$@
 
 quantor_inceptionV3_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen_imagenet.py \
+	@ python $(QUANTOR_BASE)/quantor_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb \
-		--output_node_names=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
 		--output_dir=$(QUANTOR_BASE)/inceptionV3/quantor --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/summary/$@
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inceptionV3/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/inceptionV3/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb \
