@@ -137,14 +137,14 @@ eval_quantor_cifarnet_tflite:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--tflite_model=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
-		--inference_type=uint8
+		--inference_type=uint8 --tensorflow_dir=$(TF_BASE)
 
 eval_cifarnet_tflite:
 	@ python $(QUANTOR_BASE)/eval_tflite.py \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
-		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite
+		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite --tensorflow_dir=$(TF_BASE)
 
 
 ########################################################
@@ -274,18 +274,6 @@ quantor_inceptionV3_frozen:
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@
 
 # TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
-toco_quantor_inceptionV3_float:
-	@ mkdir -p $(QUANTOR_BASE)/inceptionV3/quantor/dots
-	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
-		--input_file=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb \
-		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
-		--output_file=$(QUANTOR_BASE)/inceptionV3/quantor/model_float.lite \
-		--inference_type=FLOAT \
-		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
-		--allow_custom_ops \
-		--dump_graphviz=$(QUANTOR_BASE)/inceptionV3/quantor/dots
-
 toco_quantor_inceptionV3:
 	@ mkdir -p $(QUANTOR_BASE)/inceptionV3/quantor/dots
 	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -298,16 +286,29 @@ toco_quantor_inceptionV3:
 		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
 		--dump_graphviz=$(QUANTOR_BASE)/inceptionV3/quantor/dots
 
-run_tflite_inceptionV3_float:
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/utils/run_tflite \
-		--tflite_file=$(QUANTOR_BASE)/inceptionV3/quantor/model_float.lite \
-	  --batch_xs=$(QUANTOR_BASE)/inceptionV3/inceptionV3_input_float.npy \
-		--batch_ys=$(QUANTOR_BASE)/inceptionV3/inceptionV3_output_float.npy \
-		--use_nnapi=false --inference_type=float
+toco_inceptionV3:
+	@ mkdir -p $(QUANTOR_BASE)/inceptionV3/quantor/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(QUANTOR_BASE)/inceptionV3/float_model.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=input \
+		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3
 
-run_tflite_inceptionV3:
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/utils/run_tflite \
-		--tflite_file=$(QUANTOR_BASE)/inceptionV3/quantor/model.lite \
-	  --batch_xs=$(QUANTOR_BASE)/inceptionV3/inceptionV3_input.npy \
-		--batch_ys=$(QUANTOR_BASE)/inceptionV3/inceptionV3_output.npy \
-		--use_nnapi=false --inference_type=uint8
+eval_quantor_inceptionV3_tflite:
+	@ python $(QUANTOR_BASE)/eval_tflite_imagenet.py \
+		--summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@ \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--tflite_model=$(QUANTOR_BASE)/inceptionV3/quantor/model.lite \
+		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
+		--max_num_batches=50 --input_size=299
+
+eval_inceptionV3_tflite:
+	@ python $(QUANTOR_BASE)/eval_tflite_imagenet.py \
+		--summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@ \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--tflite_model=$(QUANTOR_BASE)/inceptionV3/float_model.lite --tensorflow_dir=$(TF_BASE) \
+		--max_num_batches=50 --input_size=299
