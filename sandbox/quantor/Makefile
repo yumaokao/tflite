@@ -87,6 +87,7 @@ eval_cifarnet_frozen:
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--output_node_name=CifarNet/Predictions/Reshape \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
 
 quantor_cifarnet_frozen:
@@ -106,6 +107,7 @@ quantor_cifarnet_frozen:
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--output_node_name=CifarNet/Predictions/Reshape \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
 
 # TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
@@ -184,10 +186,10 @@ freeze_mobilenetV1_224:
 
 #69.2%
 eval_mobilenetV1_224_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen_imagenet.py \
+	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_names=MobilenetV1/Predictions/Reshape \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
 		--input_size=224 \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb --max_num_batches=50 \
 		# --summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/summary/$@
@@ -208,10 +210,10 @@ quantor_mobilenetV1_224_frozen:
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb \
 		--output_node_names=MobilenetV1/Predictions/Reshape
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen_imagenet.py \
+	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_names=MobilenetV1/Predictions/Reshape \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
 		--input_size=224 \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/quantor/summary/$@
@@ -247,10 +249,10 @@ freeze_inceptionV3:
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb
 
 eval_inceptionV3_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen_imagenet.py \
+	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_names=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
 		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/summary/$@
@@ -270,10 +272,10 @@ quantor_inceptionV3_frozen:
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb \
 		--output_node_names=InceptionV3/Predictions/Reshape
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen_imagenet.py \
+	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_names=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
 		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@
