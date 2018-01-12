@@ -284,6 +284,7 @@ toco_quantor_inceptionV3:
 		--input_file=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/inceptionV3/quantor/model.lite \
+		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
@@ -291,14 +292,15 @@ toco_quantor_inceptionV3:
 		--dump_graphviz=$(QUANTOR_BASE)/inceptionV3/quantor/dots
 
 toco_inceptionV3:
-	@ mkdir -p $(QUANTOR_BASE)/inceptionV3/quantor/dots
+	@ mkdir -p $(QUANTOR_BASE)/inceptionV3/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/inceptionV3/float_model.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3
+		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/inceptionV3/dots
 
 eval_quantor_inceptionV3_tflite:
 	@ python $(QUANTOR_BASE)/eval_tflite_imagenet.py \
