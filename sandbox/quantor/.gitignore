@@ -2,3 +2,6 @@
 cifarnet
 inceptionV3
 mobilenetV1*
+
+# python module
+*.pyc
