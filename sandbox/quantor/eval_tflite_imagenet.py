@@ -35,11 +35,14 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'tensorflow_dir', 'string', 'The directory where the tensorflow are stored')
 
+tf.app.flags.DEFINE_integer(
+    'input_size', 299, 'The width/height of the input image.')
+
 
 FLAGS = tf.app.flags.FLAGS
 
 
-def prepare_cifar10_dataset(filenames, inference_type):
+def prepare_imagenet_dataset(filenames, inference_type):
   def _read_tfrecord(example_proto):
     feature_to_type = {
         "image/class/label": tf.FixedLenFeature([1], dtype=tf.int64),
@@ -64,17 +67,30 @@ def prepare_cifar10_dataset(filenames, inference_type):
   #      for toco with --mean_value=127.5 --std_value=127.5
   def _preprocessing_imagenet(image, label):
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [FLAGS.input_size, FLAGS.input_size],
+                                     align_corners=False)
     image = tf.squeeze(image, [0])
     image = tf.subtract(image, 0.5)
     image = tf.multiply(image, 2.0)
     return image, label
+
+  def _resize_imagenet(image, label):
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [FLAGS.input_size, FLAGS.input_size],
+                                     align_corners=False)
+    return image, label
+
 
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
   dataset = dataset.map(_read_tfrecord)
   if inference_type == 'float':
     dataset = dataset.map(_preprocessing_imagenet)
+  else:
+    dataset = dataset.map(_resize_imagenet)
   dataset = dataset.batch(FLAGS.batch_size)
   return dataset
 
@@ -103,14 +119,14 @@ def main(_):
     raise ValueError('--inference_type must be one of float or uint8')
 
   tf.logging.set_verbosity(tf.logging.INFO)
-  tfrecord_pattern = os.path.join(FLAGS.dataset_dir, '{}_{}.tfrecord'.format(
-                                  FLAGS.dataset_name, FLAGS.dataset_split_name))
+  tfrecord_pattern = [os.path.join(FLAGS.dataset_dir, 'validation-{:05d}-of-00128'.format(i)) for i in range(0, 128)]
   tf.logging.info('Import Dataset from tfrecord {}'.format(tfrecord_pattern))
 
   if FLAGS.max_num_batches:
     num_batches = FLAGS.max_num_batches
   else:
-    num_records = len(list(tf.python_io.tf_record_iterator(tfrecord_pattern)))
+    num_records = sum([len(list(tf.python_io.tf_record_iterator(record))) for record in tfrecord_pattern])
+    #num_records = len(list(tf.python_io.tf_record_iterator(tfrecord_pattern)))
     num_batches = int(math.ceil(num_records / float(FLAGS.batch_size)))
 
   #  for example in tf.python_io.tf_record_iterator(tfrecord_pattern):
@@ -119,7 +135,7 @@ def main(_):
 	#  break
 
   filenames = tf.placeholder(tf.string, shape=[None])
-  dataset = prepare_cifar10_dataset(filenames, FLAGS.inference_type)
+  dataset = prepare_imagenet_dataset(filenames, FLAGS.inference_type)
   iterator = dataset.make_initializable_iterator()
   next_batch = iterator.get_next()
 
@@ -135,24 +151,25 @@ def main(_):
   with tf.name_scope("metrics"):
     lbls = tf.placeholder(tf.int32, [None, 1])
     if FLAGS.inference_type == 'float':
-      preds = tf.placeholder(tf.int32, [None, 10])
+      preds = tf.placeholder(tf.int32, [None, 1001])
     elif FLAGS.inference_type == 'uint8':
-      preds = tf.placeholder(tf.uint8, [None, 10])
+      preds = tf.placeholder(tf.uint8, [None, 1001])
     accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
     tf.summary.scalar('accuracy', accuracy)
 
   # Initialize `iterator` with dataset.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
-    sess.run(iterator.initializer, feed_dict={filenames: [tfrecord_pattern]})
+    sess.run(iterator.initializer, feed_dict={filenames: tfrecord_pattern})
 
     for step in range(num_batches):
       if (step % 1000) == 0:
         print('{}/{}'.format(step, num_batches))
-        # print(' '.join(cmds))
+        #print(' '.join(cmds))
         print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)
 
+      print(step)
       np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
       subprocess.check_output(cmds)
       ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
