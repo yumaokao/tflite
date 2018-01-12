@@ -109,6 +109,8 @@ quantor_cifarnet_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
 
 # TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
+#   CifarNet/conv1/Relu
+#   CifarNet/Predictions/Reshape
 toco_quantor_cifarnet:
 	@ mkdir -p $(QUANTOR_BASE)/cifarnet/quantor/dots
 	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -117,19 +119,21 @@ toco_quantor_cifarnet:
 		--output_file=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
+		--mean_values=128 --std_values=127 \
 		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
 		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
 
 toco_cifarnet:
-	@ mkdir -p $(QUANTOR_BASE)/cifarnet/quantor/dots
+	@ mkdir -p $(QUANTOR_BASE)/cifarnet/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/cifarnet/float_model.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3
+		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/dots
 
 eval_quantor_cifarnet_tflite:
 	@ python $(QUANTOR_BASE)/eval_tflite.py \
