@@ -316,7 +316,7 @@ eval_quantor_inceptionV3_tflite:
 		--max_num_batches=50 --input_size=299
 
 eval_inceptionV3_tflite:
-	@ python $(QUANTOR_BASE)/eval_tflite_imagenet.py \
+	@ python $(QUANTOR_BASE)/eval_tflite.py \
 		--summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
