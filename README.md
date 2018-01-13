@@ -107,9 +107,10 @@ $ sudo pip install -U /tmp/tensorflow_pkg/tensorflow-1.4.0-cp27-cp27mu-linux_x86
 ```sh
 $ bazel build @flatbuffers//:flatc
 $ bazel-bin/external/flatbuffers/flatc --cpp --gen-object-api tensorflow/contrib/lite/schema/schema.fbs
-$ clang-format schema_generated.h --style=google > schema_generated_f.h
-$ vimdiff schema_generated_f.h tensorflow/contrib/lite/schema/schema_generated.h
 # add explicit to OperatorOptionBuilder
+$ sed -e 's/\([a-zA-Z0-9]\+Builder(\)/explicit \1/' schema_generated.h > schema_generated_e.h
+$ clang-format schema_generated_e.h --style=google > schema_generated_f.h
+$ vimdiff schema_generated_f.h tensorflow/contrib/lite/schema/schema_generated.h
 # need to install clang-format to make diff easier
 $ sudo apt-get install clang-format
 ```
