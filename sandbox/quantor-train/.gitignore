@@ -1,5 +1,8 @@
 # slim models
 train_mobilenet_v1
 
+# slim quantize models
+train_mobilenet_v1_quantize
+
 # python module
 *.pyc
