@@ -1,6 +1,6 @@
 .PHONY: all clean build
 .PHONY: train_mobilenet_v1 eval_mobilenet_v1
-.PHONY: train_mobilenet_v1_quantize
+.PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -66,4 +66,13 @@ train_mobilenet_v1_quantize:
 		--train_dir=$@ \
 		--dataset_name=imagenet --dataset_split_name=train \
 		--dataset_dir=${DATASET_BASE}/imagenet \
+		--model_name=mobilenet_v1
+
+eval_mobilenet_v1_quantize:
+	@ PYTHONPATH=${TF_SLIM_BASE} \
+	  python eval_image_classifier_quantize.py \
+		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-156822 \
+		--dataset_dir=${DATASET_BASE}/imagenet \
+		--dataset_name=imagenet \
+		--dataset_split_name=validation \
 		--model_name=mobilenet_v1

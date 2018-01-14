@@ -546,6 +546,14 @@ def main(_):
     with tf.control_dependencies([update_op]):
       train_tensor = tf.identity(total_loss, name='train_op')
 
+    # Quantize training graph
+    g = tf.get_default_graph()
+    fold_batch_norms.FoldBatchNorms(g)
+    quantize.Quantize(g, is_training=True)
+    for var in g.get_collection('variables'):
+      if var.name.endswith('min:0') or var.name.endswith('max:0'):
+        summaries.add(tf.summary.scalar(var.name, var))
+
     # Add the summaries from the first clone. These contain the summaries
     # created by model_fn and either optimize_clones() or _gather_clone_loss().
     summaries |= set(tf.get_collection(tf.GraphKeys.SUMMARIES,
@@ -554,10 +562,6 @@ def main(_):
     # Merge all summaries together.
     summary_op = tf.summary.merge(list(summaries), name='summary_op')
 
-    # Quantize training graph
-    g = tf.get_default_graph()
-    fold_batch_norms.FoldBatchNorms(g)
-    quantize.Quantize(g, is_training=True)
 
     ###########################
     # Kicks off the training. #
