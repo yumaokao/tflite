@@ -148,4 +148,4 @@ eval_tflite_mobilenet_v1_quantize:
 		--tflite_model=train_mobilenet_v1_quantize/mobilenet_v1_quantize.lite \
 	        --tensorflow_dir=$(TF_BASE) \
 		--inference_type=uint8 \
-		--max_num_batches=10000 --input_size=224
+		--max_num_batches=1000 --input_size=224

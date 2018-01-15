@@ -6,3 +6,6 @@ train_mobilenet_v1_quantize
 
 # python module
 *.pyc
+
+# slim dataset imagenet labels
+labels.txt
