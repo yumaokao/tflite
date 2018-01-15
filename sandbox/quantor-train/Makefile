@@ -71,7 +71,7 @@ train_mobilenet_v1_quantize:
 eval_mobilenet_v1_quantize:
 	@ PYTHONPATH=${TF_SLIM_BASE} \
 	  python eval_image_classifier_quantize.py \
-		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-156822 \
+		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-370481 \
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--dataset_name=imagenet \
 		--dataset_split_name=validation \
