@@ -16,7 +16,7 @@ def model(x): # float-in, float-out
   W2 = tf.fake_quant_with_min_max_args(W, min=-1.0, max=3.0, num_bits=8)
  
   x_2d = tf.reshape(x, [-1, 28, 28, 1])
-  fake_x = tf.fake_quant_with_min_max_args(x_2d, min=-1.0, max=3.0, num_bits=8)
+  # fake_x = tf.fake_quant_with_min_max_args(x_2d, min=-1.0, max=3.0, num_bits=8)
 
   y = tf.concat([x_2d, W2], 1)
   y = tf.fake_quant_with_min_max_args(y, min=-1.0, max=3.0 ,name='ys')

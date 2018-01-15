@@ -58,10 +58,11 @@ endef
 
 define compare_tflite
 	@ echo "compare_tflite"
-	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/compare_tflite_uint8 \
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/compare_tflite \
 		--tflite_file=$1/export/model.lite \
 		--batch_xs=$1/export/batch_xs.npy \
-		--batch_ys=$1/export/ys.npy
+		--batch_ys=$1/export/ys.npy \
+		--inference_type=UINT8
 endef
 
 
@@ -77,8 +78,6 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
-	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite_uint8
-
 
 $(VARIABLE_TARGETS):
 	@ mkdir -p $@/export
