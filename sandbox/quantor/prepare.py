@@ -74,8 +74,9 @@ def prepare_imagenet_dataset(filenames, width, height,
   def _resize_imagenet(image, label):
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.expand_dims(image, 0)
-    image = tf.image.resize_bilinear(image, [width, height],
+    image = tf.image.resize_nearest_neighbor(image, [width, height],
                                      align_corners=False)
+    image = tf.squeeze(image, [0])
     return image, label
 
   # tf.Dataset

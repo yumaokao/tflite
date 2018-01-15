@@ -45,6 +45,8 @@ tf.app.flags.DEFINE_string(
     'evaluation_mode', 'statistics', 'The evaluation method.')
 tf.app.flags.DEFINE_float(
     'evaluation_threshold', 0.01, 'The evaluation threshold (for "diff_threshold" mode).')
+tf.app.flags.DEFINE_string(
+    'extra_toco_flags', '', 'The extra command for toco tool.')
 
 FLAGS = tf.app.flags.FLAGS
 EVAL_MODE = ['statistics', 'diff_threshold']
@@ -80,6 +82,13 @@ def prepare_toco_commands(work_dir):
 		      '--output_arrays={}'.format(FLAGS.output_node_name),
           '--input_shapes=1,{0},{0},3'.format(FLAGS.input_size),
 		      '--dump_graphviz={}'.format(work_dir)]
+
+  extra_flags = FLAGS.extra_toco_flags.split()
+  for e_flag in extra_flags:
+    if any([e_flag.split('=')[0] in flag for flag in cmd]):
+      print('Warning: Extra toco flag "{}" has been set to "{}".'.format(e_flag.split('=')[0][2:], e_flag.split('=')[1]))
+    else:
+      cmd.append(e_flag)
   return cmd
 
 def prepare_run_tflite_commands(work_dir, data_dir):
@@ -134,10 +143,15 @@ def main(_):
 
   tf.logging.info('Prepare Dataset from tfrecord[0] '.format(tfrecords[0]))
   filenames = tf.placeholder(tf.string, shape=[None])
-  dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
-                            batch_size=FLAGS.batch_size)
-  iterator = dataset.make_initializable_iterator()
-  next_batch = iterator.get_next()
+  dataset_tf = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                            batch_size=FLAGS.batch_size, inference_type='float')
+  iterator_tf = dataset_tf.make_initializable_iterator()
+  next_batch_tf = iterator_tf.get_next()
+
+  dataset_lite = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                            batch_size=FLAGS.batch_size, inference_type=FLAGS.toco_inference_type)
+  iterator_lite = dataset_lite.make_initializable_iterator()
+  next_batch_lite = iterator_lite.get_next()
 
   tf.logging.info('Load GraphDef from frozen_pb {}'.format(FLAGS.frozen_pb))
   graph_def = load_graph_def(FLAGS.frozen_pb)
@@ -160,7 +174,8 @@ def main(_):
   # Initialize `iterator` with training data.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
-    sess.run(iterator.initializer, feed_dict={filenames: tfrecords})
+    sess.run(iterator_tf.initializer, feed_dict={filenames: tfrecords})
+    sess.run(iterator_lite.initializer, feed_dict={filenames: tfrecords})
 
     tf.import_graph_def(graph_def, name='')
     graph = sess.graph
@@ -170,32 +185,35 @@ def main(_):
     y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
 
     for step in range(num_batches):
-      images, labels = sess.run(next_batch)
+      images_tf, labels_tf = sess.run(next_batch_tf)
+      images_lite, labels_lite = sess.run(next_batch_lite)
+
+      assert labels_tf == labels_lite
 
       # forward GraphDef
-      ys_tf = sess.run(y, feed_dict={x: images})
+      ys_tf = sess.run(y, feed_dict={x: images_tf})
       np.save(os.path.join(data_dir, 'tf_ys.npy'), ys_tf)
 
       # forward TFLite
-      np.save(os.path.join(data_dir, 'batch_xs.npy'), images)
+      np.save(os.path.join(data_dir, 'batch_xs.npy'), images_lite)
       subprocess.check_output(tflite_cmds)
       ys_lite = np.load(os.path.join(data_dir, 'tflite_ys.npy'))
 
       # Evaluate the result
       if FLAGS.evaluation_mode == 'statistics':
-        print('=== GraphDef output statistics ===')
+        print('=== Tensorflow output statistics for batch #{} ==='.format(step))
         print(get_statistics(ys_tf))
-        print('=== TFLite output statistics ===')
+        print('=== TFLite output statistics for batch #{} ==='.format(step))
         print(get_statistics(ys_lite))
       elif FLAGS.evaluation_mode == 'diff_threshold':
         abs_diff = np.fabs(ys_tf - ys_lite)
         count = abs_diff > FLAGS.evaluation_threshold # True if it exceeds the threshold
         if (count.sum() == 0):
-          print('=== PASSED ===')
+          print('=== PASSED for batch #{} ==='.format(step))
           print('All {} output elements pass the threshold {}.'.format(
                 abs_diff.size, FLAGS.evaluation_threshold))
         else:
-          print('=== FAILED ===')
+          print('=== FAILED for batch #{} ==='.format(step))
           print('{} of the total {} output elements exceed the threshold {}.'.format(
                 count.sum(), abs_diff.size, FLAGS.evaluation_threshold))
 
