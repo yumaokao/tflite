@@ -1,5 +1,8 @@
 .PHONY: all clean build
-.PHONY: train_mobilenet_v1 eval_mobilenet_v1 freeze_mobilenet_v1 toco_mobilenet_v1
+# mobilenet_v1
+.PHONY: train_mobilenet_v1 eval_mobilenet_v1
+.PHONY: freeze_mobilenet_v1 toco_mobilenet_v1 eval_tflite_mobilenet_v1
+# mobilenet_v1_quantize
 .PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize
 
 ifeq ($(TFLITE_ROOT_PATH),)
@@ -10,7 +13,6 @@ ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
 TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
-TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 all:
 	@ echo "all models"
@@ -83,6 +85,15 @@ toco_mobilenet_v1:
 		--inference_input_type=FLOAT --input_arrays=input \
 		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=1,224,224,3 \
 		--dump_graphviz=train_mobilenet_v1/dots
+
+eval_tflite_mobilenet_v1:
+	@ python eval_tflite.py \
+		--summary_dir=train_mobilenet_v1/$@/summary \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--tflite_model=train_mobilenet_v1/mobilenet_v1.lite \
+	        --tensorflow_dir=$(TF_BASE) \
+		--max_num_batches=1000 --input_size=224
 
 
 # train quantize mobilenet with slim
