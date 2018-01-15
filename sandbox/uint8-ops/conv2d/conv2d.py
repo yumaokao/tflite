@@ -18,7 +18,7 @@ def bias_variable(shape, name=None):
 def model(x): # float-in, float-out
   variables = {}
   x_2d = tf.reshape(x, [-1, 14, 14, 4])
-  x_2d = tf.fake_quant_with_min_max_args(x_2d, min=-1.0, max=3.0, num_bits=8)
+  # x_2d = tf.fake_quant_with_min_max_args(x_2d, min=-1.0, max=3.0, num_bits=8)
   
   W = weight_variable([3, 3, 4, 32], name='W')
   b = bias_variable([32], name='b')
