@@ -219,6 +219,24 @@ quantor_mobilenetV1_224_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb --max_num_batches=50
 		# --summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/quantor/summary/$@
 
+toco_mobilenetV1_224:
+	@ mkdir -p $(QUANTOR_BASE)/mobilenetV1_224/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(QUANTOR_BASE)/mobilenetV1_224/float_model.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=input \
+		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=1,224,224,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/mobilenetV1_224/dots
+
+eval_mobilenetV1_224_tflite:
+	@ python $(QUANTOR_BASE)/eval_tflite.py \
+		--summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/quantor/summary/$@ \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--tflite_model=$(QUANTOR_BASE)/mobilenetV1_224/float_model.lite --tensorflow_dir=$(TF_BASE) \
+		--max_num_batches=1000 --input_size=224
 
 ########################################################
 # for inceptionV3
