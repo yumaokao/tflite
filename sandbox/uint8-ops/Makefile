@@ -50,8 +50,8 @@ define toco_uint8
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5 \
-		--mean_values=64 \
-		--std_values=64 \
+		--mean_values=63.75 \
+		--std_values=63.75 \
 		--allow_custom_ops
 	@ cd $1/dots && dot -Tpdf -O ./toco_*.dot
 endef
