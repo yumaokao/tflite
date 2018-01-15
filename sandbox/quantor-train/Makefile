@@ -1,11 +1,12 @@
 .PHONY: all clean build
-.PHONY: train_mobilenet_v1 eval_mobilenet_v1
+.PHONY: train_mobilenet_v1 eval_mobilenet_v1 freeze_mobilenet_v1 toco_mobilenet_v1
 .PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
 endif
 
+ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
 TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
@@ -43,6 +44,7 @@ dataset_mnist:
 	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
 		--dataset_name=mnist --dataset_dir="$(DATASET_BASE)/mnist"
 
+
 # train mobilenet with slim
 train_mobilenet_v1:
 	@ python $(TF_SLIM_BASE)/train_image_classifier.py \
@@ -58,6 +60,30 @@ eval_mobilenet_v1:
 		--dataset_name=imagenet \
 		--dataset_split_name=validation \
 		--model_name=mobilenet_v1
+
+freeze_mobilenet_v1:
+	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
+		--alsologtostderr \
+		--model_name=mobilenet_v1 --dataset_name=imagenet \
+		--output_file=$(ROOT_DIR)/train_mobilenet_v1/mobilenet_v1_inf_graph.pb
+	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
+		--input_graph=train_mobilenet_v1/mobilenet_v1_inf_graph.pb \
+		--input_checkpoint=train_mobilenet_v1/model.ckpt-700605 \
+		--input_binary=true \
+	        --output_graph=train_mobilenet_v1/mobilenet_v1_frozen.pb \
+		--output_node_names=MobilenetV1/Predictions/Reshape
+
+toco_mobilenet_v1:
+	@ mkdir -p train_mobilenet_v1/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=train_mobilenet_v1/mobilenet_v1_frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=train_mobilenet_v1/mobilenet_v1.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=input \
+		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=1,224,224,3 \
+		--dump_graphviz=train_mobilenet_v1/dots
+
 
 # train quantize mobilenet with slim
 train_mobilenet_v1_quantize:
