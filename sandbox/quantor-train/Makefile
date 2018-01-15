@@ -1,9 +1,9 @@
 .PHONY: all clean build
 # mobilenet_v1
-.PHONY: train_mobilenet_v1 eval_mobilenet_v1
+.PHONY: train_mobilenet_v1 eval_mobilenet_v1 eval_frozen_mobilenet_v1
 .PHONY: freeze_mobilenet_v1 toco_mobilenet_v1 eval_tflite_mobilenet_v1
 # mobilenet_v1_quantize
-.PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize
+.PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize eval_frozen_mobilenet_v1_quantize
 .PHONY: freeze_mobilenet_v1_quantize toco_mobilenet_v1_quantize eval_tflite_mobilenet_v1_quantize
 
 ifeq ($(TFLITE_ROOT_PATH),)
@@ -80,12 +80,20 @@ toco_mobilenet_v1:
 	@ mkdir -p train_mobilenet_v1/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=train_mobilenet_v1/mobilenet_v1_frozen.pb \
-		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--input_format=TENSORFLOW_GRAPHDEF --output_format=TFLITE \
 		--output_file=train_mobilenet_v1/mobilenet_v1.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
 		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=1,224,224,3 \
 		--dump_graphviz=train_mobilenet_v1/dots
+
+eval_frozen_mobilenet_v1:
+	@ python eval_frozen.py \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
+		--input_size=224 \
+		--frozen_pb=train_mobilenet_v1/mobilenet_v1_frozen.pb
 
 eval_tflite_mobilenet_v1:
 	@ python eval_tflite.py \
@@ -132,13 +140,21 @@ toco_mobilenet_v1_quantize:
 	@ mkdir -p train_mobilenet_v1_quantize/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb \
-		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--input_format=TENSORFLOW_GRAPHDEF --output_format=TFLITE \
 		--output_file=train_mobilenet_v1_quantize/mobilenet_v1_quantize.lite \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--mean_values=128 --std_values=127 \
 		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=1,224,224,3 \
 		--dump_graphviz=train_mobilenet_v1_quantize/dots
+
+eval_frozen_mobilenet_v1_quantize:
+	@ python eval_frozen.py \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
+		--input_size=224 \
+		--frozen_pb=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb
 
 eval_tflite_mobilenet_v1_quantize:
 	@ python eval_tflite.py \
