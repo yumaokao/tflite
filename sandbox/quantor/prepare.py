@@ -72,10 +72,13 @@ def prepare_imagenet_dataset(filenames, width, height,
     return image, label
 
   def _resize_imagenet(image, label):
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.expand_dims(image, 0)
     image = tf.image.resize_bilinear(image, [width, height],
                                      align_corners=False)
+    image = tf.squeeze(image, [0])
+    image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
     return image, label
 
   # tf.Dataset
@@ -92,6 +95,7 @@ def prepare_imagenet_dataset(filenames, width, height,
 def prepare_tfrecords(dataset_name, dataset_dir, dataset_split_name):
   with tf.name_scope("tfrecords"):
     if dataset_name == 'imagenet':
+      # TODO: more portable name
       return [os.path.join(dataset_dir, 'validation-{:05d}-of-00128'.format(i))
               for i in range(0, 128)]
     elif dataset_name == 'cifar10':
