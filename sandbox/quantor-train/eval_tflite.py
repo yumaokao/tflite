@@ -93,7 +93,7 @@ def main(_):
     sess.run(iterator.initializer, feed_dict={filenames: tfrecords})
 
     for step in range(num_batches):
-      if (step % 1000) == 0:
+      if (step % 100) == 0:
         print('{}/{}'.format(step, num_batches))
         # print(' '.join(cmds))
         print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
