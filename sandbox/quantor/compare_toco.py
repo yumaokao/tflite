@@ -21,7 +21,7 @@ tf.app.flags.DEFINE_integer(
     'batch_size', 1, 'The number of samples in each batch.')
 tf.app.flags.DEFINE_integer(
     'max_num_batches', None,
-    'Max number of batches to evaluate by default use all.')
+    'Max number of batches to evaluate (use all batches by default).')
 tf.app.flags.DEFINE_string(
     'dataset_name', 'imagenet', 'The name of the dataset to load.')
 tf.app.flags.DEFINE_string(
@@ -31,7 +31,7 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'summary_dir', None, 'The directory where summaries save.')
 tf.app.flags.DEFINE_string(
-    'frozen_pb', None, 'The GraphDef file are stored with freeze_graph.')
+    'frozen_pb', None, 'The GraphDef file of the freeze_graph.')
 tf.app.flags.DEFINE_string(
     'input_node_name', 'input', 'The name of the input node.')
 tf.app.flags.DEFINE_string(
@@ -39,13 +39,13 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_integer(
     'input_size', 299, 'The width/height of the input image.')
 tf.app.flags.DEFINE_string(
-    'toco_inference_type', 'float', 'The inference type to run the tflite model')
+    'toco_inference_type', 'float', 'The inference type to run toco')
 tf.app.flags.DEFINE_string(
     'tensorflow_dir', None, 'The directory where the tensorflow are stored')
 tf.app.flags.DEFINE_string(
     'evaluation_mode', 'statistics', 'The evaluation method.')
 tf.app.flags.DEFINE_float(
-    'evaluation_threshold', 0.01, 'The evaluation threshold (for "diff_threshold" mode).')
+    'evaluation_threshold', 0.01, 'The evaluation threshold (for "diff_threshold" evaluation_mode only).')
 tf.app.flags.DEFINE_string(
     'extra_toco_flags', '', 'The extra command for toco tool.')
 tf.app.flags.DEFINE_boolean(
@@ -188,7 +188,6 @@ def main(_):
     summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
     summaries = tf.summary.merge_all()
 
-  # Initialize `iterator` with training data.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
     sess.run(iterator_tf.initializer, feed_dict={filenames: tfrecords})
