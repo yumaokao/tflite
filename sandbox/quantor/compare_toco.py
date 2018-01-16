@@ -265,9 +265,14 @@ def main(_):
       elif FLAGS.evaluation_mode == 'accuracy':
         sess.run(acc_update_op_tf, feed_dict={lbls_tf: labels_tf, preds_tf: ys_tf})
         sess.run(acc_update_op_lite, feed_dict={lbls_lite: labels_tf, preds_lite: ys_lite})
+        if ((step + 1) % 50) == 0:
+          # Print current accuracy
+          tf.logging.info('=== Current accuracy for {}/{} batches ==='.format(step + 1, num_batches))
+          tf.logging.info(' Tensorflow: {}'.format(accuracy_tf.eval()))
+          tf.logging.info(' TFLite:     {}'.format(accuracy_lite.eval()))
 
     if FLAGS.evaluation_mode == 'accuracy':
-      tf.logging.info('=== Accuracy for {} {} ==='.format(num_batches, 'batch' if num_batches == 1 else 'batches'))
+      tf.logging.info('=== Final accuracy for {} {} ==='.format(num_batches, 'batch' if num_batches == 1 else 'batches'))
       tf.logging.info(' Tensorflow: {}'.format(accuracy_tf.eval()))
       tf.logging.info(' TFLite:     {}'.format(accuracy_lite.eval()))
 
