@@ -48,9 +48,11 @@ tf.app.flags.DEFINE_float(
     'evaluation_threshold', 0.01, 'The evaluation threshold (for "diff_threshold" mode).')
 tf.app.flags.DEFINE_string(
     'extra_toco_flags', '', 'The extra command for toco tool.')
+tf.app.flags.DEFINE_boolean(
+    'dump_data', False, 'Whether to dump the input and output data for each batch or not.')
 
 FLAGS = tf.app.flags.FLAGS
-EVAL_MODE = ['statistics', 'diff_threshold']
+EVAL_MODE = ['statistics', 'diff_threshold', 'top1', 'accuracy']
 
 def get_statistics(numpy_data):
   data = []
@@ -83,6 +85,7 @@ def prepare_toco_commands(work_dir):
                       '--transforms=remove_nodes(op=Identity, op=CheckNumerics) fold_batch_norms fold_old_batch_norms']
   subprocess.check_output(pre_process_cmd)
 
+  # TODO: should the value of mean_values and std_values flag be passed from user?
   cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/toco/toco',
           '--input_file={}'.format(FLAGS.frozen_pb + '.tmp'),
 		      '--input_format=TENSORFLOW_GRAPHDEF',
@@ -93,21 +96,24 @@ def prepare_toco_commands(work_dir):
           '--input_arrays={}'.format(FLAGS.input_node_name),
 		      '--output_arrays={}'.format(FLAGS.output_node_name),
           '--input_shapes=1,{0},{0},3'.format(FLAGS.input_size),
-		      '--dump_graphviz={}'.format(work_dir)]
+		      '--dump_graphviz={}'.format(work_dir),
+          '--mean_values=128',
+          '--std_values=127']
 
   extra_flags = FLAGS.extra_toco_flags.split()
   for e_flag in extra_flags:
     if any([e_flag.split('=')[0] in flag for flag in cmd]):
-      print('Warning: Extra toco flag "{}" has been set to "{}".'.format(e_flag.split('=')[0][2:], e_flag.split('=')[1]))
+      # TODO: remove the origin flag when conflicts happen
+      tf.logging.warning('Warning: Extra toco flag "{}" has been set to "{}".'.format(e_flag.split('=')[0][2:], e_flag.split('=')[1]))
     else:
       cmd.append(e_flag)
   return cmd
 
-def prepare_run_tflite_commands(work_dir, data_dir):
+def prepare_run_tflite_commands(work_dir, data_dir, input_fn, output_fn):
   return [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
           '--tflite_file={}'.format(os.path.join(work_dir, '{}_model.lite'.format(FLAGS.toco_inference_type))),
-          '--batch_xs={}'.format(os.path.join(data_dir, 'batch_xs.npy')),
-          '--batch_ys={}'.format(os.path.join(data_dir, 'tflite_ys.npy')),
+          '--batch_xs={}'.format(os.path.join(data_dir, input_fn)),
+          '--batch_ys={}'.format(os.path.join(data_dir, output_fn)),
           '--inference_type={}'.format(FLAGS.toco_inference_type)]
 
 def load_graph_def(pb):
@@ -152,6 +158,7 @@ def main(_):
     num_records = sum([len(list(tf.python_io.tf_record_iterator(r)))
                        for r in tfrecords])
     num_batches = int(math.ceil(num_records / float(FLAGS.batch_size)))
+    tf.logging.info('Total batch number: {}'.format(num_batches))
 
   tf.logging.info('Prepare Dataset from tfrecord[0] '.format(tfrecords[0]))
   filenames = tf.placeholder(tf.string, shape=[None])
@@ -172,11 +179,9 @@ def main(_):
   toco_cmds = prepare_toco_commands(work_dir)
   subprocess.check_output(toco_cmds)
 
-  tf.logging.info('Prepare tflite command')
-  tflite_cmds = prepare_run_tflite_commands(work_dir, data_dir)
-
   tf.logging.info('Prepare metrics')
-  lbls, preds, accuracy, acc_update_op = prepare_metrics(FLAGS.dataset_name)
+  lbls_tf, preds_tf, accuracy_tf, acc_update_op_tf = prepare_metrics(FLAGS.dataset_name)
+  lbls_lite, preds_lite, accuracy_lite, acc_update_op_lite = prepare_metrics(FLAGS.dataset_name)
 
   if FLAGS.summary_dir:
     tf.logging.info('Prepare summary writer')
@@ -197,20 +202,36 @@ def main(_):
     y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
 
     for step in range(num_batches):
+      tf.logging.info('Processing batch #{} ...'.format(step))
+
       images_tf, labels_tf = sess.run(next_batch_tf)
       images_lite, labels_lite = sess.run(next_batch_lite)
 
       assert labels_tf == labels_lite
 
+      if FLAGS.dump_data == True:
+        input_tf_fn = 'tf_xs_{}.npy'.format(step);
+        input_lite_fn = 'lite_xs_{}.npy'.format(step);
+        output_tf_fn = 'tf_ys_{}.npy'.format(step);
+        output_lite_fn = 'lite_ys_{}.npy'.format(step);
+      else:
+        input_tf_fn = 'tf_xs.npy'
+        input_lite_fn = 'lite_xs.npy'
+        output_tf_fn = 'tf_ys.npy'
+        output_lite_fn = 'lite_ys.npy'
+
       # forward GraphDef
+      np.save(os.path.join(data_dir, input_tf_fn), images_tf)
       ys_tf = sess.run(y, feed_dict={x: images_tf})
-      np.save(os.path.join(data_dir, 'tf_ys.npy'), ys_tf)
+      np.save(os.path.join(data_dir, output_tf_fn), ys_tf)
 
       # forward TFLite
-      np.save(os.path.join(data_dir, 'batch_xs.npy'), images_lite)
+      np.save(os.path.join(data_dir, input_lite_fn), images_lite)
+      tflite_cmds = prepare_run_tflite_commands(work_dir, data_dir, input_lite_fn, output_lite_fn)
       subprocess.check_output(tflite_cmds)
-      ys_lite = np.load(os.path.join(data_dir, 'tflite_ys.npy'))
+      ys_lite = np.load(os.path.join(data_dir, output_lite_fn))
 
+      # convert the TFLite result back to float
       if FLAGS.toco_inference_type == 'uint8':
         scale, zero_point = get_tflite_quantization_info(work_dir)
         ys_lite = ys_lite.astype(float, copy=False)
@@ -218,21 +239,37 @@ def main(_):
 
       # Evaluate the result
       if FLAGS.evaluation_mode == 'statistics':
-        print('=== Tensorflow output statistics for batch #{} ==='.format(step))
-        print(get_statistics(ys_tf))
-        print('=== TFLite output statistics for batch #{} ==='.format(step))
-        print(get_statistics(ys_lite))
+        tf.logging.info('=== Tensorflow output statistics for batch #{} ==='.format(step))
+        tf.logging.info(' {}'.format(get_statistics(ys_tf)))
+        tf.logging.info('=== TFLite output statistics for batch #{} ==='.format(step))
+        tf.logging.info(' {}'.format(get_statistics(ys_lite)))
       elif FLAGS.evaluation_mode == 'diff_threshold':
         abs_diff = np.fabs(ys_tf - ys_lite)
         count = abs_diff > FLAGS.evaluation_threshold # True if it exceeds the threshold
         if (count.sum() == 0):
-          print('=== PASSED for batch #{} ==='.format(step))
-          print('All {} output elements pass the threshold {}.'.format(
+          tf.logging.info('=== PASSED for batch #{} ==='.format(step))
+          tf.logging.info(' All {} output elements pass the threshold {}.'.format(
                 abs_diff.size, FLAGS.evaluation_threshold))
         else:
-          print('=== FAILED for batch #{} ==='.format(step))
-          print('{} of the total {} output elements exceed the threshold {}.'.format(
+          tf.logging.info('=== FAILED for batch #{} ==='.format(step))
+          tf.logging.info(' {} of the total {} output elements exceed the threshold {}.'.format(
                 count.sum(), abs_diff.size, FLAGS.evaluation_threshold))
+      elif FLAGS.evaluation_mode == 'top1':
+        tf_result = tf.argmax(ys_tf, 1).eval()
+        lite_result = tf.argmax(ys_lite, 1).eval()
+        labels = np.reshape(labels_tf, [FLAGS.batch_size])
+        tf.logging.info('=== For batch #{} ==='.format(step))
+        tf.logging.info(' Correct label:     {}'.format(labels))
+        tf.logging.info(' Tensorflow result: {}'.format(tf_result))
+        tf.logging.info(' TFLite result:     {}'.format(lite_result))
+      elif FLAGS.evaluation_mode == 'accuracy':
+        sess.run(acc_update_op_tf, feed_dict={lbls_tf: labels_tf, preds_tf: ys_tf})
+        sess.run(acc_update_op_lite, feed_dict={lbls_lite: labels_tf, preds_lite: ys_lite})
+
+    if FLAGS.evaluation_mode == 'accuracy':
+      tf.logging.info('=== Accuracy for {} {} ==='.format(num_batches, 'batch' if num_batches == 1 else 'batches'))
+      tf.logging.info(' Tensorflow: {}'.format(accuracy_tf.eval()))
+      tf.logging.info(' TFLite:     {}'.format(accuracy_lite.eval()))
 
     if FLAGS.summary_dir:
       summary_writer.add_graph(sess.graph)
