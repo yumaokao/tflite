@@ -111,7 +111,6 @@ quantor_cifarnet_frozen:
 		--output_node_name=CifarNet/Predictions/Reshape \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
 
-# TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
 # TODO(yumaokao): LRN to be appened a FakeQuant
 #   CifarNet/conv1/Relu
 #   CifarNet/Predictions/Reshape
@@ -125,7 +124,7 @@ toco_quantor_cifarnet:
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--mean_values=128 --std_values=127 \
 		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
-		--default_ranges_min=0 --default_ranges_max=10 --partial_quant --allow_custom_ops \
+		--default_ranges_min=0 --default_ranges_max=10 --partial_quant \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
 
 toco_cifarnet:
