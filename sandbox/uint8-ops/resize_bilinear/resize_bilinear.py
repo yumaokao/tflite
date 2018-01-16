@@ -5,7 +5,7 @@ def model(x):
   variables = {}
   x_2d = tf.reshape(x, [-1, 28, 28, 1])
   y = tf.image.resize_bilinear(x_2d, [54, 54])
-  y = tf.fake_quant_with_min_max_args(y, min=0.0, max=3.0, name='ys')
+  y = tf.fake_quant_with_min_max_args(y, min=-1.0, max=3.0, name='ys')
   return y, variables
 
 def cvt_x(x):
