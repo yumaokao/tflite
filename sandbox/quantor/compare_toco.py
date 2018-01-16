@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
 import math
 import tempfile
 import subprocess
@@ -60,6 +61,17 @@ def get_statistics(numpy_data):
   data.append('Q4: {}'.format(np.percentile(numpy_data, 100)))
   return data
 
+def get_tflite_quantization_info(work_dir):
+  # TODO: More straightforward solution?
+  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite',
+          '{}'.format(os.path.join(work_dir, '{}_model.lite'.format(FLAGS.toco_inference_type)))]
+  out = subprocess.check_output(cmd)
+  for line in out.splitlines():
+    if FLAGS.output_node_name + ' type' in line:
+      result = re.search('quantization \((?P<scale>[0-9\.]+) (?P<zero>[0-9\.]+)\)', line)
+      return float(result.group('scale')), int(result.group('zero'))
+  raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
+
 def prepare_toco_commands(work_dir):
   # TODO: Fixed the bug in toco when transforming the batchnorm op
   # Currently we use the transform_graph tool in tensorflow to handle the batchnorm op
@@ -113,7 +125,7 @@ def main(_):
   if not FLAGS.dataset_dir:
     raise ValueError('You must supply the dataset directory with --dataset_dir')
   if not FLAGS.frozen_pb:
-    raise ValueError('You must supply the frozen pb with --frozen_pb')
+    raise ValueError('You must supply the frozen pb (with fake quantization) with --frozen_pb')
   if not FLAGS.output_node_name:
     raise ValueError('You must supply the output node name with --output_node_name')
   if not FLAGS.tensorflow_dir:
@@ -198,6 +210,11 @@ def main(_):
       np.save(os.path.join(data_dir, 'batch_xs.npy'), images_lite)
       subprocess.check_output(tflite_cmds)
       ys_lite = np.load(os.path.join(data_dir, 'tflite_ys.npy'))
+
+      if FLAGS.toco_inference_type == 'uint8':
+        scale, zero_point = get_tflite_quantization_info(work_dir)
+        ys_lite = ys_lite.astype(float, copy=False)
+        ys_lite = (ys_lite - zero_point) * scale
 
       # Evaluate the result
       if FLAGS.evaluation_mode == 'statistics':

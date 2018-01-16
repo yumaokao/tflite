@@ -19,8 +19,10 @@ all:
 build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:transform_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:run_tflite
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 
 clean:
 	@ rm -rf $(QUANTOR_BASE)/cifarnet
