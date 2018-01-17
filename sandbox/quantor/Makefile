@@ -56,6 +56,6 @@ include mks/cifarnet.mk
 include mks/mobilenetv1.mk
 
 ########################################################
-# for inceptionV3
+# for inception_v3
 ########################################################
-include mks/inceptionv3.mk
+include mks/inception_v3.mk
