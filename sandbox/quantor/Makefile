@@ -160,10 +160,9 @@ eval_cifarnet_tflite:
 # for mobilenetV1_224
 ########################################################
 download_mobilenetV1_224:
-	@ wget http://download.tensorflow.org/models/mobilenet_v1_1.0_224_2017_06_14.tar.gz -P $(QUANTOR_BASE)/mobilenetV1_224	
+	@ wget http://download.tensorflow.org/models/mobilenet_v1_1.0_224_2017_06_14.tar.gz -P $(QUANTOR_BASE)/mobilenetV1_224
 	@ tar xvf $(QUANTOR_BASE)/mobilenetV1_224/mobilenet_v1_1.0_224_2017_06_14.tar.gz -C $(QUANTOR_BASE)/mobilenetV1_224
 
-#71.2%
 eval_mobilenetV1_224:
 	@ cd $(TF_SLIM_BASE) && python eval_image_classifier.py \
 		--checkpoint_path=$(QUANTOR_BASE)/mobilenetV1_224/mobilenet_v1_1.0_224.ckpt \
@@ -186,7 +185,6 @@ freeze_mobilenetV1_224:
 		--in_graph=$(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb
 
-#69.2%
 eval_mobilenetV1_224_frozen:
 	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
@@ -196,7 +194,6 @@ eval_mobilenetV1_224_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb --max_num_batches=50 \
 		# --summary_dir=$(QUANTOR_BASE)/mobilenetV1_224/summary/$@
 
-#5.04%
 quantor_mobilenetV1_224_frozen:
 	@ python $(QUANTOR_BASE)/quantor_frozen.py \
 		--dataset_name=imagenet \
@@ -341,3 +338,59 @@ eval_inceptionV3_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inceptionV3/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--max_num_batches=50 --input_size=299
+
+
+########################################################
+# compare_toco
+########################################################
+compare_toco_inceptionV3_float:
+	@ python $(QUANTOR_BASE)/compare_toco.py \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb \
+		--max_num_batches=100 \
+		--output_node_name=InceptionV3/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=float \
+		--input_size=299 \
+		--evaluation_mode=accuracy \
+		--dump_data=False
+
+compare_toco_mobilenetV1_224_float:
+	@ python $(QUANTOR_BASE)/compare_toco.py \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/frozen_mobilenetV1_224.pb \
+		--max_num_batches=100 \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=float \
+		--input_size=224 \
+		--evaluation_mode=accuracy \
+		--dump_data=False
+
+compare_toco_inceptionV3_uint8:
+	@ python $(QUANTOR_BASE)/compare_toco.py \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb \
+		--max_num_batches=100 \
+		--output_node_name=InceptionV3/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=uint8 \
+		--input_size=299 \
+		--evaluation_mode=accuracy \
+		--dump_data=False
+
+compare_toco_mobilenetV1_224_uint8:
+	@ python $(QUANTOR_BASE)/compare_toco.py \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/mobilenetV1_224/quantor/frozen.pb \
+		--max_num_batches=100 \
+		--output_node_name=MobilenetV1/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=uint8 \
+		--input_size=224 \
+		--evaluation_mode=accuracy \
+		--dump_data=False
