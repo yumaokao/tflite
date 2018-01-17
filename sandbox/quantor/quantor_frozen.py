@@ -107,7 +107,8 @@ def main(_):
     # summary all min/max variables
     # print(graph.get_collection('variables')[3].eval())
     for var in graph.get_collection('variables'):
-      tf.summary.scalar(var.name, var)
+      varname = var.name[:-2] if var.name[-2] == ':' else var.name
+      tf.summary.scalar(varname, var)
     summaries = tf.summary.merge_all()
 
     for step in range(num_batches):

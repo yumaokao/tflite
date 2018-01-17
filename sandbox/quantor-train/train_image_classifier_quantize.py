@@ -552,7 +552,7 @@ def main(_):
     quantize.Quantize(g, is_training=True)
     for var in g.get_collection('variables'):
       if var.name.endswith('min:0') or var.name.endswith('max:0'):
-        summaries.add(tf.summary.scalar(var.name, var))
+        summaries.add(tf.summary.scalar(var.name[:-2], var))
 
     # Add the summaries from the first clone. These contain the summaries
     # created by model_fn and either optimize_clones() or _gather_clone_loss().
