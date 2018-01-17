@@ -1,10 +1,20 @@
 .PHONY: all clean build
 # mobilenet_v1
-.PHONY: train_mobilenet_v1 eval_mobilenet_v1 eval_frozen_mobilenet_v1
-.PHONY: freeze_mobilenet_v1 toco_mobilenet_v1 eval_tflite_mobilenet_v1
+.PHONY: train_mobilenet_v1 eval_mobilenet_v1
+MOBILENET_V1_EVAL_TARGETS := eval_slim_mobilenet_v1
+MOBILENET_V1_EVAL_TARGETS += eval_frozen_mobilenet_v1
+MOBILENET_V1_EVAL_TARGETS += freeze_mobilenet_v1
+MOBILENET_V1_EVAL_TARGETS += toco_mobilenet_v1
+MOBILENET_V1_EVAL_TARGETS += eval_tflite_mobilenet_v1
+.PHONY: $(MOBILENET_V1_EVAL_TARGETS)
 # mobilenet_v1_quantize
-.PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize eval_frozen_mobilenet_v1_quantize
-.PHONY: freeze_mobilenet_v1_quantize toco_mobilenet_v1_quantize eval_tflite_mobilenet_v1_quantize
+.PHONY: train_mobilenet_v1_quantiz eval_mobilenet_v1_quantize
+MOBILENET_V1_QUANTIZE_EVAL_TARGETS := eval_slim_mobilenet_v1_quantize
+MOBILENET_V1_QUANTIZE_EVAL_TARGETS += eval_frozen_mobilenet_v1_quantize
+MOBILENET_V1_QUANTIZE_EVAL_TARGETS += freeze_mobilenet_v1_quantize
+MOBILENET_V1_QUANTIZE_EVAL_TARGETS += toco_mobilenet_v1_quantize
+MOBILENET_V1_QUANTIZE_EVAL_TARGETS += eval_tflite_mobilenet_v1_quantize
+.PHONY: $(MOBILENET_V1_QUANTIZE_EVAL_TARGETS)
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -56,7 +66,9 @@ train_mobilenet_v1:
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--model_name=mobilenet_v1
 
-eval_mobilenet_v1:
+eval_mobilenet_v1: ${MOBILENET_V1_EVAL_TARGETS}
+
+eval_slim_mobilenet_v1:
 	@ python $(TF_SLIM_BASE)/eval_image_classifier.py \
 		--checkpoint_path=train_mobilenet_v1/model.ckpt-700605 \
 		--dataset_dir=${DATASET_BASE}/imagenet \
@@ -88,6 +100,7 @@ toco_mobilenet_v1:
 		--dump_graphviz=train_mobilenet_v1/dots
 
 eval_frozen_mobilenet_v1:
+	@ echo $@
 	@ python eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -96,6 +109,7 @@ eval_frozen_mobilenet_v1:
 		--frozen_pb=train_mobilenet_v1/mobilenet_v1_frozen.pb
 
 eval_tflite_mobilenet_v1:
+	@ echo $@
 	@ python eval_tflite.py \
 		--summary_dir=train_mobilenet_v1/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
@@ -114,10 +128,12 @@ train_mobilenet_v1_quantize:
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--model_name=mobilenet_v1
 
-eval_mobilenet_v1_quantize:
+eval_mobilenet_v1_quantize: ${MOBILENET_V1_QUANTIZE_EVAL_TARGETS}
+
+eval_slim_mobilenet_v1_quantize:
 	@ PYTHONPATH=${TF_SLIM_BASE} \
 	  python eval_image_classifier_quantize.py \
-		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-595130 \
+		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-856908 \
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--dataset_name=imagenet \
 		--dataset_split_name=validation \
@@ -131,7 +147,7 @@ freeze_mobilenet_v1_quantize:
 		--output_file=$(ROOT_DIR)/train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb \
-		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-595130 \
+		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-856908 \
 		--input_binary=true \
 	        --output_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb \
 		--output_node_names=MobilenetV1/Predictions/Reshape
@@ -149,6 +165,7 @@ toco_mobilenet_v1_quantize:
 		--dump_graphviz=train_mobilenet_v1_quantize/dots
 
 eval_frozen_mobilenet_v1_quantize:
+	@ echo $@
 	@ python eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -157,6 +174,7 @@ eval_frozen_mobilenet_v1_quantize:
 		--frozen_pb=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb
 
 eval_tflite_mobilenet_v1_quantize:
+	@ echo $@
 	@ python eval_tflite.py \
 		--summary_dir=train_mobilenet_v1_quantize/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
