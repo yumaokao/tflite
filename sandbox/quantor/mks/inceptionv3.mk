@@ -1,10 +1,15 @@
-.PHONY: download_inceptionV3 eval_inceptionV3
-.PHONY: freeze_inceptionV3 eval_inceptionV3_frozen
-.PHONY: quantor_inceptionV3_frozen toco_quantor_inceptionV3
-.PHONY: toco_inceptionV3 eval_quantor_inceptionV3_tflite
-.PHONY: eval_inceptionV3_tflite
-.PHONY: compare_toco_inceptionV3_float compare_toco_inceptionV3_uint8
+QUANTOR_INCEPTIONV3_TARGETS := eval_inceptionV3_frozen
+QUANTOR_INCEPTIONV3_TARGETS += freeze_inceptionV3
+QUANTOR_INCEPTIONV3_TARGETS += toco_inceptionV3
+QUANTOR_INCEPTIONV3_TARGETS += quantor_inceptionV3_frozen
+QUANTOR_INCEPTIONV3_TARGETS += toco_quantor_inceptionV3
+QUANTOR_INCEPTIONV3_TARGETS += eval_inceptionV3_tflite
+QUANTOR_INCEPTIONV3_TARGETS += eval_quantor_inceptionV3_tflite
 
+.PHONY: download_inceptionV3 eval_inceptionV3
+.PHONY: ${QUANTOR_INCEPTIONV3_TARGETS}
+.PHONY: quantor_inceptionV3
+.PHONY: compare_toco_inceptionV3_float compare_toco_inceptionV3_uint8
 
 ########################################################
 # should already defined these variables
@@ -30,6 +35,9 @@ eval_inceptionV3:
 		--dataset_name=imagenet --dataset_split_name=validation \
 		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=inception_v3 --max_num_batches=50
 
+quantor_inceptionV3: ${QUANTOR_INCEPTIONV3_TARGETS}
+
+# sub targets
 freeze_inceptionV3:
 	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
 		--alsologtostderr \
@@ -103,6 +111,7 @@ toco_inceptionV3:
 		--dump_graphviz=$(QUANTOR_BASE)/inceptionV3/dots
 
 eval_quantor_inceptionV3_tflite:
+	@ echo $@
 	@ python $(QUANTOR_BASE)/eval_tflite_imagenet.py \
 		--summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
@@ -112,6 +121,7 @@ eval_quantor_inceptionV3_tflite:
 		--max_num_batches=50 --input_size=299
 
 eval_inceptionV3_tflite:
+	@ echo $@
 	@ python $(QUANTOR_BASE)/eval_tflite.py \
 		--summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
