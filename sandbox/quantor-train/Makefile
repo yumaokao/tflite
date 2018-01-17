@@ -15,6 +15,8 @@ MOBILENET_V1_QUANTIZE_EVAL_TARGETS += freeze_mobilenet_v1_quantize
 MOBILENET_V1_QUANTIZE_EVAL_TARGETS += toco_mobilenet_v1_quantize
 MOBILENET_V1_QUANTIZE_EVAL_TARGETS += eval_tflite_mobilenet_v1_quantize
 .PHONY: $(MOBILENET_V1_QUANTIZE_EVAL_TARGETS)
+# mobilenet_v1_quantize
+.PHONY: download_google_mobilenet_v1_quantize eval_tflite_gogole_mobilenet_v1_quantize
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -180,6 +182,25 @@ eval_tflite_mobilenet_v1_quantize:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=train_mobilenet_v1_quantize/mobilenet_v1_quantize.lite \
+	        --tensorflow_dir=$(TF_BASE) \
+		--inference_type=uint8 \
+		--max_num_batches=1000 --input_size=224
+
+# google mobilenet v1 quantize
+download_google_mobilenet_v1_quantize:
+	@ mkdir -p google_mobilenet_v1_quantize
+	@ cd google_mobilenet_v1_quantize \
+		&& wget https://storage.googleapis.com/download.tensorflow.org/models/tflite/mobilenet_v1_224_android_quant_2017_11_08.zip
+	@ cd google_mobilenet_v1_quantize \
+		&& unzip mobilenet_v1_224_android_quant_2017_11_08.zip
+
+eval_tflite_gogole_mobilenet_v1_quantize:
+	@ echo $@
+	@ python eval_tflite.py \
+		--summary_dir=google_mobilenet_v1_quantize/$@/summary \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--tflite_model=google_mobilenet_v1_quantize/mobilenet_quant_v1_224.tflite \
 	        --tensorflow_dir=$(TF_BASE) \
 		--inference_type=uint8 \
 		--max_num_batches=1000 --input_size=224

@@ -4,6 +4,9 @@ train_mobilenet_v1
 # slim quantize models
 train_mobilenet_v1_quantize
 
+# google quantize models
+google_mobilenet_v1_quantize
+
 # python module
 *.pyc
 
