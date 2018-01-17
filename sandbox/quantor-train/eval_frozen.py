@@ -95,6 +95,10 @@ def main(_):
     y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
 
     for step in range(num_batches):
+      if (step % 100) == 0:
+        print('{}/{} with batch_size {}'.format(step, num_batches,
+                                                FLAGS.batch_size))
+        print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)
       ys = sess.run(y, feed_dict={x: images})
       sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})

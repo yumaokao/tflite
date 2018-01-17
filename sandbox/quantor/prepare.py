@@ -95,9 +95,12 @@ def prepare_imagenet_dataset(filenames, width, height,
 def prepare_tfrecords(dataset_name, dataset_dir, dataset_split_name):
   with tf.name_scope("tfrecords"):
     if dataset_name == 'imagenet':
-      # TODO: more portable name
-      return [os.path.join(dataset_dir, 'validation-{:05d}-of-00128'.format(i))
-              for i in range(0, 128)]
+      if dataset_split_name == 'test':
+        return [os.path.join(dataset_dir, 'validation-{:05d}-of-00128'.format(i))
+                for i in range(0, 128)]
+      else:
+        return [os.path.join(dataset_dir, 'train-{:05d}-of-01024'.format(i))
+                for i in range(0, 1024)]
     elif dataset_name == 'cifar10':
       return [os.path.join(dataset_dir, '{}_{}.tfrecord'.format(
                            dataset_name, dataset_split_name))]

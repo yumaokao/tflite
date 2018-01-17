@@ -94,7 +94,8 @@ def main(_):
 
     for step in range(num_batches):
       if (step % 100) == 0:
-        print('{}/{}'.format(step, num_batches))
+        print('{}/{} with batch_size {}'.format(step, num_batches,
+                                                FLAGS.batch_size))
         # print(' '.join(cmds))
         print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)

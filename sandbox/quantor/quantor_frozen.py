@@ -18,7 +18,7 @@ tf.app.flags.DEFINE_integer(
 tf.app.flags.DEFINE_string(
     'dataset_name', 'imagenet', 'The name of the dataset to load.')
 tf.app.flags.DEFINE_string(
-    'dataset_split_name', 'test', 'The name of the train/test split.')
+    'dataset_split_name', 'train', 'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
     'dataset_dir', None, 'The directory where the dataset files are stored.')
 tf.app.flags.DEFINE_string(
@@ -111,6 +111,9 @@ def main(_):
     summaries = tf.summary.merge_all()
 
     for step in range(num_batches):
+      if (step % 100) == 0:
+        print('{}/{} with batch_size {}'.format(step, num_batches,
+                                                FLAGS.batch_size))
       images, labels = sess.run(next_batch)
       ys = sess.run(y, feed_dict={x: images})
       sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
@@ -118,7 +121,7 @@ def main(_):
       if FLAGS.summary_dir:
         summary_writer.add_summary(summary, step)
 
-    print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
+    print('Quantor Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
     if FLAGS.summary_dir:
       summary_writer.add_graph(graph)
 

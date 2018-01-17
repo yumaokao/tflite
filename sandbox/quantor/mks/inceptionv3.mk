@@ -33,7 +33,7 @@ eval_inceptionV3:
 		--checkpoint_path=$(QUANTOR_BASE)/inceptionV3/inception_v3.ckpt \
 		--eval_dir=$(QUANTOR_BASE)/inceptionV3 \
 		--dataset_name=imagenet --dataset_split_name=validation \
-		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=inception_v3 --max_num_batches=50
+		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=inception_v3 --max_num_batches=200
 
 quantor_inceptionV3: ${QUANTOR_INCEPTIONV3_TARGETS}
 
@@ -59,7 +59,7 @@ eval_inceptionV3_frozen:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
-		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb --max_num_batches=50
+		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb --max_num_batches=200
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/summary/$@
 
 quantor_inceptionV3_frozen:
@@ -69,7 +69,7 @@ quantor_inceptionV3_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/frozen_inceptionV3.pb \
 		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
-		--output_dir=$(QUANTOR_BASE)/inceptionV3/quantor --max_num_batches=50
+		--output_dir=$(QUANTOR_BASE)/inceptionV3/quantor --max_num_batches=200
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/summary/$@
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inceptionV3/quantor/quantor.pb \
@@ -82,13 +82,13 @@ quantor_inceptionV3_frozen:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
-		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb --max_num_batches=50
+		--frozen_pb=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb --max_num_batches=200
 		# --summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@
 
 # TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
 toco_quantor_inceptionV3:
 	@ mkdir -p $(QUANTOR_BASE)/inceptionV3/quantor/dots
-	$(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$(QUANTOR_BASE)/inceptionV3/quantor/frozen.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/inceptionV3/quantor/model.lite \
@@ -112,13 +112,13 @@ toco_inceptionV3:
 
 eval_quantor_inceptionV3_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite_imagenet.py \
+	@ python $(QUANTOR_BASE)/eval_tflite.py \
 		--summary_dir=$(QUANTOR_BASE)/inceptionV3/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inceptionV3/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=50 --input_size=299
+		--max_num_batches=1000 --input_size=299
 
 eval_inceptionV3_tflite:
 	@ echo $@
@@ -127,7 +127,7 @@ eval_inceptionV3_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inceptionV3/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=50 --input_size=299
+		--max_num_batches=1000 --input_size=299
 
 
 ########################################################
