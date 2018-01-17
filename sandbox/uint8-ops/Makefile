@@ -12,7 +12,7 @@ UINT8_TARGETS := depth_to_space
 VARIABLE_TARGETS := conv2d depthwise_conv2d fully_connected
 VARIABLE_TARGETS += concat add multiply
 FIXED_TARGETS := softmax max_pool avg_pool space_to_depth
-FIXED_TARGETS += resize_bilinear depth_to_space
+FIXED_TARGETS += resize_bilinear
 
 .PHONY: $(UINT8_TARGETS)
 .PHONY: $(VARIABLE_TARGETS)
@@ -69,7 +69,9 @@ endef
 
 all:
 	@ echo "all uint8-ops"
-	@ echo $(UINT8_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	# @ echo $(UINT8_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	@ echo $(VARIABLE_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	@ echo $(FIXED_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
 
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb */__pycache__
