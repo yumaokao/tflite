@@ -74,7 +74,7 @@ def get_tflite_quantization_info(work_dir):
       return float(result.group('scale')), int(result.group('zero'))
   raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
 
-def prepare_toco_commands(work_dir):
+def process_toco(work_dir):
   # TODO: Fixed the bug in toco when transforming the batchnorm op
   # Currently we use the transform_graph tool in tensorflow to handle the batchnorm op
   pre_process_cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/tools/graph_transforms/transform_graph',
@@ -107,7 +107,10 @@ def prepare_toco_commands(work_dir):
       tf.logging.warning('Warning: Extra toco flag "{}" has been set to "{}".'.format(e_flag.split('=')[0][2:], e_flag.split('=')[1]))
     else:
       cmd.append(e_flag)
-  return cmd
+  subprocess.check_output(cmd)
+
+  rm_cmd = ['rm', FLAGS.frozen_pb + '.tmp']
+  subprocess.check_output(rm_cmd)
 
 def prepare_run_tflite_commands(work_dir, data_dir, input_fn, output_fn):
   return [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
@@ -176,8 +179,7 @@ def main(_):
   graph_def = load_graph_def(FLAGS.frozen_pb)
 
   tf.logging.info('Run toco')
-  toco_cmds = prepare_toco_commands(work_dir)
-  subprocess.check_output(toco_cmds)
+  toco_cmds = process_toco(work_dir)
 
   tf.logging.info('Prepare metrics')
   lbls_tf, preds_tf, accuracy_tf, acc_update_op_tf = prepare_metrics(FLAGS.dataset_name)
