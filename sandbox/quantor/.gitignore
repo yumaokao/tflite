@@ -1,7 +1,7 @@
 # slim models
 cifarnet
 inception_v3
-mobilenetV1*
+mobilenet_v1*
 
 # python module
 *.pyc
