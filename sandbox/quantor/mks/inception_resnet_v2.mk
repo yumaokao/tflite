@@ -69,25 +69,22 @@ quantor_inception_resnet_v2_frozen:
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb \
-		--output_node_name=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionResnetV2/Logits/Predictions \
 		--input_size=299 \
 		--output_dir=$(QUANTOR_BASE)/inception_resnet_v2/quantor --max_num_batches=200
-		# --summary_dir=$(QUANTOR_BASE)/inception_resnet_v2/summary/$@
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inception_resnet_v2/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/inception_resnet_v2/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb \
-		--output_node_names=InceptionV3/Predictions/Reshape
+		--output_node_names=InceptionResnetV2/Logits/Predictions
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb
 	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionResnetV2/Logits/Predictions \
 		--input_size=299 \
 		--frozen_pb=$(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb --max_num_batches=200
-		# --summary_dir=$(QUANTOR_BASE)/inception_resnet_v2/quantor/summary/$@
 
-# TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
 toco_quantor_inception_resnet_v2:
 	@ mkdir -p $(QUANTOR_BASE)/inception_resnet_v2/quantor/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -97,8 +94,8 @@ toco_quantor_inception_resnet_v2:
 		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
-		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
+		--output_arrays=InceptionResnetV2/Logits/Predictions --input_shapes=1,299,299,3 \
+		--default_ranges_min=0 --default_ranges_max=10 \
 		--dump_graphviz=$(QUANTOR_BASE)/inception_resnet_v2/quantor/dots
 
 toco_inception_resnet_v2:
@@ -109,7 +106,7 @@ toco_inception_resnet_v2:
 		--output_file=$(QUANTOR_BASE)/inception_resnet_v2/float_model.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
+		--output_arrays=InceptionResnetV2/Logits/Predictions --input_shapes=1,299,299,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/inception_resnet_v2/dots
 
 eval_quantor_inception_resnet_v2_tflite:
@@ -141,7 +138,7 @@ compare_toco_inception_resnet_v2_float:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb \
 		--max_num_batches=100 \
-		--output_node_name=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionResnetV2/Logits/Predictions \
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=float \
 		--input_size=299 \
@@ -154,7 +151,7 @@ compare_toco_inception_resnet_v2_uint8:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb \
 		--max_num_batches=100 \
-		--output_node_name=InceptionV3/Predictions/Reshape \
+		--output_node_name=InceptionResnetV2/Logits/Predictions \
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=uint8 \
 		--input_size=299 \
