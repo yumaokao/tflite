@@ -100,6 +100,8 @@ def main(_):
                                                 FLAGS.batch_size))
         print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)
+      import ipdb
+      ipdb.set_trace()
       ys = sess.run(y, feed_dict={x: images})
       sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
       if FLAGS.summary_dir:

@@ -34,7 +34,8 @@ download_inception_resnet_v2:
 		$(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2.ckpt
 
 eval_inception_resnet_v2:
-	@ cd $(TF_SLIM_BASE) && python eval_image_classifier.py \
+	@ PYTHONPATH=${TF_SLIM_BASE} \
+	  python eval_slim_debugger.py \
 		--checkpoint_path=$(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2.ckpt \
 		--eval_dir=$(QUANTOR_BASE)/inception_resnet_v2 \
 		--dataset_name=imagenet --dataset_split_name=validation \
