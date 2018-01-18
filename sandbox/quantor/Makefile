@@ -59,3 +59,8 @@ include mks/mobilenetv1.mk
 # for inception_v3
 ########################################################
 include mks/inception_v3.mk
+
+########################################################
+# for inception_resnet_v2
+########################################################
+include mks/inception_resnet_v2.mk
