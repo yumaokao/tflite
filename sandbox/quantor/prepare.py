@@ -136,7 +136,7 @@ def prepare_metrics(dataset_name, inference_type='float'):
       return None
     lbls = tf.placeholder(tf.int32, [None, 1])
     if inference_type == 'float':
-      preds = tf.placeholder(tf.int32, pred_shape)
+      preds = tf.placeholder(tf.float32, pred_shape)
     elif inference_type == 'uint8':
       preds = tf.placeholder(tf.uint8, pred_shape)
     accuracy, acc_update_op = tf.metrics.accuracy(lbls, tf.argmax(preds, 1))
