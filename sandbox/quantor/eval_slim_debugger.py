@@ -197,17 +197,19 @@ def main(_):
       restorer.restore(sess, checkpoint_path)
       # metric_values = sess.run(names_to_updates.values())
       imgs, lgts, lbls = sess.run([images, logits, labels])
-      import ipdb
-      ipdb.set_trace()
-      print('YMK')
+      import numpy as np
+      np.save('imgs.npy', imgs)
+      np.save('lgts.npy', lgts)
+      np.save('lbls.npy', lbls)
 
-    slim.evaluation.evaluate_once(
-        master=FLAGS.master,
-        checkpoint_path=checkpoint_path,
-        logdir=FLAGS.eval_dir,
-        num_evals=1,
-        eval_op=list(names_to_updates.values()),
-        variables_to_restore=variables_to_restore)
+
+    # slim.evaluation.evaluate_once(
+        # master=FLAGS.master,
+        # checkpoint_path=checkpoint_path,
+        # logdir=FLAGS.eval_dir,
+        # num_evals=1,
+        # eval_op=list(names_to_updates.values()),
+        # variables_to_restore=variables_to_restore)
 
 
 if __name__ == '__main__':
