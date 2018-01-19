@@ -3,6 +3,7 @@ cifarnet
 inception_v3
 inception_resnet_v2
 mobilenet_v1*
+resnet_v1_50
 
-# python module
+# python modules
 *.pyc

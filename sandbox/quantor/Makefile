@@ -64,3 +64,8 @@ include mks/inception_v3.mk
 # for inception_resnet_v2
 ########################################################
 include mks/inception_resnet_v2.mk
+
+########################################################
+# for resnet_v1
+########################################################
+include mks/resnet_v1_50.mk
