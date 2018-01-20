@@ -1,11 +1,5 @@
 # Tensorflow Lite Develop Environment
 
-## Worked tensorflow commits
-- 5723904ef8402093001a6b90fcf6675258be096b
-  - with bugfixs with 'std::isnan'
-- efbdc15b280374607895ab0ada467de4a0512e0c
-- 27c55e556b77fdc841fb54483dece48476645239
-
 ## Prepare Docker
 ```sh
 $ cd docker
@@ -51,31 +45,6 @@ $ bazel build //tensorflow/contrib/lite/toco:toco
 $ bazel build tensorflow/python/tools:freeze_graph
 ```
 
-## Build nnapi_example
-- It's need to add linkopts to make it compiled.
-cc_binary(
-    name = "nnapi_example",
-    ...,
-    linkopts = [
-        "-lm",
-    ],
-)
-```sh
-# generate_examples
-$ bazel build //tensorflow/contrib/lite/testing:generate_examples
-$ bazel-bin/tensorflow/contrib/lite/testing/generate_examples \
-	--zip_to_output mul.zip \
-	--toco bazel-bin/tensorflow/contrib/lite/toco/toco \
-	tensorflow/contrib/lite/testing/generated_examples zipped
-
-# nnapi_example
-$ # bazel build -s //tensorflow/contrib/lite/testing:nnapi_example
-$ # bazel-bin/tensorflow/contrib/lite/testing/nnapi_example
-
-# new added: read_tflife
-$ bazel build //tensorflow/contrib/lite/testing:read_tflite
-```
-
 ## Build cc_test, py_test
 ```sh
 $ bazel build //tensorflow/contrib/lite:model_test
@@ -116,53 +85,6 @@ $ sudo apt-get install clang-format
 ```
 
 # MNIST
-
-## train with saver and summary
-```sh
-$ cd /home/tflite/sandbox/mnist
-$ python ./mnist_deep.py
-# or
-$ python ./mnist_deep_nodropout.py
-test accuracy 0.9921
-Model saved in file: /home/tflite/sandbox/mnist/model.ckpt
-```
-
-## tensorboard
-```sh
-$ tensorboard --logdir=/home/tflite/sandbox/mnist/summary
-Open http://192.168.10.50:6006
-```
-
-## frozen MNIST
-```sh
-$ bazel-bin/tensorflow/python/tools/freeze_graph \
-    --input_graph=/home/tflite/sandbox/mnist/mnist.pb \
-    --input_checkpoint=/home/tflite/sandbox/mnist/model.ckpt \
-    --input_binary=true --output_graph=/home/tflite/sandbox/mnist/frozen_mnist.pb \
-    --output_node_names=loss/Reshape
-```
-
-## toco MNIST
-```sh
-$ bazel-bin/tensorflow/contrib/lite/toco/toco \
-  --input_file=/home/tflite/sandbox/mnist/frozen_mnist.pb \
-  --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
-  --output_file=/tmp/mnist.lite --inference_type=FLOAT \
-  --inference_input_type=FLOAT --input_arrays=reshape/Reshape \
-  --output_arrays=fc2/add --input_shapes=1,28,28,1
-```
-
-## toco MNIST dummy-quantization
-```sh
-$ bazel-bin/tensorflow/contrib/lite/toco/toco \
-  --input_file=/home/tflite/sandbox/mnist/frozen_mnist.pb \
-  --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
-  --output_file=/tmp/mnist_quan.lite --inference_type=QUANTIZED_UINT8 \
-  --inference_input_type=QUANTIZED_UINT8 --input_array=reshape/Reshape \
-  --output_array=fc2/add --input_shape=1,28,28,1 \
-  --default_ranges_min=0 --default_ranges_max=6 \
-  --mean_value=127.5 --std_value=127.5
-```
 
 ## MNIST apks
 ```sh
