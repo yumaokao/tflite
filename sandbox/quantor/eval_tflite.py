@@ -29,6 +29,9 @@ tf.app.flags.DEFINE_integer(
     'evaluate the VGG and ResNet architectures which do not use a background '
     'class for the ImageNet dataset.')
 tf.app.flags.DEFINE_string(
+    'preprocess_name', 'inception', 'The name of the preprocessing method '
+    'either inception [-1.0, 1.0] or vgg [-105.0, 141.0]')
+tf.app.flags.DEFINE_string(
     'tflite_model', None, 'The TFLite model file is stored with toco.')
 tf.app.flags.DEFINE_string(
     'inference_type', 'float', 'The inference type to run the tflie model')
@@ -75,6 +78,7 @@ def main(_):
 
   filenames = tf.placeholder(tf.string, shape=[None])
   dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                            preprocess_name=FLAGS.preprocess_name,
                             batch_size=FLAGS.batch_size,
                             labels_offset=FLAGS.labels_offset,
                             inference_type=FLAGS.inference_type)

@@ -28,6 +28,9 @@ tf.app.flags.DEFINE_integer(
     'evaluate the VGG and ResNet architectures which do not use a background '
     'class for the ImageNet dataset.')
 tf.app.flags.DEFINE_string(
+    'preprocess_name', 'inception', 'The name of the preprocessing method '
+    'either inception [-1.0, 1.0] or vgg [-105.0, 141.0]')
+tf.app.flags.DEFINE_string(
     'summary_dir', None, 'The directory where summaries save.')
 tf.app.flags.DEFINE_string(
     'frozen_pb', None, 'The GraphDef file are stored with quantized_graph.')
@@ -85,6 +88,7 @@ def main(_):
     with tf.name_scope("dataset"):
       filenames = tf.placeholder(tf.string, shape=[None])
       dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                                preprocess_name=FLAGS.preprocess_name,
                                 batch_size=FLAGS.batch_size,
                                 labels_offset=FLAGS.labels_offset)
       iterator = dataset.make_initializable_iterator()

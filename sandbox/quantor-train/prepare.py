@@ -7,8 +7,8 @@ import tensorflow as tf
 
 
 def prepare_cifar10_dataset(filenames, width, height,
-                            batch_size=1, labels_offset=0,
-                            inference_type='float'):
+                            preprocess_name='inception', batch_size=1,
+                            labels_offset=0, inference_type='float'):
   def _read_tfrecord(example_proto):
     feature_to_type = {
         "image/class/label": tf.FixedLenFeature([1], dtype=tf.int64),
@@ -29,9 +29,9 @@ def prepare_cifar10_dataset(filenames, width, height,
     tf.summary.image('std_image', tf.expand_dims(image, 0))
     return image, label
 
-  # YMK: use _preprocessing_imagenet [-1, 1) is easier
+  # YMK: use _preprocessing_inception [-1, 1) is easier
   #      for toco with --mean_value=127.5 --std_value=127.5
-  def _preprocessing_imagenet(image, label):
+  def _preprocessing_inception(image, label):
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image = tf.expand_dims(image, 0)
     image = tf.squeeze(image, [0])
@@ -39,18 +39,35 @@ def prepare_cifar10_dataset(filenames, width, height,
     image = tf.multiply(image, 2.0)
     return image, label
 
+  # YMK: use _preprocessing_vgg for vgg/resnet
+  #      for toco with --mean_value=-114.8 --std_value=1.0
+  #      slim eval choose _R_MEAN = 123.68, _G_MEAN = 116.78, _B_MEAN = 103.94
+  #      however per_channel not yet supported, so _ALL_MEAN = 114.8
+  def _preprocessing_vgg(image, label):
+    image = tf.to_float(image)
+    image = tf.expand_dims(image, 0)
+    image = tf.subtract(image, 114.8)
+    return image, label
+
+  # proprocessing func
+  _preprocessing_func = None
+  if preprocess_name == 'inception':
+    _preprocessing_func = _preprocessing_inception
+  elif preprocess_name == 'vgg':
+    _preprocessing_func = _preprocessing_vgg
+
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
   dataset = dataset.map(_read_tfrecord)
-  if inference_type == 'float':
-    dataset = dataset.map(_preprocessing_imagenet)
+  if _preprocessing_func is not None:
+    dataset = dataset.map(_preprocessing_func)
   dataset = dataset.batch(batch_size)
   return dataset
 
 
 def prepare_imagenet_dataset(filenames, width, height,
-                             batch_size=1, labels_offset=0,
-                             inference_type='float'):
+                             preprocess_name='inception', batch_size=1,
+                             labels_offset=0, inference_type='float'):
   def _read_tfrecord(example_proto):
     feature_to_type = {
         "image/class/label": tf.FixedLenFeature([1], dtype=tf.int64),
@@ -63,7 +80,7 @@ def prepare_imagenet_dataset(filenames, width, height,
     label -= labels_offset
     return image_decoded, label
 
-  def _preprocessing(image, label):
+  def _preprocessing_inception(image, label):
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.expand_dims(image, 0)
@@ -72,6 +89,20 @@ def prepare_imagenet_dataset(filenames, width, height,
     image = tf.squeeze(image, [0])
     image = tf.subtract(image, 0.5)
     image = tf.multiply(image, 2.0)
+    return image, label
+
+  # YMK: use _preprocessing_vgg for vgg/resnet
+  #      for toco with --mean_value=-114.8 --std_value=1.0
+  #      slim eval choose _R_MEAN = 123.68, _G_MEAN = 116.78, _B_MEAN = 103.94
+  #      however per_channel not yet supported, so _ALL_MEAN = 114.8
+  def _preprocessing_vgg(image, label):
+    image = tf.to_float(image)
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [width, height],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
+    image = tf.subtract(image, 114.8)
     return image, label
 
   def _resize_imagenet(image, label):
@@ -84,19 +115,33 @@ def prepare_imagenet_dataset(filenames, width, height,
     image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
     return image, label
 
+  # proprocessing func
+  _preprocessing_func = None
+  if inference_type == 'float':
+    if preprocess_name == 'inception':
+      _preprocessing_func = _preprocessing_inception
+    elif preprocess_name == 'vgg':
+      _preprocessing_func = _preprocessing_vgg
+  elif inference_type == 'uint8':
+    _preprocessing_func = _resize_imagenet
+
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
   dataset = dataset.map(_read_tfrecord)
-  if inference_type == 'float':
-    dataset = dataset.map(_preprocessing)
-  else:
-    dataset = dataset.map(_resize_imagenet)
+  dataset = dataset.map(_preprocessing_func)
   dataset = dataset.batch(batch_size)
   return dataset
 
 
 def prepare_tfrecords(dataset_name, dataset_dir, dataset_split_name):
   with tf.name_scope("tfrecords"):
+    if dataset_name not in ['imagenet', 'cifar10']:
+      tf.logging.error('Could not find tfrecords for dataset {}'.format(dataset_name))
+      return None
+    if dataset_split_name not in ['train', 'test']:
+      tf.logging.error('Could not find tfrecords for dataset_split_name {}'.format(dataset_split_name))
+      return None
+
     if dataset_name == 'imagenet':
       if dataset_split_name == 'test':
         return [os.path.join(dataset_dir, 'validation-{:05d}-of-00128'.format(i))
@@ -107,38 +152,49 @@ def prepare_tfrecords(dataset_name, dataset_dir, dataset_split_name):
     elif dataset_name == 'cifar10':
       return [os.path.join(dataset_dir, '{}_{}.tfrecord'.format(
                            dataset_name, dataset_split_name))]
-    else:
-      tf.logging.error('Could not found preprocessing for dataset {}'.format(dataset_name))
-      return None
 
 
 def prepare_dataset(filenames, dataset_name, input_size,
-                    batch_size=1, labels_offset=0, inference_type='float'):
+                    preprocess_name='inception', batch_size=1,
+                    labels_offset=0, inference_type='float'):
   with tf.name_scope("datasets"):
+    if dataset_name not in ['imagenet', 'cifar10']:
+      tf.logging.error('Could not find preprocessing for dataset {}'.format(dataset_name))
+      return None
+    if preprocess_name not in ['inception', 'vgg']:
+      tf.logging.error('Could not find preprocessing method {}'.format(preprocess_name))
+      return None
+    if inference_type not in ['float', 'uint8']:
+      tf.logging.error('Could not find preprocessing method {}'.format(preprocess_name))
+      return None
+
     if dataset_name == 'imagenet':
       return prepare_imagenet_dataset(filenames, input_size, input_size,
+                                      preprocess_name=preprocess_name,
                                       batch_size=batch_size,
                                       labels_offset=labels_offset,
                                       inference_type=inference_type)
     elif dataset_name == 'cifar10':
       return prepare_cifar10_dataset(filenames, 32, 32,
+                                     preprocess_name=preprocess_name,
                                      batch_size=batch_size,
                                      labels_offset=labels_offset,
                                      inference_type=inference_type)
-    else:
-      tf.logging.error('Could not found preprocessing for dataset {}'.format(dataset_name))
-      return None
 
 
 def prepare_metrics(dataset_name, labels_offset=0, inference_type='float'):
   with tf.name_scope("metrics"):
+    if dataset_name not in ['imagenet', 'cifar10']:
+      tf.logging.error('Could not find metrics for dataset {}'.format(dataset_name))
+      return None
+    if inference_type not in ['float', 'uint8']:
+      tf.logging.error('Could not find preprocessing method {}'.format(preprocess_name))
+      return None
+
     if dataset_name == 'imagenet':
       pred_shape = [None, 1001 - labels_offset]
     elif dataset_name == 'cifar10':
       pred_shape = [None, 10 - labels_offset]
-    else:
-      tf.logging.error('Could not found metrics for dataset {}'.format(dataset_name))
-      return None
     lbls = tf.placeholder(tf.int32, [None, 1])
     if inference_type == 'float':
       preds = tf.placeholder(tf.float32, pred_shape)

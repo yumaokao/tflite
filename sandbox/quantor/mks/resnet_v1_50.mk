@@ -60,7 +60,7 @@ eval_resnet_v1_50_frozen:
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=resnet_v1_50/logits/BiasAdd \
-		--input_size=224 --labels_offset=1 \
+		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb --max_num_batches=200
 
 quantor_resnet_v1_50_frozen:
