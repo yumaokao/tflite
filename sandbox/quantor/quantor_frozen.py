@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os
 import math
+import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.quantize as qg
 
@@ -21,6 +22,11 @@ tf.app.flags.DEFINE_string(
     'dataset_split_name', 'train', 'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
     'dataset_dir', None, 'The directory where the dataset files are stored.')
+tf.app.flags.DEFINE_integer(
+    'labels_offset', 0,
+    'An offset for the labels in the dataset. This flag is primarily used to '
+    'evaluate the VGG and ResNet architectures which do not use a background '
+    'class for the ImageNet dataset.')
 tf.app.flags.DEFINE_string(
     'summary_dir', None, 'The directory where summaries save.')
 tf.app.flags.DEFINE_string(
@@ -79,12 +85,15 @@ def main(_):
     with tf.name_scope("dataset"):
       filenames = tf.placeholder(tf.string, shape=[None])
       dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
-                                batch_size=FLAGS.batch_size)
+                                batch_size=FLAGS.batch_size,
+                                labels_offset=FLAGS.labels_offset)
       iterator = dataset.make_initializable_iterator()
       next_batch = iterator.get_next()
 
     tf.logging.info('Prepare metrics')
-    lbls, preds, accuracy, acc_update_op = prepare_metrics(FLAGS.dataset_name)
+    (lbls, preds,accuracy,
+     acc_update_op) = prepare_metrics(FLAGS.dataset_name,
+                                      labels_offset=FLAGS.labels_offset)
 
     tf.logging.info('Prepare Saver')
     saver = tf.train.Saver()
@@ -117,7 +126,7 @@ def main(_):
                                                 FLAGS.batch_size))
       images, labels = sess.run(next_batch)
       ys = sess.run(y, feed_dict={x: images})
-      sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
+      sess.run(acc_update_op, feed_dict={lbls: labels, preds: np.squeeze(ys)})
       summary = sess.run(summaries)
       if FLAGS.summary_dir:
         summary_writer.add_summary(summary, step)

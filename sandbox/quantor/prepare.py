@@ -7,7 +7,8 @@ import tensorflow as tf
 
 
 def prepare_cifar10_dataset(filenames, width, height,
-                            batch_size=1, inference_type='float'):
+                            batch_size=1, labels_offset=0,
+                            inference_type='float'):
   def _read_tfrecord(example_proto):
     feature_to_type = {
         "image/class/label": tf.FixedLenFeature([1], dtype=tf.int64),
@@ -48,7 +49,8 @@ def prepare_cifar10_dataset(filenames, width, height,
 
 
 def prepare_imagenet_dataset(filenames, width, height,
-                             batch_size=1, inference_type='float'):
+                             batch_size=1, labels_offset=0,
+                             inference_type='float'):
   def _read_tfrecord(example_proto):
     feature_to_type = {
         "image/class/label": tf.FixedLenFeature([1], dtype=tf.int64),
@@ -58,6 +60,7 @@ def prepare_imagenet_dataset(filenames, width, height,
     label = parsed_features["image/class/label"]
     rawpng = parsed_features["image/encoded"]
     image_decoded = tf.image.decode_png(rawpng, channels=3)
+    label -= labels_offset
     return image_decoded, label
 
   def _preprocessing(image, label):
@@ -110,27 +113,29 @@ def prepare_tfrecords(dataset_name, dataset_dir, dataset_split_name):
 
 
 def prepare_dataset(filenames, dataset_name, input_size,
-                    batch_size=1, inference_type='float'):
+                    batch_size=1, labels_offset=0, inference_type='float'):
   with tf.name_scope("datasets"):
     if dataset_name == 'imagenet':
       return prepare_imagenet_dataset(filenames, input_size, input_size,
                                       batch_size=batch_size,
+                                      labels_offset=labels_offset,
                                       inference_type=inference_type)
     elif dataset_name == 'cifar10':
       return prepare_cifar10_dataset(filenames, 32, 32,
                                      batch_size=batch_size,
+                                     labels_offset=labels_offset,
                                      inference_type=inference_type)
     else:
       tf.logging.error('Could not found preprocessing for dataset {}'.format(dataset_name))
       return None
 
 
-def prepare_metrics(dataset_name, inference_type='float'):
+def prepare_metrics(dataset_name, labels_offset=0, inference_type='float'):
   with tf.name_scope("metrics"):
     if dataset_name == 'imagenet':
-      pred_shape = [None, 1001]
+      pred_shape = [None, 1001 - labels_offset]
     elif dataset_name == 'cifar10':
-      pred_shape = [None, 10]
+      pred_shape = [None, 10 - labels_offset]
     else:
       tf.logging.error('Could not found metrics for dataset {}'.format(dataset_name))
       return None
