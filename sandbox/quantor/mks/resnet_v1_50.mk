@@ -68,20 +68,20 @@ quantor_resnet_v1_50_frozen:
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
-		--output_node_name=InceptionResnetV2/Logits/Predictions \
-		--input_size=299 \
+		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--output_dir=$(QUANTOR_BASE)/resnet_v1_50/quantor --max_num_batches=200
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_50/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
-		--output_node_names=InceptionResnetV2/Logits/Predictions
+		--output_node_names=resnet_v1_50/logits/BiasAdd
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb
 	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=InceptionResnetV2/Logits/Predictions \
-		--input_size=224 \
+		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb --max_num_batches=200
 
 toco_quantor_resnet_v1_50:
