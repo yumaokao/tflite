@@ -23,6 +23,14 @@ tf.app.flags.DEFINE_string(
     'dataset_split_name', 'test', 'The name of the train/test split.')
 tf.app.flags.DEFINE_string(
     'dataset_dir', None, 'The directory where the dataset files are stored.')
+tf.app.flags.DEFINE_integer(
+    'labels_offset', 0,
+    'An offset for the labels in the dataset. This flag is primarily used to '
+    'evaluate the VGG and ResNet architectures which do not use a background '
+    'class for the ImageNet dataset.')
+tf.app.flags.DEFINE_string(
+    'preprocess_name', 'inception', 'The name of the preprocessing method '
+    'either inception [-1.0, 1.0] or vgg [-105.0, 141.0]')
 tf.app.flags.DEFINE_string(
     'tflite_model', None, 'The TFLite model file is stored with toco.')
 tf.app.flags.DEFINE_string(
@@ -70,7 +78,9 @@ def main(_):
 
   filenames = tf.placeholder(tf.string, shape=[None])
   dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                            preprocess_name=FLAGS.preprocess_name,
                             batch_size=FLAGS.batch_size,
+                            labels_offset=FLAGS.labels_offset,
                             inference_type=FLAGS.inference_type)
   iterator = dataset.make_initializable_iterator()
   next_batch = iterator.get_next()
@@ -84,8 +94,10 @@ def main(_):
                                      FLAGS.tflite_model, FLAGS.inference_type)
 
   tf.logging.info('Prepare metrics')
-  lbls, preds, accuracy, acc_update_op = prepare_metrics(
-          FLAGS.dataset_name, inference_type=FLAGS.inference_type)
+  (lbls, preds,accuracy,
+   acc_update_op) = prepare_metrics(FLAGS.dataset_name,
+                                    labels_offset=FLAGS.labels_offset,
+                                    inference_type=FLAGS.inference_type)
 
   # Initialize `iterator` with dataset.
   with tf.Session() as sess:
@@ -103,7 +115,7 @@ def main(_):
       np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
       subprocess.check_output(cmds)
       ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
-      sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
+      sess.run(acc_update_op, feed_dict={lbls: labels, preds: np.squeeze(ys)})
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
 
