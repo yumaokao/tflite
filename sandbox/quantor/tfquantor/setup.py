@@ -15,7 +15,7 @@ setup(
   license='LICENSE.txt',
   url='http://www.github.com',
 
-  packages=['tfquantor'],
+  packages=['tfquantor', 'tfquantor.quantize'],
   install_requires=[
       'tensorflow>=1.5.0rc0',
   ],
