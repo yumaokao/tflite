@@ -53,6 +53,13 @@ freeze_resnet_v1_50:
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
 		--output_node_names=resnet_v1_50/logits/BiasAdd
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/transform_graph \
+		--in_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
+		--out_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb \
+		--inputs=input \
+		--outputs=resnet_v1_50/logits/BiasAdd \
+		--transforms=fold_old_batch_norms
+	@ mv $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
 
 eval_resnet_v1_50_frozen:
