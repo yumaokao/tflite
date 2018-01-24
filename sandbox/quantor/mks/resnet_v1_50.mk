@@ -58,7 +58,7 @@ freeze_resnet_v1_50:
 		--out_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb \
 		--inputs=input \
 		--outputs=resnet_v1_50/logits/BiasAdd \
-		--transforms=fold_old_batch_norms
+		--transforms='fold_old_batch_norms fold_batch_norms'
 	@ mv $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
 
@@ -91,17 +91,17 @@ quantor_resnet_v1_50_frozen:
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb --max_num_batches=200
 
+# --default_ranges_min=0 --default_ranges_max=10
 toco_quantor_resnet_v1_50:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_50/quantor/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.lite \
-		--mean_values=128 --std_values=127 \
+		--mean_values=114.8 --std_values=1.0 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=InceptionResnetV2/Logits/Predictions --input_shapes=1,299,299,3 \
-		--default_ranges_min=0 --default_ranges_max=10 \
+		--output_arrays=resnet_v1_50/logits/BiasAdd --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_50/quantor/dots
 
 toco_resnet_v1_50:

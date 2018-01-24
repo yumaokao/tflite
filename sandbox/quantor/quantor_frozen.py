@@ -6,8 +6,8 @@ import os
 import math
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.quantize as qg
-# import tfquantor as qg
+# import tensorflow.contrib.quantize as qg
+import tfquantor as qg
 
 
 from prepare import prepare_dataset, prepare_metrics, prepare_tfrecords

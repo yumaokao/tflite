@@ -161,6 +161,7 @@ class _QuantizeContext(object):
     self.quantize_folded_weights_use_ema = quantize_folded_weights_use_ema
     self.input_to_ops_map = input_to_ops.InputToOps(graph)
     self.add_contexts = set()
+    self.quantized_scopes = set()
 
   def QuantizeAddContexts(self):
     """Quantizes all add ops in self.add_contexts."""
@@ -364,6 +365,10 @@ class _QuantizeContext(object):
     """
     scope = context + '/' + name
     inputs = producer.outputs[0]
+    # Skip already quantized ops
+    if scope in self.quantized_scopes:
+      return
+
     if moving_avg:
       quant = (quant_ops.MovingAvgQuantize(
           inputs,
@@ -387,6 +392,7 @@ class _QuantizeContext(object):
           updates_collection=_UPDATE_QUANT_OPS,
           vars_collection=self.vars_collection,
           scope=scope))
+    self.quantized_scopes.add(scope)
 
     if delay_requested and self.quant_delay and self.quant_delay > 0:
       activate_quant = math_ops.greater_equal(

@@ -40,7 +40,7 @@ def prepare_cifar10_dataset(filenames, width, height,
     return image, label
 
   # YMK: use _preprocessing_vgg for vgg/resnet
-  #      for toco with --mean_value=-114.8 --std_value=1.0
+  #      for toco with --mean_value=114.8 --std_value=1.0
   #      slim eval choose _R_MEAN = 123.68, _G_MEAN = 116.78, _B_MEAN = 103.94
   #      however per_channel not yet supported, so _ALL_MEAN = 114.8
   def _preprocessing_vgg(image, label):
