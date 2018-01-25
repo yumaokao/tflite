@@ -112,7 +112,7 @@ toco_resnet_v1_50:
 		--output_file=$(QUANTOR_BASE)/resnet_v1_50/float_model.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=InceptionResnetV2/Logits/Predictions --input_shapes=1,299,299,3 \
+		--output_arrays=resnet_v1_50/logits/BiasAdd --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_50/dots
 
 eval_quantor_resnet_v1_50_tflite:
@@ -123,6 +123,7 @@ eval_quantor_resnet_v1_50_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
+		--labels_offset=1 --preprocess_name=vgg \
 		--max_num_batches=1000 --input_size=299
 
 eval_resnet_v1_50_tflite:
@@ -132,6 +133,7 @@ eval_resnet_v1_50_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/float_model.lite --tensorflow_dir=$(TF_BASE) \
+		--labels_offset=1 --preprocess_name=vgg \
 		--max_num_batches=1000 --input_size=299
 
 
