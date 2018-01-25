@@ -115,6 +115,11 @@ def main(_):
       np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
       subprocess.check_output(cmds)
       ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
+
+      # if output is 4-dim, reshape to 2-dim
+      if ys.ndim == 4:
+        ys = np.reshape(ys, (-1, ys.shape[-1]))
+
       sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))

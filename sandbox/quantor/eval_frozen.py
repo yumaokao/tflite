@@ -114,7 +114,12 @@ def main(_):
         print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)
       ys = sess.run(y, feed_dict={x: images})
-      sess.run(acc_update_op, feed_dict={lbls: labels, preds: np.squeeze(ys)})
+
+      # if output is 4-dim, reshape to 2-dim
+      if ys.ndim == 4:
+        ys = np.reshape(ys, (-1, ys.shape[-1]))
+
+      sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
       if FLAGS.summary_dir:
         summary = sess.run(summaries)
         summary_writer.add_summary(summary, step)
