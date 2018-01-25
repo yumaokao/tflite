@@ -52,12 +52,12 @@ freeze_resnet_v1_50:
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
-		--output_node_names=resnet_v1_50/logits/BiasAdd
+		--output_node_names=resnet_v1_50/predictions/Reshape_1
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/transform_graph \
 		--in_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
 		--out_graph=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb \
 		--inputs=input \
-		--outputs=resnet_v1_50/logits/BiasAdd \
+		--outputs=resnet_v1_50/predictions/Reshape_1 \
 		--transforms='fold_old_batch_norms fold_batch_norms'
 	@ mv $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
@@ -66,7 +66,7 @@ eval_resnet_v1_50_frozen:
 	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb --max_num_batches=200
 
@@ -75,19 +75,19 @@ quantor_resnet_v1_50_frozen:
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
-		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--output_dir=$(QUANTOR_BASE)/resnet_v1_50/quantor --max_num_batches=200
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_50/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
-		--output_node_names=resnet_v1_50/logits/BiasAdd
+		--output_node_names=resnet_v1_50/predictions/Reshape_1
 	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb
 	@ python $(QUANTOR_BASE)/eval_frozen.py \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb --max_num_batches=200
 
