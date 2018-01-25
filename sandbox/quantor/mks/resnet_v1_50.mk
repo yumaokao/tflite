@@ -101,7 +101,7 @@ toco_quantor_resnet_v1_50:
 		--mean_values=114.8 --std_values=1.0 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=resnet_v1_50/logits/BiasAdd --input_shapes=1,224,224,3 \
+		--output_arrays=resnet_v1_50/predictions/Reshape_1 --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_50/quantor/dots
 
 toco_resnet_v1_50:
@@ -112,7 +112,7 @@ toco_resnet_v1_50:
 		--output_file=$(QUANTOR_BASE)/resnet_v1_50/float_model.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=resnet_v1_50/logits/BiasAdd --input_shapes=1,224,224,3 \
+		--output_arrays=resnet_v1_50/predictions/Reshape_1 --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_50/dots
 
 eval_quantor_resnet_v1_50_tflite:
@@ -146,7 +146,7 @@ compare_toco_resnet_v1_50_float:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
 		--max_num_batches=100 \
-		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=float \
 		--input_size=224 \
@@ -159,7 +159,7 @@ compare_toco_resnet_v1_50_uint8:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
 		--max_num_batches=100 \
-		--output_node_name=resnet_v1_50/logits/BiasAdd \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=uint8 \
 		--input_size=224 \
