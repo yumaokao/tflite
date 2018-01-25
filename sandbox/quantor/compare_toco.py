@@ -48,6 +48,14 @@ tf.app.flags.DEFINE_float(
     'evaluation_threshold', 0.01, 'The evaluation threshold (for "diff_threshold" evaluation_mode only).')
 tf.app.flags.DEFINE_string(
     'extra_toco_flags', '', 'The extra command for toco tool.')
+tf.app.flags.DEFINE_integer(
+    'labels_offset', 0,
+    'An offset for the labels in the dataset. This flag is primarily used to '
+    'evaluate the VGG and ResNet architectures which do not use a background '
+    'class for the ImageNet dataset.')
+tf.app.flags.DEFINE_string(
+    'preprocess_name', 'inception', 'The name of the preprocessing method '
+    'either inception [-1.0, 1.0] or vgg [-105.0, 141.0]')
 tf.app.flags.DEFINE_boolean(
     'dump_data', False, 'Whether to dump the input and output data for each batch or not.')
 
@@ -56,11 +64,11 @@ EVAL_MODE = ['statistics', 'diff_threshold', 'top1', 'accuracy']
 
 def get_statistics(numpy_data):
   data = []
-  data.append('Q0: {}'.format(np.percentile(numpy_data, 0)))
-  data.append('Q1: {}'.format(np.percentile(numpy_data, 25)))
-  data.append('Q2: {}'.format(np.percentile(numpy_data, 50)))
-  data.append('Q3: {}'.format(np.percentile(numpy_data, 75)))
-  data.append('Q4: {}'.format(np.percentile(numpy_data, 100)))
+  data.append('Q0: {:.6f}'.format(np.percentile(numpy_data, 0)))
+  data.append('Q1: {:.6f}'.format(np.percentile(numpy_data, 25)))
+  data.append('Q2: {:.6f}'.format(np.percentile(numpy_data, 50)))
+  data.append('Q3: {:.6f}'.format(np.percentile(numpy_data, 75)))
+  data.append('Q4: {:.6f}'.format(np.percentile(numpy_data, 100)))
   return data
 
 def get_tflite_quantization_info(work_dir):
@@ -105,6 +113,7 @@ def process_toco(work_dir):
     if any([e_flag.split('=')[0] in flag for flag in cmd]):
       # TODO: remove the origin flag when conflicts happen
       tf.logging.warning('Warning: Extra toco flag "{}" has been set to "{}".'.format(e_flag.split('=')[0][2:], e_flag.split('=')[1]))
+      cmd.append(e_flag)
     else:
       cmd.append(e_flag)
   subprocess.check_output(cmd)
@@ -166,11 +175,15 @@ def main(_):
   tf.logging.info('Prepare Dataset from tfrecord[0] '.format(tfrecords[0]))
   filenames = tf.placeholder(tf.string, shape=[None])
   dataset_tf = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                            labels_offset=FLAGS.labels_offset,
+                            preprocess_name=FLAGS.preprocess_name,
                             batch_size=FLAGS.batch_size, inference_type='float')
   iterator_tf = dataset_tf.make_initializable_iterator()
   next_batch_tf = iterator_tf.get_next()
 
   dataset_lite = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
+                            labels_offset=FLAGS.labels_offset,
+                            preprocess_name=FLAGS.preprocess_name,
                             batch_size=FLAGS.batch_size, inference_type=FLAGS.toco_inference_type)
   iterator_lite = dataset_lite.make_initializable_iterator()
   next_batch_lite = iterator_lite.get_next()
@@ -182,8 +195,8 @@ def main(_):
   toco_cmds = process_toco(work_dir)
 
   tf.logging.info('Prepare metrics')
-  lbls_tf, preds_tf, accuracy_tf, acc_update_op_tf = prepare_metrics(FLAGS.dataset_name)
-  lbls_lite, preds_lite, accuracy_lite, acc_update_op_lite = prepare_metrics(FLAGS.dataset_name)
+  lbls_tf, preds_tf, accuracy_tf, acc_update_op_tf = prepare_metrics(FLAGS.dataset_name, labels_offset=FLAGS.labels_offset)
+  lbls_lite, preds_lite, accuracy_lite, acc_update_op_lite = prepare_metrics(FLAGS.dataset_name, labels_offset=FLAGS.labels_offset)
 
   if FLAGS.summary_dir:
     tf.logging.info('Prepare summary writer')

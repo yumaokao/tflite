@@ -124,7 +124,7 @@ eval_quantor_resnet_v1_50_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=1000 --input_size=299
+		--max_num_batches=1000 --input_size=224
 
 eval_resnet_v1_50_tflite:
 	@ echo $@
@@ -134,7 +134,7 @@ eval_resnet_v1_50_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=1000 --input_size=299
+		--max_num_batches=1000 --input_size=224
 
 
 ########################################################
@@ -145,12 +145,13 @@ compare_toco_resnet_v1_50_float:
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
-		--max_num_batches=100 \
-		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
+		--max_num_batches=10 \
+		--output_node_name=resnet_v1_50/Pad \
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=float \
 		--input_size=224 \
-		--evaluation_mode=accuracy \
+		--evaluation_mode=statistics \
+		--labels_offset=1 --preprocess_name=vgg \
 		--dump_data=False
 
 compare_toco_resnet_v1_50_uint8:
@@ -158,10 +159,17 @@ compare_toco_resnet_v1_50_uint8:
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
-		--max_num_batches=100 \
-		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
+		--max_num_batches=10 \
 		--tensorflow_dir=$(TF_BASE) \
+		--output_node_name=resnet_v1_50/Pad \
 		--toco_inference_type=uint8 \
 		--input_size=224 \
-		--evaluation_mode=accuracy \
-		--dump_data=False
+		--evaluation_mode=statistics \
+		--labels_offset=1 --preprocess_name=vgg \
+		--dump_data=False \
+		--extra_toco_flags='--mean_values=114.8 --std_values=1.0'
+
+		#--output_node_name=resnet_v1_50/Pad \
+		#--output_node_name=resnet_v1_50/conv1/act_quant/FakeQuantWithMinMaxVars
+		#--output_node_name=resnet_v1_50/block1/unit_1/bottleneck_v1/add_quant/FakeQuantWithMinMaxVars
+		#--output_node_name=resnet_v1_50/predictions/Reshape_1 \
