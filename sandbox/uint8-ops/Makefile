@@ -12,7 +12,7 @@ UINT8_TARGETS := depth_to_space
 VARIABLE_TARGETS := conv2d depthwise_conv2d fully_connected
 VARIABLE_TARGETS += concat add multiply
 FIXED_TARGETS := softmax max_pool avg_pool space_to_depth
-FIXED_TARGETS += resize_bilinear
+FIXED_TARGETS += resize_bilinear mean
 
 .PHONY: $(UINT8_TARGETS)
 .PHONY: $(VARIABLE_TARGETS)
