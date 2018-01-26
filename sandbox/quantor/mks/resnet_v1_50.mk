@@ -146,7 +146,7 @@ compare_toco_resnet_v1_50_float:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
 		--max_num_batches=10 \
-		--output_node_name=resnet_v1_50/Pad \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=float \
 		--input_size=224 \
@@ -161,15 +161,10 @@ compare_toco_resnet_v1_50_uint8:
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
 		--max_num_batches=10 \
 		--tensorflow_dir=$(TF_BASE) \
-		--output_node_name=resnet_v1_50/Pad \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
 		--toco_inference_type=uint8 \
 		--input_size=224 \
 		--evaluation_mode=statistics \
 		--labels_offset=1 --preprocess_name=vgg \
 		--dump_data=False \
 		--extra_toco_flags='--mean_values=114.8 --std_values=1.0'
-
-		#--output_node_name=resnet_v1_50/Pad \
-		#--output_node_name=resnet_v1_50/conv1/act_quant/FakeQuantWithMinMaxVars
-		#--output_node_name=resnet_v1_50/block1/unit_1/bottleneck_v1/add_quant/FakeQuantWithMinMaxVars
-		#--output_node_name=resnet_v1_50/predictions/Reshape_1 \

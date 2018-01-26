@@ -110,9 +110,11 @@ def process_toco(work_dir):
 
   extra_flags = FLAGS.extra_toco_flags.split()
   for e_flag in extra_flags:
-    if any([e_flag.split('=')[0] in flag for flag in cmd]):
-      # TODO: remove the origin flag when conflicts happen
-      tf.logging.warning('Warning: Extra toco flag "{}" has been set to "{}".'.format(e_flag.split('=')[0][2:], e_flag.split('=')[1]))
+    prev_flag = [flag for flag in cmd if e_flag.split('=')[0] in flag]
+    if any(prev_flag):
+      # remove the origin flag when conflicts happen
+      for old_flag in prev_flag:
+        cmd.remove(old_flag)
       cmd.append(e_flag)
     else:
       cmd.append(e_flag)
