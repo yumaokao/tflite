@@ -231,6 +231,10 @@ class _QuantizeContext(object):
     if add_op:
       original_context = context
       context = add_context
+      # Since add_context follows an activation_op which will have an
+      # act_quant, remove it from self.add_contexts.
+      if add_context in self.add_contexts:
+        self.add_contexts.remove(add_context)
 
     # Quantize activation outputs.
     consumer_ops = self.input_to_ops_map.ConsumerOperations(activation_op)
