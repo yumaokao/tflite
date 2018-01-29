@@ -50,6 +50,7 @@ freeze_inception_v3:
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inception_v3/inception_v3_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/inception_v3/inception_v3.ckpt \
+		--checkpoint_version=1 \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb \
 		--output_node_names=InceptionV3/Predictions/Reshape
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
