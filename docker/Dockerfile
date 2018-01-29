@@ -25,7 +25,7 @@ RUN apt-get update && \
     echo "tflite ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/tflite && \
     chmod 0440 /etc/sudoers.d/tflite && \
     su - tflite -c /tmp/setup-ubuntu.sh && \
-    su - tflite -c /tmp/setup-android-sdk.sh && \
+    # su - tflite -c /tmp/setup-android-sdk.sh && \
     # Removed unused parts to make a smaller Docker image:
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

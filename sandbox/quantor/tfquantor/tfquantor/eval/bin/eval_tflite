@@ -1,17 +1,21 @@
+#!/usr/bin/env python
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import os
 import math
+import tempfile
+import subprocess
 import numpy as np
 import tensorflow as tf
 
-from prepare import prepare_dataset, prepare_metrics, prepare_tfrecords
+from tfquantor.eval.prepare import prepare_dataset, prepare_tfrecords
+from tfquantor.eval.prepare import prepare_metrics
 
 
 tf.app.flags.DEFINE_integer(
-    'batch_size', 50, 'The number of samples in each batch.')
+    'batch_size', 1, 'The number of samples in each batch.')
 tf.app.flags.DEFINE_integer(
     'max_num_batches', None,
     'Max number of batches to evaluate by default use all.')
@@ -30,13 +34,11 @@ tf.app.flags.DEFINE_string(
     'preprocess_name', 'inception', 'The name of the preprocessing method '
     'either inception [-1.0, 1.0] or vgg [-105.0, 141.0]')
 tf.app.flags.DEFINE_string(
-    'summary_dir', None, 'The directory where summaries save.')
+    'tflite_model', None, 'The TFLite model file is stored with toco.')
 tf.app.flags.DEFINE_string(
-    'frozen_pb', None, 'The GraphDef file are stored with freeze_graph.')
+    'inference_type', 'float', 'The inference type to run the tflie model')
 tf.app.flags.DEFINE_string(
-    'input_node_name', 'input', 'The name of the input node.')
-tf.app.flags.DEFINE_string(
-    'output_node_name', None, 'The name of the output node.')
+    'tensorflow_dir', 'string', 'The directory where the tensorflow are stored')
 tf.app.flags.DEFINE_integer(
     'input_size', 299, 'The width/height of the input image.')
 FLAGS = tf.app.flags.FLAGS
@@ -49,13 +51,21 @@ def load_graph_def(pb):
   return graph_def
 
 
+def prepare_run_tflite_commands(eval_dir, tflite_model, inference_type):
+  return [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
+          '--tflite_file={}'.format(tflite_model),
+          '--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npy')),
+          '--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npy')),
+          '--inference_type={}'.format(inference_type)]
+
+
 def main(_):
   if not FLAGS.dataset_dir:
     raise ValueError('You must supply the dataset directory with --dataset_dir')
-  if not FLAGS.frozen_pb:
-    raise ValueError('You must supply the frozen pb with --frozen_pb')
-  if not FLAGS.output_node_name:
-    raise ValueError('You must supply the output node name with --output_node_name')
+  if not FLAGS.tflite_model:
+    raise ValueError('You must supply the frozen pb with --tflite_model')
+  if FLAGS.inference_type != 'float' and FLAGS.inference_type != 'uint8':
+    raise ValueError('--inference_type must be one of float or uint8')
 
   tf.logging.set_verbosity(tf.logging.INFO)
   tfrecords = prepare_tfrecords(FLAGS.dataset_name, FLAGS.dataset_dir,
@@ -68,62 +78,53 @@ def main(_):
                        for r in tfrecords])
     num_batches = int(math.ceil(num_records / float(FLAGS.batch_size)))
 
-  #  for example in tf.python_io.tf_record_iterator(tfrecords[0]):
-	#  result = tf.train.Example.FromString(example)
-	#  print(result)
-	#  break
-
-  tf.logging.info('Prepare Dataset from tfrecord[0] '.format(tfrecords[0]))
   filenames = tf.placeholder(tf.string, shape=[None])
   dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
                             preprocess_name=FLAGS.preprocess_name,
                             batch_size=FLAGS.batch_size,
-                            labels_offset=FLAGS.labels_offset)
+                            labels_offset=FLAGS.labels_offset,
+                            inference_type=FLAGS.inference_type)
   iterator = dataset.make_initializable_iterator()
   next_batch = iterator.get_next()
 
-  tf.logging.info('Load GraphDef from frozen_pb {}'.format(FLAGS.frozen_pb))
-  graph_def = load_graph_def(FLAGS.frozen_pb)
+  tf.logging.info('Prepare run_tflite')
+  eval_dir = os.path.dirname(FLAGS.tflite_model)
+  eval_dir = os.path.join(eval_dir, 'eval_tflite')
+  if not os.path.exists(eval_dir):
+    os.makedirs(eval_dir)
+  cmds = prepare_run_tflite_commands(eval_dir,
+                                     FLAGS.tflite_model, FLAGS.inference_type)
 
   tf.logging.info('Prepare metrics')
   (lbls, preds,accuracy,
    acc_update_op) = prepare_metrics(FLAGS.dataset_name,
-                                    labels_offset=FLAGS.labels_offset)
+                                    labels_offset=FLAGS.labels_offset,
+                                    inference_type=FLAGS.inference_type)
 
-  if FLAGS.summary_dir:
-    tf.logging.info('Prepare summary writer')
-    summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
-    summaries = tf.summary.merge_all()
-
-  # Initialize `iterator` with training data.
+  # Initialize `iterator` with dataset.
   with tf.Session() as sess:
     sess.run(tf.local_variables_initializer())
     sess.run(iterator.initializer, feed_dict={filenames: tfrecords})
-
-    tf.import_graph_def(graph_def, name='')
-    graph = sess.graph
-
-    # get x and y
-    x = graph.get_tensor_by_name('{}:0'.format(FLAGS.input_node_name))
-    y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
 
     for step in range(num_batches):
       if (step % 100) == 0:
         print('{}/{} with batch_size {}'.format(step, num_batches,
                                                 FLAGS.batch_size))
+        # print(' '.join(cmds))
         print('  Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
       images, labels = sess.run(next_batch)
-      ys = sess.run(y, feed_dict={x: images})
-      sess.run(acc_update_op, feed_dict={lbls: labels, preds: np.squeeze(ys)})
-      if FLAGS.summary_dir:
-        summary = sess.run(summaries)
-        summary_writer.add_summary(summary, step)
+
+      np.save(os.path.join(eval_dir, 'batch_xs.npy'), images)
+      subprocess.check_output(cmds)
+      ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
+
+      # if output is 4-dim, reshape to 2-dim
+      if ys.ndim == 4:
+        ys = np.reshape(ys, (-1, ys.shape[-1]))
+
+      sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
 
     print('Accuracy: [{:.4f}]'.format(sess.run(accuracy)))
-    # import ipdb
-    # ipdb.set_trace()
-    if FLAGS.summary_dir:
-      summary_writer.add_graph(sess.graph)
 
 
 if __name__ == '__main__':

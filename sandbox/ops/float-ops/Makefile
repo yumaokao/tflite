@@ -5,10 +5,26 @@ TFLITE_ROOT_PATH := /home/tflite
 endif
 
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
-OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/quant-ops
+OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/ops/float-ops
 
-QUANT_TARGETS := dequantize quantize_v2 quantize
-.PHONY: $(QUANT_TARGETS)
+VARIABLE_TARGETS := fully_connected concat multiply
+VARIABLE_TARGETS += conv2d depthwise_conv2d conv2d_transpose
+FIXED_TARGETS := avg_pool max_pool l2_pool
+FIXED_TARGETS += relu relu6 sigmoid tanh softmax floor
+FIXED_TARGETS += resize_bilinear mean
+FIXED_TARGETS += space_to_depth depth_to_space
+FIXED_TARGETS += l2_normalize local_response_normalization
+
+# float-ops not passed with compare_tflite
+#    1. no tflite kernels:
+# 	floor
+#
+#    2. --allow_custom_ops:
+#       conv2d_transpose -> TransposeConv
+
+
+.PHONY: $(VARIABLE_TARGETS)
+.PHONY: $(FIXED_TARGETS)
 
 ## functions ##
 define freeze_graph
@@ -35,20 +51,6 @@ define toco
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
 endef
 
-define toco_dequantize
-	@ echo "toco"
-	@ mkdir -p $1/dots
-	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
-		--input_file=$1/$2 \
-		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
-		--output_file=$1/export/model.lite \
-		--inference_type=FLOAT \
-		--inference_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
-		--output_arrays=$4 --input_shapes=10,784 \
-		--dump_graphviz=$1/dots $5
-	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
-endef
-
 define compare_tflite
 	@ echo "compare_tflite"
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/compare_tflite \
@@ -59,8 +61,9 @@ endef
 
 
 all:
-	@ echo "all quant-ops"
-	@ echo $(QUANT_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	@ echo "all float-ops"
+	@ echo $(VARIABLE_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
+	@ echo $(FIXED_TARGETS) | tr '\n' '\0' | xargs -d ' ' -i make {}
 
 clean:
 	@ rm -rf */summary */dots */export */ckpts */*.pb
@@ -71,14 +74,16 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
 
-dequantize:
+
+$(VARIABLE_TARGETS):
 	@ mkdir -p $@/export
-	@ python $@/$@.py
-	$(call toco_dequantize,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
+	@ python float-ops.py $@
+	$(call freeze_graph,$(OPS_BASE)/$@,ys)
+	$(call toco,$(OPS_BASE)/$@,frozen.pb,Placeholder,ys,)
 	$(call compare_tflite,$(OPS_BASE)/$@)
 
-quantize_v2 quantize:
+$(FIXED_TARGETS):
 	@ mkdir -p $@/export
-	@ python $@/$@.py
+	@ python float-ops.py $@
 	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
 	$(call compare_tflite,$(OPS_BASE)/$@)

@@ -103,7 +103,7 @@ toco_mobilenet_v1:
 
 eval_frozen_mobilenet_v1:
 	@ echo $@
-	@ python eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=MobilenetV1/Predictions/Reshape \
@@ -112,7 +112,7 @@ eval_frozen_mobilenet_v1:
 
 eval_tflite_mobilenet_v1:
 	@ echo $@
-	@ python eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=train_mobilenet_v1/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -135,7 +135,7 @@ eval_mobilenet_v1_quantize: ${MOBILENET_V1_QUANTIZE_EVAL_TARGETS}
 eval_slim_mobilenet_v1_quantize:
 	@ PYTHONPATH=${TF_SLIM_BASE} \
 	  python eval_image_classifier_quantize.py \
-		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-2124479 \
+		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-2902390 \
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--dataset_name=imagenet \
 		--dataset_split_name=validation \
@@ -149,7 +149,7 @@ freeze_mobilenet_v1_quantize:
 		--output_file=$(ROOT_DIR)/train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb \
-		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-2124479 \
+		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-2902390 \
 		--input_binary=true \
 	        --output_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb \
 		--output_node_names=MobilenetV1/Predictions/Reshape
@@ -168,7 +168,7 @@ toco_mobilenet_v1_quantize:
 
 eval_frozen_mobilenet_v1_quantize:
 	@ echo $@
-	@ python eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=MobilenetV1/Predictions/Reshape \
@@ -177,7 +177,7 @@ eval_frozen_mobilenet_v1_quantize:
 
 eval_tflite_mobilenet_v1_quantize:
 	@ echo $@
-	@ python eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=train_mobilenet_v1_quantize/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -196,7 +196,7 @@ download_google_mobilenet_v1_quantize:
 
 eval_tflite_gogole_mobilenet_v1_quantize:
 	@ echo $@
-	@ python eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=google_mobilenet_v1_quantize/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \

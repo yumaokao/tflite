@@ -6,13 +6,13 @@ TFLITE_ROOT_PATH := /home/weiche/workspace/tensor_lab/tflite
 endif
 
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
-OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/uint8-ops
+OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/ops/uint8-ops
 
 UINT8_TARGETS := depth_to_space
 VARIABLE_TARGETS := conv2d depthwise_conv2d fully_connected
 VARIABLE_TARGETS += concat add multiply
 FIXED_TARGETS := softmax max_pool avg_pool space_to_depth
-FIXED_TARGETS += resize_bilinear
+FIXED_TARGETS += resize_bilinear mean
 
 .PHONY: $(UINT8_TARGETS)
 .PHONY: $(VARIABLE_TARGETS)
