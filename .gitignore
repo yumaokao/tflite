@@ -49,25 +49,33 @@ sandbox/mnist/*/dots
 sandbox/*.apk
 
 # float-ops ckpts
-sandbox/float-ops/*/*.pb
-sandbox/float-ops/*/ckpts
-sandbox/float-ops/*/export
-sandbox/float-ops/*/summary
-sandbox/float-ops/*/dots
-sandbox/float-ops/*/*.pyc
+sandbox/ops/float-ops/*/*.pb
+sandbox/ops/float-ops/*/ckpts
+sandbox/ops/float-ops/*/export
+sandbox/ops/float-ops/*/summary
+sandbox/ops/float-ops/*/dots
+sandbox/ops/float-ops/*/*.pyc
 
 # quant-ops ckpts
-sandbox/quant-ops/*/*.pb
-sandbox/quant-ops/*/ckpts
-sandbox/quant-ops/*/export
-sandbox/quant-ops/*/summary
-sandbox/quant-ops/*/dots
-sandbox/quant-ops/*/*.pyc
+sandbox/ops/quant-ops/*/*.pb
+sandbox/ops/quant-ops/*/ckpts
+sandbox/ops/quant-ops/*/export
+sandbox/ops/quant-ops/*/summary
+sandbox/ops/quant-ops/*/dots
+sandbox/ops/quant-ops/*/*.pyc
 
 # rnn-ops ckpts
-sandbox/rnn-ops/*/*.pb
-sandbox/rnn-ops/*/ckpts
-sandbox/rnn-ops/*/export
-sandbox/rnn-ops/*/summary
-sandbox/rnn-ops/*/dots
-sandbox/rnn-ops/*/*.pyc
+sandbox/ops/rnn-ops/*/*.pb
+sandbox/ops/rnn-ops/*/ckpts
+sandbox/ops/rnn-ops/*/export
+sandbox/ops/rnn-ops/*/summary
+sandbox/ops/rnn-ops/*/dots
+sandbox/ops/rnn-ops/*/*.pyc
+
+# uint8-ops ckpts
+sandbox/ops/uint8-ops/*/*.pb
+sandbox/ops/uint8-ops/*/ckpts
+sandbox/ops/uint8-ops/*/export
+sandbox/ops/uint8-ops/*/summary
+sandbox/ops/uint8-ops/*/dots
+sandbox/ops/uint8-ops/*/*.pyc
