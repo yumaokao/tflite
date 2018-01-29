@@ -5,7 +5,7 @@ TFLITE_ROOT_PATH := /home/tflite
 endif
 
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
-OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/rnn-ops
+OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/ops/rnn-ops
 TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 RNN_TARGETS := basic_lstm_cell gru_cell basic_rnn_cell
