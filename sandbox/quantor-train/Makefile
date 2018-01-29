@@ -103,7 +103,7 @@ toco_mobilenet_v1:
 
 eval_frozen_mobilenet_v1:
 	@ echo $@
-	@ python eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=MobilenetV1/Predictions/Reshape \
@@ -112,7 +112,7 @@ eval_frozen_mobilenet_v1:
 
 eval_tflite_mobilenet_v1:
 	@ echo $@
-	@ python eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=train_mobilenet_v1/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -168,7 +168,7 @@ toco_mobilenet_v1_quantize:
 
 eval_frozen_mobilenet_v1_quantize:
 	@ echo $@
-	@ python eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=MobilenetV1/Predictions/Reshape \
@@ -177,7 +177,7 @@ eval_frozen_mobilenet_v1_quantize:
 
 eval_tflite_mobilenet_v1_quantize:
 	@ echo $@
-	@ python eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=train_mobilenet_v1_quantize/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -196,7 +196,7 @@ download_google_mobilenet_v1_quantize:
 
 eval_tflite_gogole_mobilenet_v1_quantize:
 	@ echo $@
-	@ python eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=google_mobilenet_v1_quantize/$@/summary \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
