@@ -16,7 +16,9 @@ setup(
   url='http://www.github.com',
 
   packages=['tfquantor', 'tfquantor.quantize', 'tfquantor.eval'],
-  scripts=['tfquantor/eval/bin/eval_frozen', 'tfquantor/eval/bin/eval_tflite'],
+  scripts=['tfquantor/eval/bin/eval_frozen',
+           'tfquantor/eval/bin/eval_tflite',
+           'tfquantor/eval/bin/quantor_frozen'],
   install_requires=[
     'tensorflow>=1.5.0rc1',
   ],
