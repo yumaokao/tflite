@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
   name='tfquantor',
-  version='0.1.2',
+  version='0.1.3',
   author='yumaokao',
   author_email='yumao.kao@mediatek.com',
   description='Quantization module for tensorflow with FakeQuant*',
@@ -19,7 +19,9 @@ setup(
             'tfquantor.eval', 'tfquantor.tools'],
   scripts=['tfquantor/eval/bin/eval_frozen',
            'tfquantor/eval/bin/eval_tflite',
-           'tfquantor/eval/bin/quantor_frozen'],
+           'tfquantor/eval/bin/quantor_frozen',
+           'tfquantor/tools/bin/compare_toco',
+           'tfquantor/tools/bin/visualize_output'],
   entry_points={
     'console_scripts':[
       'save_summaries=tfquantor.tools.save_summaries:main',

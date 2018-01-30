@@ -146,7 +146,6 @@ compare_toco_inception_v3_float:
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=float \
 		--input_size=299 \
-		--evaluation_mode=accuracy \
 		--dump_data=False
 
 compare_toco_inception_v3_uint8:
@@ -159,5 +158,4 @@ compare_toco_inception_v3_uint8:
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=uint8 \
 		--input_size=299 \
-		--evaluation_mode=accuracy \
 		--dump_data=False

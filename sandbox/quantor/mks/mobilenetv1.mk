@@ -144,7 +144,6 @@ compare_toco_mobilenet_v1_224_float:
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=float \
 		--input_size=224 \
-		--evaluation_mode=accuracy \
 		--dump_data=False
 
 compare_toco_mobilenet_v1_224_uint8:
@@ -157,5 +156,4 @@ compare_toco_mobilenet_v1_224_uint8:
 		--tensorflow_dir=$(TF_BASE) \
 		--toco_inference_type=uint8 \
 		--input_size=224 \
-		--evaluation_mode=accuracy \
 		--dump_data=False
