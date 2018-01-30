@@ -99,7 +99,6 @@ toco_quantor_inception_v3:
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
-		--default_ranges_min=0 --default_ranges_max=6 --partial_quant --allow_custom_ops \
 		--dump_graphviz=$(QUANTOR_BASE)/inception_v3/quantor/dots
 
 toco_inception_v3:
