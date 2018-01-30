@@ -22,7 +22,6 @@ QUANTOR_INCPETIONRESNETV2_TARGETS += eval_quantor_inception_resnet_v2_tflite
 # TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 # DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
 # QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
-# TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 ########################################################
 # for inception_resnet_v2
@@ -48,16 +47,16 @@ freeze_inception_resnet_v2:
 		--alsologtostderr \
 		--model_name=inception_resnet_v2 --dataset_name=imagenet \
 		--output_file=$(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2_inf_graph.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2_inf_graph.pb
+	@ save_summaries $(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/inception_resnet_v2/inception_resnet_v2.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb \
 		--output_node_names=InceptionResnetV2/Logits/Predictions
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb
+	@ save_summaries $(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb
 
 eval_inception_resnet_v2_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=InceptionResnetV2/Logits/Predictions \
@@ -65,7 +64,7 @@ eval_inception_resnet_v2_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb --max_num_batches=200
 
 quantor_inception_resnet_v2_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen.py \
+	@ quantor_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_resnet_v2/frozen_inception_resnet_v2.pb \
@@ -77,8 +76,8 @@ quantor_inception_resnet_v2_frozen:
 		--input_checkpoint=$(QUANTOR_BASE)/inception_resnet_v2/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb \
 		--output_node_names=InceptionResnetV2/Logits/Predictions
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ save_summaries $(QUANTOR_BASE)/inception_resnet_v2/quantor/frozen.pb
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=InceptionResnetV2/Logits/Predictions \
@@ -111,7 +110,7 @@ toco_inception_resnet_v2:
 
 eval_quantor_inception_resnet_v2_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/inception_resnet_v2/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -121,7 +120,7 @@ eval_quantor_inception_resnet_v2_tflite:
 
 eval_inception_resnet_v2_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/inception_resnet_v2/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \

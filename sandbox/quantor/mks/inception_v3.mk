@@ -22,7 +22,6 @@ QUANTOR_INCEPTIONV3_TARGETS += eval_quantor_inception_v3_tflite
 # TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 # DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
 # QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
-# TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 ########################################################
 # for inception_v3
@@ -46,7 +45,7 @@ freeze_inception_v3:
 		--alsologtostderr \
 		--model_name=inception_v3 --dataset_name=imagenet \
 		--output_file=$(QUANTOR_BASE)/inception_v3/inception_v3_inf_graph.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_v3/inception_v3_inf_graph.pb
+	@ save_summaries $(QUANTOR_BASE)/inception_v3/inception_v3_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inception_v3/inception_v3_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/inception_v3/inception_v3.ckpt \
@@ -55,10 +54,10 @@ freeze_inception_v3:
 		--output_node_names=InceptionV3/Predictions/Reshape
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
 		--in_graph=$(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb
+	@ save_summaries $(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb
 
 eval_inception_v3_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=InceptionV3/Predictions/Reshape \
@@ -67,7 +66,7 @@ eval_inception_v3_frozen:
 		# --summary_dir=$(QUANTOR_BASE)/inception_v3/summary/$@
 
 quantor_inception_v3_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen.py \
+	@ quantor_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb \
@@ -80,8 +79,8 @@ quantor_inception_v3_frozen:
 		--input_checkpoint=$(QUANTOR_BASE)/inception_v3/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/inception_v3/quantor/frozen.pb \
 		--output_node_names=InceptionV3/Predictions/Reshape
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/inception_v3/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ save_summaries $(QUANTOR_BASE)/inception_v3/quantor/frozen.pb
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=InceptionV3/Predictions/Reshape \
@@ -116,7 +115,7 @@ toco_inception_v3:
 
 eval_quantor_inception_v3_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/inception_v3/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -126,7 +125,7 @@ eval_quantor_inception_v3_tflite:
 
 eval_inception_v3_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/inception_v3/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \

@@ -9,7 +9,6 @@ TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
 TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
 QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
-TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 all:
 	@ echo "all models"

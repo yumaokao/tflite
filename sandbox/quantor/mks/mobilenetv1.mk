@@ -24,7 +24,6 @@ QUANTOR_MOBILENETV1_224_TARGETS += eval_quantor_mobilenet_v1_224_tflite
 # TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 # DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
 # QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
-# TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 ########################################################
 # for mobilenet_v1_224
@@ -48,7 +47,7 @@ freeze_mobilenet_v1_224:
 		--alsologtostderr \
 		--model_name=mobilenet_v1 --dataset_name=imagenet \
 		--output_file=$(QUANTOR_BASE)/mobilenet_v1_224/mobilenet_v1_224_inf_graph.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/mobilenet_v1_224/mobilenet_v1_224_inf_graph.pb
+	@ save_summaries $(QUANTOR_BASE)/mobilenet_v1_224/mobilenet_v1_224_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/mobilenet_v1_224/mobilenet_v1_224_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/mobilenet_v1_224/mobilenet_v1_1.0_224.ckpt \
@@ -56,10 +55,10 @@ freeze_mobilenet_v1_224:
 		--output_node_names=MobilenetV1/Predictions/Reshape
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
 		--in_graph=$(QUANTOR_BASE)/mobilenet_v1_224/frozen_mobilenet_v1_224.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/mobilenet_v1_224/frozen_mobilenet_v1_224.pb
+	@ save_summaries $(QUANTOR_BASE)/mobilenet_v1_224/frozen_mobilenet_v1_224.pb
 
 eval_mobilenet_v1_224_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=MobilenetV1/Predictions/Reshape \
@@ -68,7 +67,7 @@ eval_mobilenet_v1_224_frozen:
 		# --summary_dir=$(QUANTOR_BASE)/mobilenet_v1_224/summary/$@
 
 quantor_mobilenet_v1_224_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen.py \
+	@ quantor_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenet_v1_224/frozen_mobilenet_v1_224.pb \
@@ -81,8 +80,8 @@ quantor_mobilenet_v1_224_frozen:
 		--input_checkpoint=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/frozen.pb \
 		--output_node_names=MobilenetV1/Predictions/Reshape
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/mobilenet_v1_224/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ save_summaries $(QUANTOR_BASE)/mobilenet_v1_224/quantor/frozen.pb
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=MobilenetV1/Predictions/Reshape \
@@ -115,7 +114,7 @@ toco_mobilenet_v1_224:
 
 eval_quantor_mobilenet_v1_224_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -125,7 +124,7 @@ eval_quantor_mobilenet_v1_224_tflite:
 
 eval_mobilenet_v1_224_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \

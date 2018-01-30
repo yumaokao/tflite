@@ -22,7 +22,6 @@ QUANTOR_RESNET_V1_50_TARGETS += eval_quantor_resnet_v1_50_tflite
 # TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 # DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
 # QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
-# TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 ########################################################
 # for resnet_v1_50
@@ -47,7 +46,7 @@ freeze_resnet_v1_50:
 		--alsologtostderr --labels_offset=1 \
 		--model_name=resnet_v1_50 --dataset_name=imagenet \
 		--output_file=$(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50_inf_graph.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50_inf_graph.pb
+	@ save_summaries $(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50_inf_graph.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_50/resnet_v1_50.ckpt \
@@ -60,10 +59,10 @@ freeze_resnet_v1_50:
 		--outputs=resnet_v1_50/predictions/Reshape_1 \
 		--transforms='fold_old_batch_norms fold_batch_norms'
 	@ mv $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50_tmp.pb $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
+	@ save_summaries $(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb
 
 eval_resnet_v1_50_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
@@ -71,7 +70,7 @@ eval_resnet_v1_50_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb --max_num_batches=200
 
 quantor_resnet_v1_50_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen.py \
+	@ quantor_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
@@ -83,8 +82,8 @@ quantor_resnet_v1_50_frozen:
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
 		--output_node_names=resnet_v1_50/predictions/Reshape_1
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ save_summaries $(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb
+	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
@@ -117,7 +116,7 @@ toco_resnet_v1_50:
 
 eval_quantor_resnet_v1_50_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/resnet_v1_50/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
@@ -128,7 +127,7 @@ eval_quantor_resnet_v1_50_tflite:
 
 eval_resnet_v1_50_tflite:
 	@ echo $@
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/resnet_v1_50/quantor/summary/$@ \
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \

@@ -9,7 +9,6 @@
 # TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 # DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
 # QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
-# TOOLS_BASE := $(TFLITE_ROOT_PATH)/sandbox/mnist/tools
 
 ########################################################
 # slim cifarnet
@@ -37,7 +36,7 @@ freeze_cifarnet:
 		--alsologtostderr \
 		--model_name=cifarnet --dataset_name=cifar10 \
 		--output_file=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
+	@ save_summaries $(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/summarize_graph \
 		--in_graph=$(QUANTOR_BASE)/cifarnet/cifarnet_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
@@ -45,11 +44,11 @@ freeze_cifarnet:
 		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/model.ckpt-100000 \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
 		--output_node_names=CifarNet/Predictions/Reshape
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
+	@ save_summaries $(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
 
 # eval frozen
 eval_cifarnet_frozen:
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ eval_frozen \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
@@ -57,7 +56,7 @@ eval_cifarnet_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb
 
 quantor_cifarnet_frozen:
-	@ python $(QUANTOR_BASE)/quantor_frozen.py \
+	@ quantor_frozen \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
@@ -69,8 +68,8 @@ quantor_cifarnet_frozen:
 		--input_checkpoint=$(QUANTOR_BASE)/cifarnet/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb \
 		--output_node_names=CifarNet/Predictions/Reshape
-	@ python $(TOOLS_BASE)/save_summaries.py $(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
-	@ python $(QUANTOR_BASE)/eval_frozen.py \
+	@ save_summaries $(QUANTOR_BASE)/cifarnet/quantor/frozen.pb
+	@ eval_frozen \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
@@ -105,7 +104,7 @@ toco_cifarnet:
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/dots
 
 eval_quantor_cifarnet_tflite:
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
@@ -113,7 +112,7 @@ eval_quantor_cifarnet_tflite:
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE)
 
 eval_cifarnet_tflite:
-	@ python $(QUANTOR_BASE)/eval_tflite.py \
+	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
