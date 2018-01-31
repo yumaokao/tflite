@@ -245,6 +245,12 @@ def main(_):
         ys_lite = ys_lite.astype(float, copy=False)
         ys_lite = (ys_lite - zero_point) * scale
 
+      # Check the inference result
+      tf_result = tf.argmax(ys_tf, 1).eval()
+      lite_result = tf.argmax(ys_lite, 1).eval()
+      # if tf_result != lite_result:
+      #   print('Mismatch result at step {}!'.format(step))
+
       # Evaluate the result
       sess.run(acc_update_op_tf, feed_dict={lbls_tf: labels_tf, preds_tf: ys_tf})
       sess.run(acc_update_op_lite, feed_dict={lbls_lite: labels_tf, preds_lite: ys_lite})
