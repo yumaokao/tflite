@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/tony/tensorflow_venv/bin/python2
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,6 +10,8 @@ import subprocess
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import itertools
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import gaussian_kde
 
 '''
@@ -42,12 +44,27 @@ tf.app.flags.DEFINE_string(
 
 FLAGS = tf.app.flags.FLAGS
 
-def draw_distribution(ax, title, data):
-  data = data.flatten()
-  ax.hist(data, bins=100, edgecolor='gray', facecolor='green', alpha=0.5, density=True)
-  density = gaussian_kde(data)
+def get_density_from_data(data):
+  tmp = data.flatten()
+  density = gaussian_kde(tmp)
   density.covariance_factor = lambda : .05
   density._compute_covariance()
+  return density
+
+def draw_3d_distribution(ax, title, data, color, z):
+  data = data.flatten()
+  hist, bins = np.histogram(data, bins=100, density=True)
+  bar_xs = (bins[:-1] + bins[1:])/2
+  bar_width = np.mean(bins[1:] - bins[:-1]) * 0.8
+  ax.bar(bar_xs, hist, width=bar_width, zs=z, zdir='y', color=color, edgecolor='gray', alpha=0.5)
+  density = get_density_from_data(data)
+  xs = np.linspace(np.min(data), np.max(data), 200)
+  ax.plot(xs, density(xs), zs=z, zdir='y', color='black', linewidth=2)
+
+def draw_2d_distribution(ax, title, data):
+  data = data.flatten()
+  ax.hist(data, bins=100, edgecolor='gray', facecolor='green', alpha=0.5, density=True)
+  density = get_density_from_data(data)
   xs = np.linspace(np.min(data), np.max(data), 200)
   ax.plot(xs, density(xs), color='black', linewidth=2)
   ax.set_ylabel('density')
@@ -160,11 +177,21 @@ def main(_):
       print('Output of model \'{}\''.format(fn))
       print('------> {}\n'.format(get_statistics(output)))
 
-  elif FLAGS.evaluation_mode == 'plot_distribution':
+  elif FLAGS.evaluation_mode == '2d_distribution':
     _, ax = plt.subplots(len(output_buffers), sharex='col')
     for cur_ax, cur_out in zip(ax, output_buffers):
-      draw_distribution(cur_ax, cur_out[0], cur_out[1])
+      draw_2d_distribution(cur_ax, cur_out[0], cur_out[1])
     plt.show()
+
+  elif FLAGS.evaluation_mode == '3d_distribution':
+    zpos_iter = itertools.count()
+    color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for cur_out in output_buffers:
+      draw_3d_distribution(ax, cur_out[0], cur_out[1], next(color_iter), next(zpos_iter))
+    plt.show()
+
 
   plt.show()
 
