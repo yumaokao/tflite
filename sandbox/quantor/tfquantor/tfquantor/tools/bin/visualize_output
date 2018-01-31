@@ -56,10 +56,10 @@ def draw_3d_distribution(ax, title, data, color, z):
   hist, bins = np.histogram(data, bins=100, density=True)
   bar_xs = (bins[:-1] + bins[1:])/2
   bar_width = np.mean(bins[1:] - bins[:-1]) * 0.8
-  ax.bar(bar_xs, hist, width=bar_width, zs=z, zdir='y', color=color, edgecolor='gray', alpha=0.5)
+  ax.bar(bar_xs, hist, zs=z, zdir='y', width=bar_width, color=color, edgecolor='gray', alpha=0.9, label=title)
   density = get_density_from_data(data)
   xs = np.linspace(np.min(data), np.max(data), 200)
-  ax.plot(xs, density(xs), zs=z, zdir='y', color='black', linewidth=2)
+  ax.plot(xs, [z] * len(xs), density(xs), color='black', linewidth=2)
 
 def draw_2d_distribution(ax, title, data):
   data = data.flatten()
@@ -190,10 +190,12 @@ def main(_):
     ax = fig.add_subplot(111, projection='3d')
     for cur_out in output_buffers:
       draw_3d_distribution(ax, cur_out[0], cur_out[1], next(color_iter), next(zpos_iter))
+    ax.set_yticklabels([])
+    ax.set_xlabel('Value')
+    ax.set_zlabel('Density')
+    plt.legend(loc='best')
     plt.show()
 
-
-  plt.show()
 
 if __name__ == '__main__':
   tf.app.run()
