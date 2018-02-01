@@ -44,31 +44,113 @@ tf.app.flags.DEFINE_string(
 
 FLAGS = tf.app.flags.FLAGS
 
-def get_density_from_data(data):
-  tmp = data.flatten()
-  density = gaussian_kde(tmp)
-  density.covariance_factor = lambda : .05
-  density._compute_covariance()
-  return density
+class StatisticsVisualizer:
+  def show(self, data):
+    def get_statistics_text(numpy_data):
+      data = []
+      data.append('Q0: {:.6f}'.format(np.percentile(numpy_data, 0)))
+      data.append('Q1: {:.6f}'.format(np.percentile(numpy_data, 25)))
+      data.append('Q2: {:.6f}'.format(np.percentile(numpy_data, 50)))
+      data.append('Q3: {:.6f}'.format(np.percentile(numpy_data, 75)))
+      data.append('Q4: {:.6f}'.format(np.percentile(numpy_data, 100)))
+      return data
 
-def draw_3d_distribution(ax, title, data, color, z):
-  data = data.flatten()
-  hist, bins = np.histogram(data, bins=100, density=True)
-  bar_xs = (bins[:-1] + bins[1:])/2
-  bar_width = np.mean(bins[1:] - bins[:-1]) * 0.8
-  ax.bar(bar_xs, hist, zs=z, zdir='y', width=bar_width, color=color, edgecolor='gray', alpha=0.9, label=title)
-  density = get_density_from_data(data)
-  xs = np.linspace(np.min(data), np.max(data), 200)
-  ax.plot(xs, [z] * len(xs), density(xs), color='black', linewidth=2)
+    for fn, output in data:
+      print('Output of model \'{}\''.format(fn))
+      print('------> {}\n'.format(get_statistics_text(output)))
 
-def draw_2d_distribution(ax, title, data):
-  data = data.flatten()
-  ax.hist(data, bins=100, edgecolor='gray', facecolor='green', alpha=0.5, density=True)
-  density = get_density_from_data(data)
-  xs = np.linspace(np.min(data), np.max(data), 200)
-  ax.plot(xs, density(xs), color='black', linewidth=2)
-  ax.set_ylabel('density')
-  ax.title.set_text(title)
+
+class DistributionVisualizer2D:
+  def show(self, data):
+    def get_density_from_data(data):
+      tmp = data.flatten()
+      density = gaussian_kde(tmp)
+      density.covariance_factor = lambda : .05
+      density._compute_covariance()
+      return density
+
+    def plot_2d_distribution(ax, title, data):
+      data = data.flatten()
+      ax.hist(data, bins=100, edgecolor='gray', facecolor='green', alpha=0.5, density=True)
+      density = get_density_from_data(data)
+      xs = np.linspace(np.min(data), np.max(data), 200)
+      ax.plot(xs, density(xs), color='black', linewidth=2)
+      ax.set_ylabel('Density')
+      ax.title.set_text(title)
+
+    # FIXME: if len(data) == 1
+    _, ax = plt.subplots(len(data), sharex='col', sharey='col')
+    for cur_ax, cur_out in zip(ax, data):
+      fn, output = cur_out
+      plot_2d_distribution(cur_ax, fn, output)
+    plt.show()
+
+
+class DistributionVisualizer3D:
+  def show(self, data):
+    def get_density_from_data(data):
+      tmp = data.flatten()
+      density = gaussian_kde(tmp)
+      density.covariance_factor = lambda : .05
+      density._compute_covariance()
+      return density
+
+    def plot_3d_distribution(ax, title, data, color, z):
+      data = data.flatten()
+      hist, bins = np.histogram(data, bins=100, density=True)
+      bar_xs = (bins[:-1] + bins[1:])/2
+      bar_width = np.mean(bins[1:] - bins[:-1]) * 0.8
+      ax.bar(bar_xs, hist, zs=z, zdir='y', width=bar_width, color=color, edgecolor='gray', alpha=0.9, label=title)
+      density = get_density_from_data(data)
+      xs = np.linspace(np.min(data), np.max(data), 200)
+      ax.plot(xs, [z] * len(xs), density(xs), color='black', linewidth=2)
+
+    zpos_iter = itertools.count()
+    color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for fn, output in data:
+      plot_3d_distribution(ax, fn, output, next(color_iter), next(zpos_iter))
+    ax.set_yticklabels([])
+    ax.set_xlabel('Value')
+    ax.set_zlabel('Density')
+    plt.legend(loc='best')
+    plt.show()
+
+
+class ChannelVisualizer:
+  def show(self, data):
+    def plot(ax, title, data):
+      for e in data:
+        x = range(len(e))
+        ax.plot(x, e)
+      ax.set_ylabel('Value')
+      ax.title.set_text(title)
+
+    def get_statistics_tuple(data):
+      return (np.percentile(data, 0),
+              np.percentile(data, 25),
+              np.percentile(data, 50),
+              np.percentile(data, 75),
+              np.percentile(data, 100))
+    _, ax = plt.subplots(len(data), sharex='col', sharey='col')
+    for cur_ax, cur_out in zip(ax, data):
+      fn, output = cur_out
+      data = np.transpose(np.reshape(output, (-1, output.shape[-1])))
+      data = zip(*[get_statistics_tuple(channel) for channel in data])
+      plot(cur_ax, fn, data)
+    plt.show()
+
+
+def get_visualizer(mode):
+  if mode == 'statistics':
+    return StatisticsVisualizer()
+  elif mode == '2d_distribution':
+    return DistributionVisualizer2D()
+  elif mode == '3d_distribution':
+    return DistributionVisualizer3D()
+  elif mode == 'channel_statistics':
+    return ChannelVisualizer()
 
 def get_tflite_quantization_info(model):
   cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite',
@@ -104,12 +186,15 @@ def process_tflite_model_with_data_and_type(model_fn, input_data_fn, output_idx,
   return output_data
 
 def process_frozen_pb_with_data(model_fn, input_float):
+  print(model_fn)
   graph_def = tf.GraphDef()
   with tf.gfile.GFile(model_fn, "rb") as f:
     graph_def.ParseFromString(f.read())
 
-  with tf.Session() as sess:
+  with tf.Graph().as_default() as cur_graph:
     tf.import_graph_def(graph_def, name='')
+
+  with tf.Session(graph=cur_graph) as sess:
     graph = sess.graph
     x = graph.get_tensor_by_name('{}:0'.format(FLAGS.input_node_name))
     y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
@@ -142,14 +227,14 @@ def main(_):
   if any(pb_model_fns):
     def process_frozen_pb(model):
       return (model, process_frozen_pb_with_data(model, input_float))
-    output_buffers += map(process_frozen_pb, pb_model_fns)
+    output_buffers += list(map(process_frozen_pb, pb_model_fns))
 
   tf.logging.info('Process float_tflite_model')
   if any(float_tflite_model_fns):
     def process_float_tflite_model(model):
       output_idx = get_tflite_tensor_index(model, FLAGS.output_node_name)
       return (model, process_tflite_model_with_data_and_type(model, FLAGS.input_float_npy, output_idx, 'float'))
-    output_buffers += map(process_float_tflite_model, float_tflite_model_fns)
+    output_buffers += list(map(process_float_tflite_model, float_tflite_model_fns))
 
   tf.logging.info('Process quantized_tflite_model')
   if any(quantized_tflite_model_fns):
@@ -159,43 +244,13 @@ def main(_):
       def dequantize_output(output_np_array):
         return (output_np_array.astype(float) - zero_point) * scale
       return (model, dequantize_output(process_tflite_model_with_data_and_type(model, FLAGS.input_quantized_npy, output_idx, 'uint8')))
-    output_buffers += map(process_quantized_tflite_model, quantized_tflite_model_fns)
+    output_buffers += list(map(process_quantized_tflite_model, quantized_tflite_model_fns))
 
   # evaluation
   tf.logging.info('Evaluate the data')
 
-  if FLAGS.evaluation_mode == 'statistics':
-    def get_statistics(numpy_data):
-      data = []
-      data.append('Q0: {:.6f}'.format(np.percentile(numpy_data, 0)))
-      data.append('Q1: {:.6f}'.format(np.percentile(numpy_data, 25)))
-      data.append('Q2: {:.6f}'.format(np.percentile(numpy_data, 50)))
-      data.append('Q3: {:.6f}'.format(np.percentile(numpy_data, 75)))
-      data.append('Q4: {:.6f}'.format(np.percentile(numpy_data, 100)))
-      return data
-    for fn, output in output_buffers:
-      print('Output of model \'{}\''.format(fn))
-      print('------> {}\n'.format(get_statistics(output)))
-
-  elif FLAGS.evaluation_mode == '2d_distribution':
-    _, ax = plt.subplots(len(output_buffers), sharex='col')
-    for cur_ax, cur_out in zip(ax, output_buffers):
-      draw_2d_distribution(cur_ax, cur_out[0], cur_out[1])
-    plt.show()
-
-  elif FLAGS.evaluation_mode == '3d_distribution':
-    zpos_iter = itertools.count()
-    color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for cur_out in output_buffers:
-      draw_3d_distribution(ax, cur_out[0], cur_out[1], next(color_iter), next(zpos_iter))
-    ax.set_yticklabels([])
-    ax.set_xlabel('Value')
-    ax.set_zlabel('Density')
-    plt.legend(loc='best')
-    plt.show()
-
+  visualizer = get_visualizer(FLAGS.evaluation_mode);
+  visualizer.show(output_buffers)
 
 if __name__ == '__main__':
   tf.app.run()
