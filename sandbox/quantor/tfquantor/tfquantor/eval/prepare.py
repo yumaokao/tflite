@@ -51,10 +51,11 @@ def prepare_cifar10_dataset(filenames, width, height,
 
   # proprocessing func
   _preprocessing_func = None
-  if preprocess_name == 'inception':
-    _preprocessing_func = _preprocessing_inception
-  elif preprocess_name == 'vgg':
-    _preprocessing_func = _preprocessing_vgg
+  if inference_type == 'float':
+    if preprocess_name == 'inception':
+      _preprocessing_func = _preprocessing_inception
+    elif preprocess_name == 'vgg':
+      _preprocessing_func = _preprocessing_vgg
 
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
