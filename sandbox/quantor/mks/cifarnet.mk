@@ -117,3 +117,33 @@ eval_cifarnet_tflite:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite --tensorflow_dir=$(TF_BASE)
+
+########################################################
+# compare_toco
+########################################################
+compare_toco_cifarnet_float:
+	@ python $(QUANTOR_BASE)/compare_toco.py \
+		--dataset_name=cifar10 \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--dataset_split_name=test \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \
+		--max_num_batches=100 \
+		--output_node_name=CifarNet/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=float \
+		--input_size=32 \
+		--dump_data=False
+
+compare_toco_cifarnet_uint8:
+	@ python $(QUANTOR_BASE)/compare_toco.py \
+		--dataset_name=cifar10 \
+		--dataset_dir=$(DATASET_BASE)/cifar10 \
+		--dataset_split_name=test \
+		--frozen_pb=$(QUANTOR_BASE)/cifarnet/quantor/frozen.pb \
+		--max_num_batches=100 \
+		--output_node_name=CifarNet/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=uint8 \
+		--dump_data=False \
+		--input_size=32 \
+		--extra_toco_flags='--default_ranges_min=0 --default_ranges_max=10 --partial_quant'
