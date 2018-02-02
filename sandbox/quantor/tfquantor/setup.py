@@ -30,6 +30,6 @@ setup(
     ],
   },
   install_requires=[
-    'tensorflow>=1.5.0rc1',
+    'tensorflow>=1.5.0',
   ],
 )
