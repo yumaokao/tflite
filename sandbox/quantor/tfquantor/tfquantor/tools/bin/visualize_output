@@ -32,7 +32,9 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'input_quantized_npy', None, 'The numpy file of the uint8 input data.')
 tf.app.flags.DEFINE_string(
-    'output_node_name', None, 'The name of the output node for visualization.')
+    'output_float_node_name', None, 'The name of the output node (for float model).')
+tf.app.flags.DEFINE_string(
+    'output_quantized_node_name', None, 'The name of the output node (for quantized model).')
 tf.app.flags.DEFINE_string(
     'tensorflow_dir', None, 'The directory where the tensorflow are stored')
 tf.app.flags.DEFINE_boolean(
@@ -45,7 +47,7 @@ tf.app.flags.DEFINE_string(
 FLAGS = tf.app.flags.FLAGS
 
 class StatisticsVisualizer:
-  def show(self, data):
+  def show(self, fn_data_list):
     def get_statistics_text(numpy_data):
       data = []
       data.append('Q0: {:.6f}'.format(np.percentile(numpy_data, 0)))
@@ -55,71 +57,94 @@ class StatisticsVisualizer:
       data.append('Q4: {:.6f}'.format(np.percentile(numpy_data, 100)))
       return data
 
-    for fn, output in data:
+    for fn, output in fn_data_list:
       print('Output of model \'{}\''.format(fn))
       print('------> {}\n'.format(get_statistics_text(output)))
 
 
-class DistributionVisualizer2D:
-  def show(self, data):
-    def get_density_from_data(data):
-      tmp = data.flatten()
-      density = gaussian_kde(tmp)
-      density.covariance_factor = lambda : .05
-      density._compute_covariance()
-      return density
+class DistributionVisualizer:
 
-    def plot_2d_distribution(ax, title, data):
-      data = data.flatten()
-      ax.hist(data, bins=100, edgecolor='gray', facecolor='green', alpha=0.5, density=True)
-      density = get_density_from_data(data)
-      xs = np.linspace(np.min(data), np.max(data), 200)
-      ax.plot(xs, density(xs), color='black', linewidth=2)
+  def __init__(self, mode_str):
+    self.mode_str = mode_str
+  
+  def get_density_from_data(self, data, density_xs):
+    tmp = data.flatten()
+    density = gaussian_kde(tmp)
+    density.covariance_factor = lambda : .05
+    density._compute_covariance()
+    return density_xs, density(density_xs)
+
+  def get_histogram_from_data(self, data, hist_bins):
+    hist, bins = np.histogram(data, bins=hist_bins, density=True)
+    bar_xs = (bins[:-1] + bins[1:])/2
+    bar_width = np.mean(bins[1:] - bins[:-1]) * 0.8
+    return bar_xs, bar_width, hist
+
+  def show_2D(self, fn_list, hist_list, density_list):
+    _, ax_list = plt.subplots(len(fn_list), sharex='col', sharey='col')
+    if len(fn_list) == 1:
+      ax_list = [ax_list] # make it iterable
+
+    for ax, fn, hist, density in zip(ax_list, fn_list, hist_list, density_list):
+      bar_x, bar_width, bar_y = hist
+      density_x, density_y = density
+      ax.bar(bar_x, bar_y, width=bar_width, edgecolor='gray', facecolor='green', alpha=0.5)
+      ax.plot(density_x, density_y, color='black', linewidth=2)
       ax.set_ylabel('Density')
-      ax.title.set_text(title)
-
-    # FIXME: if len(data) == 1
-    _, ax = plt.subplots(len(data), sharex='col', sharey='col')
-    for cur_ax, cur_out in zip(ax, data):
-      fn, output = cur_out
-      plot_2d_distribution(cur_ax, fn, output)
+      ax.title.set_text(fn)
     plt.show()
 
-
-class DistributionVisualizer3D:
-  def show(self, data):
-    def get_density_from_data(data):
-      tmp = data.flatten()
-      density = gaussian_kde(tmp)
-      density.covariance_factor = lambda : .05
-      density._compute_covariance()
-      return density
-
-    def plot_3d_distribution(ax, title, data, color, z):
-      data = data.flatten()
-      hist, bins = np.histogram(data, bins=100, density=True)
-      bar_xs = (bins[:-1] + bins[1:])/2
-      bar_width = np.mean(bins[1:] - bins[:-1]) * 0.8
-      ax.bar(bar_xs, hist, zs=z, zdir='y', width=bar_width, color=color, edgecolor='gray', alpha=0.9, label=title)
-      density = get_density_from_data(data)
-      xs = np.linspace(np.min(data), np.max(data), 200)
-      ax.plot(xs, [z] * len(xs), density(xs), color='black', linewidth=2)
-
+  def show_3D(self, fn_list, hist_list, density_list):
     zpos_iter = itertools.count()
     color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for fn, output in data:
-      plot_3d_distribution(ax, fn, output, next(color_iter), next(zpos_iter))
+    ax = plt.figure().add_subplot(111, projection='3d')
+    for fn, hist, density in zip(fn_list, hist_list, density_list):
+      z = next(zpos_iter)
+      bar_x, bar_width, bar_y = hist
+      density_x, density_y = density
+      ax.bar(bar_x, bar_y, zs=z, zdir='y', width=bar_width, edgecolor='gray', facecolor=next(color_iter), alpha=0.9, label=fn)
+      ax.plot(density_x, [z] * len(density_x), density_y, color='black', linewidth=2)
+
     ax.set_yticklabels([])
     ax.set_xlabel('Value')
     ax.set_zlabel('Density')
     plt.legend(loc='best')
     plt.show()
 
+  def show(self, fn_data_list):
+    def get_total_min_max(data_list):
+      all_min = None
+      all_max = None
+      min_range = None
+      for data in data_list:
+        min_data = np.min(data)
+        max_data = np.max(data)
+        range_data = max_data - min_data
+        if not all_min or all_min > min_data:
+          all_min = min_data
+        if not all_max or all_max < max_data:
+          all_max = max_data
+        if not min_range or min_range > range_data:
+          min_range = range_data
+      return all_min, all_max, min_range
+      
+    fn_list, data_list = zip(*fn_data_list)
+    all_min, all_max, min_range = get_total_min_max(data_list)
+    hist_step = min_range / 50
+    hist_bins = np.arange(all_min, all_max + hist_step, hist_step)
+    hist_list = [self.get_histogram_from_data(data, hist_bins) for data in data_list]
+    density_step = min_range / 100
+    density_xs = np.arange(all_min, all_max + density_step, density_step)
+    density_list = [self.get_density_from_data(data, density_xs) for data in data_list]
 
-class ChannelVisualizer:
-  def show(self, data):
+    if self.mode_str == '2d_distribution':
+      self.show_2D(fn_list, hist_list, density_list)
+    elif self.mode_str == '3d_distribution':
+      self.show_3D(fn_list, hist_list, density_list)
+
+
+'''
+  def show_channel(self, fn_data_list):
     def plot(ax, title, data):
       for e in data:
         x = range(len(e))
@@ -134,30 +159,27 @@ class ChannelVisualizer:
               np.percentile(data, 75),
               np.percentile(data, 100))
     _, ax = plt.subplots(len(data), sharex='col', sharey='col')
-    for cur_ax, cur_out in zip(ax, data):
+    for cur_ax, cur_out in zip(ax, fn_data_list):
       fn, output = cur_out
       data = np.transpose(np.reshape(output, (-1, output.shape[-1])))
       data = zip(*[get_statistics_tuple(channel) for channel in data])
       plot(cur_ax, fn, data)
     plt.show()
+'''
 
 
 def get_visualizer(mode):
   if mode == 'statistics':
     return StatisticsVisualizer()
-  elif mode == '2d_distribution':
-    return DistributionVisualizer2D()
-  elif mode == '3d_distribution':
-    return DistributionVisualizer3D()
-  elif mode == 'channel_statistics':
-    return ChannelVisualizer()
+  elif mode == '2d_distribution' or mode == '3d_distribution' or mode == 'channel_statistics':
+    return DistributionVisualizer(mode)
 
-def get_tflite_quantization_info(model):
+def get_tflite_quantization_info(model, node_name):
   cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite',
           '{}'.format(model)]
   out = subprocess.check_output(cmd)
   for line in out.splitlines():
-    if 'name ' + FLAGS.output_node_name in line:
+    if 'name ' + node_name in line:
       result = re.search('quantization \((?P<scale>[0-9\.]+) (?P<zero>[0-9\.]+)\)', line)
       return float(result.group('scale')), int(result.group('zero'))
   raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
@@ -167,7 +189,7 @@ def get_tflite_tensor_index(model, tensor_name):
           '{}'.format(model)]
   out = subprocess.check_output(cmd)
   for line in out.splitlines():
-    if 'name ' + FLAGS.output_node_name in line:
+    if 'name ' + tensor_name in line:
       result = re.search('(?P<index>[0-9]+): name ' + tensor_name, line)
       return int(result.group('index'))
   raise ValueError('Tensor name \'{}\' is not defined in the TFLite model'.format(tensor_name))
@@ -186,7 +208,6 @@ def process_tflite_model_with_data_and_type(model_fn, input_data_fn, output_idx,
   return output_data
 
 def process_frozen_pb_with_data(model_fn, input_float):
-  print(model_fn)
   graph_def = tf.GraphDef()
   with tf.gfile.GFile(model_fn, "rb") as f:
     graph_def.ParseFromString(f.read())
@@ -197,7 +218,7 @@ def process_frozen_pb_with_data(model_fn, input_float):
   with tf.Session(graph=cur_graph) as sess:
     graph = sess.graph
     x = graph.get_tensor_by_name('{}:0'.format(FLAGS.input_node_name))
-    y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
+    y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_float_node_name))
     output_float = sess.run(y, feed_dict={x: input_float})
   return output_float
 
@@ -215,8 +236,10 @@ def main(_):
     raise ValueError('--input_float_npy is required')
   if any(quantized_tflite_model_fns) and not FLAGS.input_quantized_npy:
     raise ValueError('--input_quantized_npy is required')
-  if not FLAGS.output_node_name:
-    raise ValueError('--output_node_name is required')
+  if any(pb_model_fns + float_tflite_model_fns) and not FLAGS.output_float_node_name:
+    raise ValueError('--output_float_node_name is required')
+  elif any(quantized_tflite_model_fns) and not FLAGS.output_quantized_node_name:
+    raise ValueError('--output_quantized_node_name is required')
 
   tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -232,15 +255,15 @@ def main(_):
   tf.logging.info('Process float_tflite_model')
   if any(float_tflite_model_fns):
     def process_float_tflite_model(model):
-      output_idx = get_tflite_tensor_index(model, FLAGS.output_node_name)
+      output_idx = get_tflite_tensor_index(model, FLAGS.output_float_node_name)
       return (model, process_tflite_model_with_data_and_type(model, FLAGS.input_float_npy, output_idx, 'float'))
     output_buffers += list(map(process_float_tflite_model, float_tflite_model_fns))
 
   tf.logging.info('Process quantized_tflite_model')
   if any(quantized_tflite_model_fns):
     def process_quantized_tflite_model(model):
-      scale, zero_point = get_tflite_quantization_info(model)
-      output_idx = get_tflite_tensor_index(model, FLAGS.output_node_name)
+      scale, zero_point = get_tflite_quantization_info(model, FLAGS.output_quantized_node_name)
+      output_idx = get_tflite_tensor_index(model, FLAGS.output_quantized_node_name)
       def dequantize_output(output_np_array):
         return (output_np_array.astype(float) - zero_point) * scale
       return (model, dequantize_output(process_tflite_model_with_data_and_type(model, FLAGS.input_quantized_npy, output_idx, 'uint8')))
