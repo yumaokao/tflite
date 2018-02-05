@@ -22,7 +22,7 @@ fi
 if [ -d ./models ]; then
     :
 else
-    git clone https://github.com/tensorflow/models
+    git clone https://yumaokao@github.com/yumaokao/models
 fi
 
 echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."
