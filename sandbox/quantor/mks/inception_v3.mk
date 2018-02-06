@@ -136,7 +136,7 @@ eval_inception_v3_tflite:
 # compare_toco
 ########################################################
 compare_toco_inception_v3_float:
-	@ python $(QUANTOR_BASE)/compare_toco.py \
+	@ compare_toco \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb \
@@ -148,7 +148,7 @@ compare_toco_inception_v3_float:
 		--dump_data=False
 
 compare_toco_inception_v3_uint8:
-	@ python $(QUANTOR_BASE)/compare_toco.py \
+	@ compare_toco \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/inception_v3/quantor/frozen.pb \
