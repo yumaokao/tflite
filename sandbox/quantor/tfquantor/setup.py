@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
   name='tfquantor',
-  version='0.1.3',
+  version='0.1.4',
   author='yumaokao',
   author_email='yumao.kao@mediatek.com',
   description='Quantization module for tensorflow with FakeQuant*',
@@ -27,9 +27,11 @@ setup(
       'save_summaries=tfquantor.tools.save_summaries:main',
       'drop_dropouts=tfquantor.tools.drop_dropouts:main',
       'rename_ops=tfquantor.tools.rename_ops:main',
+      'npyhisto=tfquantor.tools.npyhisto:main',
     ],
   },
   install_requires=[
     'tensorflow>=1.5.0',
+    'urwid',
   ],
 )
