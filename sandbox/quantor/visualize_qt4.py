@@ -7,11 +7,12 @@ import itertools
 import numpy as np
 import threading
 import inspect
+import json
 from datetime import datetime
 from scipy.stats import gaussian_kde
 
 import tensorflow as tf
-from PyQt4.QtCore import Qt, QThread, QStringList, SIGNAL, SLOT
+from PyQt4.QtCore import Qt, QThread, QString, QStringList, SIGNAL, SLOT
 from PyQt4.QtGui import *
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
@@ -68,9 +69,16 @@ def createButtonWithText(text, set_fixed_width=False, set_min_width=False):
     btn.setMinimumWidth(width)
   return btn
 
-def saveFileDialogAndReturn(parent, filter_list=None):
+def saveFileDialogAndReturn(parent, filter_str=None):
   dialog = QFileDialog(parent, 'Save as', os.getcwd())
   dialog.setAcceptMode(QFileDialog.AcceptSave)
+  if filter_str is not None:
+    dialog.setNameFilter(QString(filter_str))
+  if dialog.exec_():
+    return dialog.selectedFiles()[0]
+
+def openFileDialogAndReturn(parent, filter_list=None):
+  dialog = QFileDialog(parent, 'Open file', os.getcwd())
   if filter_list is not None:
     dialog.setNameFilters(QStringList(filter_list))
   if dialog.exec_():
@@ -231,7 +239,7 @@ class ModelExecutor:
 
   def saveNumpyResult(self, parent):
     if self.numpy_result is not None:
-      fn = saveFileDialogAndReturn(parent, filter_list=['NumPy array file (*.npy)'])
+      fn = saveFileDialogAndReturn(parent, filter_str='NumPy array file (*.npy)')
       np.save(str(fn), self.numpy_result)
     else:
       self.errorReporter('No result to save!', timeout=1000)
@@ -241,6 +249,25 @@ class ModelExecutor:
 
   def getGroupBoxWidget(self):
     return self.group_box
+
+  def importConfig(self, config):
+    self.file_edit.setText(config['model'])
+    self.data_edit.setText(config['data'])
+    self.input_edit.setText(config['input_node'])
+    self.output_edit.setText(config['output_node'])
+    if config['type'] == 'float':
+      self.float_btn.setChecked(True)
+    else:
+      self.uint8_btn.setChecked(True)
+
+  def exportConfig(self):
+    config = {}
+    config['model'] = str(self.file_edit.text());
+    config['data'] = str(self.data_edit.text());
+    config['input_node'] = str(self.input_edit.text());
+    config['output_node'] = str(self.output_edit.text());
+    config['type'] = 'float' if self.float_btn.isChecked() else 'uint8'
+    return config
 
   def run(self):
 
@@ -292,20 +319,49 @@ class Visualizer(QMainWindow):
     self.display_mode_box = QComboBox()
     self.display_mode_box.addItem('Histogram(2D)')
     self.display_mode_box.addItem('Histogram(3D)')
-    self.display_mode_box.currentIndexChanged.connect(lambda x : self.drawFigure())
+    self.draw_btn = createButtonWithText('Draw', set_min_width=True)
+    self.draw_btn.clicked.connect(lambda x : self.drawFigure())
 
     splitter = QSplitter(Qt.Horizontal)
     splitter.addWidget(getVBoxLayout([self.canvas_toolbar, self.canvas]));
     splitter.addWidget(getVBoxLayout(
                           [self.tf_dir, getHBoxLayout([self.tf_dir_edit, self.tf_dir_btn], margin=0),
                           self.model_a.getGroupBoxWidget(), self.model_b.getGroupBoxWidget(),
-                          self.display_mode, self.display_mode_box], stretch_at_end=True));
+                          self.display_mode, self.display_mode_box, self.draw_btn], stretch_at_end=True));
 
     self.setCentralWidget(splitter)
     self.setStatusBar(self.status_bar)
 
+    # Menu bar
+    self.import_action = QAction('Import', self)
+    self.export_action = QAction('Export', self)
+    self.import_action.triggered.connect(self.importConfig)
+    self.export_action.triggered.connect(self.exportConfig)
+    self.file_menu = self.menuBar().addMenu('File')
+    self.file_menu.addAction(self.import_action)
+    self.file_menu.addAction(self.export_action)
+
     self.canvas.setFocus()
     self.show()
+
+  def importConfig(self):
+    fn = openFileDialogAndReturn(self, filter_list=['JSON file (*.json)'])
+    with open(str(fn), 'r') as f:
+      config = json.load(f)
+    self.tf_dir_edit.setText(config['tensorflow_dir'])
+    self.display_mode_box.setCurrentIndex(self.display_mode_box.findText(config['display_mode']))
+    self.model_a.importConfig(config['model_a'])
+    self.model_b.importConfig(config['model_b'])
+
+  def exportConfig(self):
+    config = {}
+    config['tensorflow_dir'] = str(self.tf_dir_edit.text())
+    config['display_mode'] = str(self.display_mode_box.currentText())
+    config['model_a'] = self.model_a.exportConfig()
+    config['model_b'] = self.model_b.exportConfig()
+    fn = saveFileDialogAndReturn(self, filter_str='JSON file (*.json)')
+    with open(str(fn), 'w') as f:
+      json.dump(config, f)
 
   def drawFigure(self):
     logThreadName(self)
@@ -362,6 +418,9 @@ class Visualizer(QMainWindow):
         ax.bar(bar_x, bar_y, width=bar_width, edgecolor='gray', facecolor='green', alpha=0.5)
         ax.plot(kde_x, kde_y, color='black', linewidth=2)
         ax.title.set_text(fn)
+        ax.set_ylabel('Density')
+        if fn == fn_list[-1]:
+          ax.set_xlabel('Value')
 
     elif self.display_mode_box.currentText() == 'Histogram(3D)':
       zpos_iter = itertools.count()
@@ -375,14 +434,17 @@ class Visualizer(QMainWindow):
         ax.plot(kde_x, [z] * len(kde_x), kde_y, color='black', linewidth=2)
 
       ax.set_yticklabels([])
-      #ax.set_xlabel('Value')
-      #ax.set_zlabel('Density')
-      #plt.legend(loc='best')
+      ax.set_xlabel('Value')
+      ax.set_zlabel('Density')
+      ax.set_ylim(-1, 2)
+      ax.legend(loc='best')
 
     self.canvas.draw()
 
   def updateCallback(self, update_index):
-    self.drawFigure()
+    # TODO: Use light widget to notify users that the result is ready
+    #self.drawFigure()
+    pass
 
   def errorReporter(self, msg, timeout=0):
     time_msg = datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' > '
