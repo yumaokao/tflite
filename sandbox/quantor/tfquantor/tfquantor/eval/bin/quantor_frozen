@@ -133,7 +133,7 @@ def main(_):
                                                 FLAGS.batch_size))
       images, labels = sess.run(next_batch)
       ys = sess.run(y, feed_dict={x: images})
-      sess.run(acc_update_op, feed_dict={lbls: labels, preds: np.squeeze(ys)})
+      sess.run(acc_update_op, feed_dict={lbls: labels, preds: ys})
       summary = sess.run(summaries)
       if FLAGS.summary_dir:
         summary_writer.add_summary(summary, step)
