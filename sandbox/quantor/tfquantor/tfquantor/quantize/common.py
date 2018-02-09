@@ -53,6 +53,16 @@ def BatchNormGroups(graph):
   return list(collections.OrderedDict.fromkeys(bns))
 
 
+def GetEndpointSameNameReluOp(graph, prefix):
+  match = re.compile(r'(^|(.*/))(?P<suffix>[^/]*)$').search(prefix)
+  if match:
+    suffix = match.group('suffix')
+    activation = _GetOperationByNameDontThrow(graph, prefix + '/' + suffix)
+    if activation and activation.type == 'Relu':
+      return activation
+  return None
+
+
 def GetEndpointActivationOp(graph, prefix):
   """Returns an Operation with the given prefix and a valid end point suffix.
 

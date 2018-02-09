@@ -284,6 +284,12 @@ class _QuantizeContext(object):
     activation_op = common.GetEndpointActivationOp(self.graph, context)
     if activation_op:
       return activation_op, None, None
+    else:
+      # For special networks (i.e. googlenet) where the output buffer of Relu op
+      # does not name with 'Relu'
+      activation_op = common.GetEndpointSameNameReluOp(self.graph, context)
+      if activation_op:
+        return activation_op, None, None
 
     if '/' in context:
       # If no activation op is there, look for them one level up.
