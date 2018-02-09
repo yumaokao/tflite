@@ -81,6 +81,7 @@ def saveFileDialogAndReturn(parent, filter_str=None):
     dialog.setNameFilter(QString(filter_str))
   if dialog.exec_():
     return dialog.selectedFiles()[0]
+  return None
 
 def openFileDialogAndReturn(parent, filter_list=None):
   dialog = QFileDialog(parent, 'Open file', os.getcwd())
@@ -88,6 +89,7 @@ def openFileDialogAndReturn(parent, filter_list=None):
     dialog.setNameFilters(QStringList(filter_list))
   if dialog.exec_():
     return dialog.selectedFiles()[0]
+  return None
 
 def openFileDialogAndDisplay(parent, display_widget, need_dir=False, filter_list=None):
   dialog = QFileDialog(parent, 'Open file', os.getcwd())
@@ -267,7 +269,8 @@ class ModelExecutor:
   def saveNumpyResult(self, parent):
     if self.numpy_result is not None:
       fn = saveFileDialogAndReturn(parent, filter_str='NumPy array file (*.npy)')
-      np.save(str(fn), self.numpy_result)
+      if fn is not None:
+        np.save(str(fn), self.numpy_result)
     else:
       self.errorReporter('No result to save!', timeout=1000)
 
@@ -355,8 +358,8 @@ class Visualizer(QMainWindow):
     self.tf_dir_btn.clicked.connect(lambda : openFileDialogAndDisplay(self.tf_dir_btn, self.tf_dir_edit, need_dir=True))
     self.display_mode = QLabel('Display mode')
     self.display_mode_box = QComboBox()
-    self.display_mode_box.addItem('Histogram(2D)')
-    self.display_mode_box.addItem('Histogram(3D)')
+    self.display_mode_box.addItem('Histogram (2D)')
+    self.display_mode_box.addItem('Histogram (3D)')
     self.draw_btn = createButtonWithText('Draw', set_min_width=True)
     self.draw_btn.clicked.connect(lambda x : self.drawFigure())
 
@@ -384,22 +387,24 @@ class Visualizer(QMainWindow):
 
   def importConfig(self):
     fn = openFileDialogAndReturn(self, filter_list=['JSON file (*.json)'])
-    with open(str(fn), 'r') as f:
-      config = json.load(f)
-    self.tf_dir_edit.setText(config['tensorflow_dir'])
-    self.display_mode_box.setCurrentIndex(self.display_mode_box.findText(config['display_mode']))
-    self.model_a.importConfig(config['model_a'])
-    self.model_b.importConfig(config['model_b'])
+    if fn is not None:
+      with open(str(fn), 'r') as f:
+        config = json.load(f)
+        self.tf_dir_edit.setText(config['tensorflow_dir'])
+        self.display_mode_box.setCurrentIndex(config['display_mode'])
+        self.model_a.importConfig(config['model_a'])
+        self.model_b.importConfig(config['model_b'])
 
   def exportConfig(self):
     config = {}
     config['tensorflow_dir'] = str(self.tf_dir_edit.text())
-    config['display_mode'] = str(self.display_mode_box.currentText())
+    config['display_mode'] = self.display_mode_box.currentIndex()
     config['model_a'] = self.model_a.exportConfig()
     config['model_b'] = self.model_b.exportConfig()
     fn = saveFileDialogAndReturn(self, filter_str='JSON file (*.json)')
-    with open(str(fn), 'w') as f:
-      json.dump(config, f)
+    if fn is not None:
+      with open(str(fn), 'w') as f:
+        json.dump(config, f)
 
   def drawFigure(self):
     result_a = self.model_a.getNumpyResult()
@@ -444,7 +449,7 @@ class Visualizer(QMainWindow):
     kde_list = [getGaussianKdeFromData(data, kde_xs) for data in data_list]
 
     self.figure.clf()
-    if self.display_mode_box.currentText() == 'Histogram(2D)':
+    if self.display_mode_box.currentText() == 'Histogram (2D)':
       ax_list = self.figure.subplots(len(fn_list), sharex='col', sharey='col')
       if len(fn_list) == 1:
         ax_list = [ax_list] # make it iterable
@@ -459,9 +464,10 @@ class Visualizer(QMainWindow):
         if fn == fn_list[-1]:
           ax.set_xlabel('Value')
 
-    elif self.display_mode_box.currentText() == 'Histogram(3D)':
+    elif self.display_mode_box.currentText() == 'Histogram (3D)':
       zpos_iter = itertools.count()
-      color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
+      #color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
+      color_iter = itertools.cycle(['red', 'green'])
       ax = self.figure.add_subplot(111, projection='3d')
       for fn, hist, kde in zip(fn_list, hist_list, kde_list):
         z = next(zpos_iter)
