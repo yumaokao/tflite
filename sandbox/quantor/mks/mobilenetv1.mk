@@ -120,7 +120,7 @@ eval_quantor_mobilenet_v1_224_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/model.lite --tensorflow_dir=$(TF_BASE) \
 		--inference_type=uint8 \
-		--max_num_batches=1000 --input_size=224
+		--max_num_batches=20 --input_size=224 --batch_size=50
 
 eval_mobilenet_v1_224_tflite:
 	@ echo $@
@@ -135,7 +135,7 @@ eval_mobilenet_v1_224_tflite:
 # compare_toco
 ########################################################
 compare_toco_mobilenet_v1_224_float:
-	@ python $(QUANTOR_BASE)/compare_toco.py \
+	@ compare_toco \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenet_v1_224/frozen_mobilenet_v1_224.pb \
@@ -147,7 +147,7 @@ compare_toco_mobilenet_v1_224_float:
 		--dump_data=False
 
 compare_toco_mobilenet_v1_224_uint8:
-	@ python $(QUANTOR_BASE)/compare_toco.py \
+	@ compare_toco \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--frozen_pb=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/frozen.pb \

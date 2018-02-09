@@ -411,6 +411,8 @@ class Visualizer(QMainWindow):
     result_b = self.model_b.getNumpyResult()
     data_list = []
     fn_list = []
+
+    # FIXME: if batch > 1 ?
     if result_a is not None:
       data = result_a.flatten()
       data_list.append(data)

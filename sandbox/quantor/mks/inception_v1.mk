@@ -112,7 +112,7 @@ eval_quantor_inception_v1_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_v1/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 --input_size=224
+		--max_num_batches=20 --input_size=224 --batch_size=50
 
 eval_inception_v1_tflite:
 	@ echo $@
@@ -124,3 +124,29 @@ eval_inception_v1_tflite:
 		--max_num_batches=1000 --input_size=224
 
 
+########################################################
+# compare_toco
+########################################################
+compare_toco_inception_v1_float:
+	@ compare_toco \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/inception_v1/frozen_inception_v1.pb \
+		--max_num_batches=100 \
+		--output_node_name=InceptionV1/Logits/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=float \
+		--input_size=224 \
+		--dump_data=False
+
+compare_toco_inception_v1_uint8:
+	@ compare_toco \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--frozen_pb=$(QUANTOR_BASE)/inception_v1/quantor/frozen.pb \
+		--max_num_batches=100 \
+		--output_node_name=InceptionV1/Logits/Predictions/Reshape \
+		--tensorflow_dir=$(TF_BASE) \
+		--toco_inference_type=uint8 \
+		--input_size=224 \
+		--dump_data=False

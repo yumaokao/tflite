@@ -109,20 +109,22 @@ eval_quantor_cifarnet_tflite:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--tflite_model=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
-		--inference_type=uint8 --tensorflow_dir=$(TF_BASE)
+		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
+		--batch_size=50
 
 eval_cifarnet_tflite:
 	@ eval_tflite \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/quantor/summary/$@ \
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
-		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite --tensorflow_dir=$(TF_BASE)
+		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite --tensorflow_dir=$(TF_BASE) \
+		--batch_size=50
 
 ########################################################
 # compare_toco
 ########################################################
 compare_toco_cifarnet_float:
-	@ python $(QUANTOR_BASE)/compare_toco.py \
+	@ compare_toco \
 		--dataset_name=cifar10 \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--dataset_split_name=test \
@@ -135,7 +137,7 @@ compare_toco_cifarnet_float:
 		--dump_data=False
 
 compare_toco_cifarnet_uint8:
-	@ python $(QUANTOR_BASE)/compare_toco.py \
+	@ compare_toco \
 		--dataset_name=cifar10 \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--dataset_split_name=test \
