@@ -19,10 +19,15 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import Axes3D
 
+##########################
+##  Function decorator  ##
+##########################
 
-def logThreadName(instance):
-  prev_frame = inspect.currentframe().f_back
-  #print('[{}.{}()] executed by {}'.format(instance.__class__.__name__, prev_frame.f_code.co_name, threading.current_thread().name))
+def classlogthreadname(func):
+  def wrappered(self, *args, **kwargs):
+    print('[{}.{}()] is executed by {}'.format(self.__class__.__name__, func.__name__, threading.current_thread().name))
+    func(self, *args, **kwargs)
+  return wrappered
 
 #########################
 ##  Utility functions  ##
@@ -93,9 +98,29 @@ def openFileDialogAndDisplay(parent, display_widget, need_dir=False, filter_list
   if dialog.exec_():
     display_widget.setText(dialog.selectedFiles()[0])
 
-######################
-##  Member classes  ##
-######################
+####################
+##  Main classes  ##
+####################
+
+class LightWidget(QWidget):
+  def __init__(self, color):
+    super(LightWidget, self).__init__()
+    self.color = color
+
+  def setColor(self, color):
+    self.color = color
+    self.update()
+
+  def paintEvent(self, event):
+    length = self.width()
+    if length > self.height():
+      length = self.height()
+
+    painter = QPainter(self)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.setBrush(self.color)
+    painter.drawEllipse(self.width() - length, 0, length, length)
+
 
 class Executor(QThread):
   def __init__(self, parent=None):
@@ -105,8 +130,6 @@ class Executor(QThread):
     self.param = param
 
   def run(self):
-    logThreadName(self)
-
     def processFrozenPb(model_fn, input_fn, input_node, output_node):
       graph_def = tf.GraphDef()
       input_data = np.load(input_fn)
@@ -192,7 +215,6 @@ class ModelExecutor:
     self.type_btn_group = QButtonGroup()
     self.type_btn_group.setExclusive(True)
     self.float_btn = QRadioButton('float')
-    self.float_btn.setChecked(True)
     self.uint8_btn = QRadioButton('uint8')
     self.type_btn_group.addButton(self.uint8_btn)
     self.type_btn_group.addButton(self.float_btn)
@@ -202,35 +224,40 @@ class ModelExecutor:
     self.output_edit.setPlaceholderText('Output node name')
     self.run_btn = createButtonWithText('Run', set_min_width=True)
     self.run_btn.clicked.connect(self.run)
+    self.clear_btn = createButtonWithText('Clear', set_min_width=True)
+    self.clear_btn.clicked.connect(self.clear)
     self.save_btn = createButtonWithText('Save', set_min_width=True)
     self.save_btn.clicked.connect(lambda : self.saveNumpyResult(self.save_btn))
+    self.light = LightWidget(Qt.red)
+    self.widgetValueInit()
 
     # Assign widget placement
     self.layout = QGridLayout()
-    self.layout.addWidget(self.file, 0, 0)
+    self.layout.addWidget(getHBoxLayout([self.file, self.light], margin=0), 0, 0)
     self.layout.addWidget(getHBoxLayout([self.file_edit, self.file_btn], margin=0), 1, 0)
     self.layout.addWidget(self.data, 2, 0)
     self.layout.addWidget(getHBoxLayout([self.data_edit, self.data_btn], margin=0), 3, 0)
     self.layout.addWidget(getHBoxLayout([self.float_btn, self.uint8_btn], margin=0), 4, 0)
     self.layout.addWidget(self.input_edit, 5, 0)
     self.layout.addWidget(self.output_edit, 6, 0)
-    self.layout.addWidget(getHBoxLayout([self.run_btn, self.save_btn], margin=0), 7, 0)
-    self.layout.setRowStretch(8, 1)
+    self.layout.addWidget(getHBoxLayout([self.run_btn, self.clear_btn, self.save_btn], margin=0), 7, 0)
+    self.layout.setRowStretch(9, 1)
     self.group_box.setLayout(self.layout)
 
   def executorStarted(self):
-    logThreadName(self)
+    self.light.setColor(Qt.red)
     self.run_btn.clearFocus()
     self.run_btn.setEnabled(False)
+    self.clear_btn.setEnabled(False)
     self.save_btn.setEnabled(False)
 
   def executorFinished(self):
-    logThreadName(self)
+    self.light.setColor(Qt.green)
     self.run_btn.setEnabled(True)
+    self.clear_btn.setEnabled(True)
     self.save_btn.setEnabled(True)
 
   def setNumpyResult(self, numpy_result):
-    logThreadName(self)
     self.numpy_result = numpy_result
     self.updateCallback()
 
@@ -269,8 +296,19 @@ class ModelExecutor:
     config['type'] = 'float' if self.float_btn.isChecked() else 'uint8'
     return config
 
-  def run(self):
+  def widgetValueInit(self):
+    self.file_edit.setText('')
+    self.data_edit.setText('')
+    self.input_edit.setText('')
+    self.output_edit.setText('')
+    self.float_btn.setChecked(True)
 
+  def clear(self):
+    self.widgetValueInit()
+    self.numpy_result = None
+    self.light.setColor(Qt.red)
+
+  def run(self):
     if self.tensorflow_dir is None:
       self.errorReporter('Please specify the tensorflow directory.', timeout=1000)
       return
@@ -333,11 +371,11 @@ class Visualizer(QMainWindow):
     self.setStatusBar(self.status_bar)
 
     # Menu bar
-    self.import_action = QAction('Import', self)
-    self.export_action = QAction('Export', self)
+    self.import_action = QAction('&Import', self)
+    self.export_action = QAction('&Export', self)
     self.import_action.triggered.connect(self.importConfig)
     self.export_action.triggered.connect(self.exportConfig)
-    self.file_menu = self.menuBar().addMenu('File')
+    self.file_menu = self.menuBar().addMenu('&File')
     self.file_menu.addAction(self.import_action)
     self.file_menu.addAction(self.export_action)
 
@@ -364,7 +402,6 @@ class Visualizer(QMainWindow):
       json.dump(config, f)
 
   def drawFigure(self):
-    logThreadName(self)
     result_a = self.model_a.getNumpyResult()
     result_b = self.model_b.getNumpyResult()
     data_list = []
