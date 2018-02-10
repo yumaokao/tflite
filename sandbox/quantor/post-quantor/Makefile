@@ -8,7 +8,7 @@ endif
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
 TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
 DATASET_BASE := $(TFLITE_ROOT_PATH)/datasets
-QUANTOR_BASE := $(TFLITE_ROOT_PATH)/sandbox/quantor
+QUANTOR_BASE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 all:
 	@ echo "all models"
