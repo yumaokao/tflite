@@ -6,7 +6,7 @@ TAG_NAME=latest-devel
 DOCKER=docker
 [ $DEVICE == "GPU" ] && TAG_NAME=latest-devel-gpu
 [ $DEVICE == "GPU" ] && DOCKER=nvidia-docker
-DATASETS_DIR=${DATASETS_DIR:=/home/yumaokao/mnts/sda2/yumaokao/datasets}
+DATASETS_DIR=${DATASETS_DIR:=/data/yumaokao/datasets}
 [ -d $DATASETS_DIR ] || DATASETS_DIR=$PWD/datasets
 
 IMAGE_NAME=yumaokao/tensorflow/lite:$TAG_NAME

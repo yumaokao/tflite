@@ -119,7 +119,9 @@ def main(_):
     network_fn(placeholder)
 
     # Quantize inference graph
-    fold_batch_norms.FoldBatchNorms(graph)
+    fold_batch_norms.FoldBatchNorms(graph,
+                                    freeze_batch_norm_delay=None,
+                                    is_training=False)
     quantize.Quantize(graph, is_training=False)
 
     graph_def = graph.as_graph_def()

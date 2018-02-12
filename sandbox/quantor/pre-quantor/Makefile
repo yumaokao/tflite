@@ -135,7 +135,7 @@ eval_mobilenet_v1_quantize: ${MOBILENET_V1_QUANTIZE_EVAL_TARGETS}
 eval_slim_mobilenet_v1_quantize:
 	@ PYTHONPATH=${TF_SLIM_BASE} \
 	  python eval_image_classifier_quantize.py \
-		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-2902390 \
+		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-3517205 \
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--dataset_name=imagenet \
 		--dataset_split_name=validation \
@@ -149,7 +149,7 @@ freeze_mobilenet_v1_quantize:
 		--output_file=$(ROOT_DIR)/train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb \
-		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-2902390 \
+		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-3517205 \
 		--input_binary=true \
 	        --output_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb \
 		--output_node_names=MobilenetV1/Predictions/Reshape

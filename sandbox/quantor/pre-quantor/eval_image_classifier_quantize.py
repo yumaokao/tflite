@@ -142,7 +142,9 @@ def main(_):
 
     # Quantize training graph
     g = tf.get_default_graph()
-    fold_batch_norms.FoldBatchNorms(g)
+    fold_batch_norms.FoldBatchNorms(g,
+                                    freeze_batch_norm_delay=None,
+                                    is_training=False)
     quantize.Quantize(g, is_training=True)
 
     if FLAGS.moving_average_decay:
