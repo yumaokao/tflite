@@ -224,10 +224,10 @@ class ModelExecutor:
     self.node_completer = QCompleter()
     self.input_edit = QLineEdit()
     self.input_edit.setPlaceholderText('Input node name')
-    self.input_edit.setCompleter(self.node_completer)
+    #self.input_edit.setCompleter(self.node_completer)
     self.output_edit = QLineEdit()
     self.output_edit.setPlaceholderText('Output node name')
-    self.output_edit.setCompleter(self.node_completer)
+    #self.output_edit.setCompleter(self.node_completer)
     self.run_btn = createButtonWithText('Run', set_min_width=True)
     self.run_btn.clicked.connect(self.run)
     self.clear_btn = createButtonWithText('Clear', set_min_width=True)
@@ -251,7 +251,7 @@ class ModelExecutor:
     self.group_box.setLayout(self.layout)
 
   def setModelFile(self, fn):
-    # FIXME: Use customized tree model instead of QStringListModel
+    # FIXME: Use more efficient model, say tree model
     # check https://gist.github.com/jason-s/9dcef741288b6509d362
     model_fn = str(fn)
     model_ext = os.path.splitext(model_fn)[1]
