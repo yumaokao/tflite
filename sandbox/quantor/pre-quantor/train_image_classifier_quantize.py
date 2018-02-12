@@ -548,7 +548,9 @@ def main(_):
 
     # Quantize training graph
     g = tf.get_default_graph()
-    fold_batch_norms.FoldBatchNorms(g)
+    fold_batch_norms.FoldBatchNorms(g,
+                                    freeze_batch_norm_delay=0,
+                                    is_training=True)
     quantize.Quantize(g, is_training=True)
     for var in g.get_collection('variables'):
       if var.name.endswith('min:0') or var.name.endswith('max:0'):
