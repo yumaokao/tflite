@@ -4,6 +4,7 @@
 - stores in the seperated directory `utils` that will avoid many git merge troubles
 - TODOs
   + should have `libtoco` directoy its own
+  + should have version to check
   + design library interface with namespace and header
 - build
 ```sh
