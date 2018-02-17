@@ -78,9 +78,10 @@ $ bazel build @flatbuffers//:flatc
 $ bazel-bin/external/flatbuffers/flatc --cpp --gen-object-api tensorflow/contrib/lite/schema/schema.fbs
 # add explicit to OperatorOptionBuilder
 $ sed -e 's/\([a-zA-Z0-9]\+Builder(\)/explicit \1/' schema_generated.h > schema_generated_e.h
-$ clang-format schema_generated_e.h --style=google > schema_generated_f.h
+# $ clang-format schema_generated_e.h --style=google > schema_generated_f.h
 $ git checkout --theirs tensorflow/contrib/lite/schema/schema_generated.h
-$ vimdiff schema_generated_f.h tensorflow/contrib/lite/schema/schema_generated.h
+# $ vimdiff schema_generated_f.h tensorflow/contrib/lite/schema/schema_generated.h
+$ vimdiff schema_generated_e.h tensorflow/contrib/lite/schema/schema_generated.h
 # need to install clang-format to make diff easier
 $ sudo apt-get install clang-format
 ```
