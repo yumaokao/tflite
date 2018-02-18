@@ -22,6 +22,10 @@ ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
 endif
 
+ifeq ($(MOBILENET_V1_QUANT_CKPT),)
+MOBILENET_V1_QUANT_CKPT := 5064184
+endif
+
 ROOT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
 TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
@@ -135,7 +139,7 @@ eval_mobilenet_v1_quantize: ${MOBILENET_V1_QUANTIZE_EVAL_TARGETS}
 eval_slim_mobilenet_v1_quantize:
 	@ PYTHONPATH=${TF_SLIM_BASE} \
 	  python eval_image_classifier_quantize.py \
-		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-3582752 \
+		--checkpoint_path=train_mobilenet_v1_quantize/model.ckpt-$(MOBILENET_V1_QUANT_CKPT) \
 		--dataset_dir=${DATASET_BASE}/imagenet \
 		--dataset_name=imagenet \
 		--dataset_split_name=validation \
@@ -149,7 +153,7 @@ freeze_mobilenet_v1_quantize:
 		--output_file=$(ROOT_DIR)/train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_inf_graph.pb \
-		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-3582752 \
+		--input_checkpoint=train_mobilenet_v1_quantize/model.ckpt-$(MOBILENET_V1_QUANT_CKPT) \
 		--input_binary=true \
 	        --output_graph=train_mobilenet_v1_quantize/mobilenet_v1_quantize_frozen.pb \
 		--output_node_names=MobilenetV1/Predictions/Reshape
