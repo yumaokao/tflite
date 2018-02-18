@@ -35,6 +35,7 @@ $ ./data/mnist/get_mnist.sh
 $ ./examples/mnist/create_mnist.sh
 ```
 
+## LeNet
 - Train
 ```sh
 $ vim examples/mnist/lenet_solver.prototxt
@@ -42,4 +43,16 @@ $ vim examples/mnist/lenet_solver.prototxt
   solver_mode: CPU
 $ ./examples/mnist/train_lenet.sh
 $ ls -lh ./examples/mnist/lenet_iter_*
+examples/mnist/lenet_iter_10000.caffemodel
+examples/mnist/lenet_iter_10000.solverstate
+```
+
+- lenetcpp
+```sh
+$ cd caffe/lenetcpp
+$ mkdir build && cd build
+$ cmake ../
+$ make make get_lenet_model
+$ make run_lenetcpp
+  res: 1 0.999654
 ```

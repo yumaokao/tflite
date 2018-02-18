@@ -30,10 +30,7 @@ int main(int argc, char* argv[]) {
   // load net train file caffemodel
   lenet.CopyTrainedLayersFrom(argv[2]);
 
-  cout << "YMK num_inputs " << lenet.num_inputs() << endl;
-  cout << "YMK num_outputs " << lenet.num_outputs() << endl;
   Blob<type>* input_ptr = lenet.input_blobs()[0];
-  cout << "YMK end" << endl;
   input_ptr->Reshape(1, 1, 28, 28);
 
   Blob<type>* output_ptr = lenet.output_blobs()[0];

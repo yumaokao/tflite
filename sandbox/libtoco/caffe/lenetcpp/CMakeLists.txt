@@ -14,11 +14,8 @@ find_package(OpenCV REQUIRED)
 target_link_libraries(lenetcpp caffe boost_system ${OpenCV_LIBS})
 
 add_custom_target(get_lenet_model
-    COMMAND cp -r ../../caffe/examples/mnist/mnist_test_lmdb ./
-    COMMAND cp ../../caffe/examples/mnist/lenet_train_test.prototxt ./
     COMMAND cp ../../caffe/examples/mnist/lenet.prototxt ./
-    COMMAND cp ../../caffe/examples/mnist/lenet_iter_10000.caffemodel ./
-    COMMAND sed -e 's/examples.mnist.//' lenet_train_test.prototxt > lenet_train_test_local.prototxt)
+    COMMAND cp ../../caffe/examples/mnist/lenet_iter_10000.caffemodel ./)
 
 add_custom_target(run_lenetcpp DEPENDS lenetcpp
     COMMAND ./lenetcpp lenet.prototxt lenet_iter_10000.caffemodel 1)
