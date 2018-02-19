@@ -30,6 +30,12 @@ android_ndk_repository(
     api_level=14)
 ```
 
+## bazelrc
+```sh
+$ cat ~/.bazelrc
+startup --max_idle_secs=100000000
+```
+
 ## Build TFLite Demo App
 ```sh
 $ bazel build --cxxopt='--std=c++11' //tensorflow/contrib/lite/java/demo/app/src/main:TfLiteCameraDemo
