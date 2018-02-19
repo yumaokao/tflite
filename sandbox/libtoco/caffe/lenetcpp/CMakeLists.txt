@@ -8,6 +8,7 @@ include_directories("../caffe/include")
 link_directories("../caffe/build/lib")
 
 find_package(OpenCV REQUIRED)
+find_package(Protobuf REQUIRED)
 
 # get_lenet_model
 add_custom_target(get_lenet_model
@@ -22,6 +23,6 @@ add_custom_target(run_lenetinf DEPENDS lenetinf
 
 # lenetdump
 add_executable(lenetdump lenetdump.cpp)
-target_link_libraries(lenetdump caffe boost_system)
+target_link_libraries(lenetdump caffe boost_system ${PROTOBUF_LIBRARIES})
 add_custom_target(run_lenetdump DEPENDS lenetdump
     COMMAND ./lenetdump lenet.prototxt lenet_iter_10000.caffemodel)
