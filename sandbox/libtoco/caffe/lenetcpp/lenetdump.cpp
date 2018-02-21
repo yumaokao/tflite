@@ -56,17 +56,48 @@ int main(int argc, char* argv[]) {
     }
     // has_convolution_param
     if (layer_param.has_convolution_param()) {
-      const ConvolutionParameter& conv_param = layer_param.convolution_param();
+      const ConvolutionParameter& param = layer_param.convolution_param();
       cout << "    [convolution_param]" << endl;
-      if (conv_param.has_bias_term())
-        cout << "      bias_term: " << conv_param.bias_term() << endl;
-      cout << "      pad_size: " << conv_param.pad_size() << endl;
-      cout << "      kernel_size: " << conv_param.kernel_size_size()
-           << " (" << conv_param.kernel_size(0) << ")" << endl;
-      cout << "      stride_size: " << conv_param.stride_size()
-           << " (" << conv_param.stride(0) << ")" << endl;
+      if (param.has_num_output())
+        cout << "      num_output: " << param.num_output() << endl;
+      if (param.has_bias_term())
+        cout << "      bias_term: " << param.bias_term() << endl;
+      cout << "      pad_size: " << param.pad_size() << endl;
+      cout << "      kernel_size: " << param.kernel_size_size()
+           << " (" << param.kernel_size(0) << ")" << endl;
+      cout << "      stride_size: " << param.stride_size()
+           << " (" << param.stride(0) << ")" << endl;
     }
 
+    // has_pooling_param
+    if (layer_param.has_pooling_param()) {
+      const PoolingParameter& param = layer_param.pooling_param();
+      cout << "    [pooling_param]" << endl;
+      if (param.has_pool())
+        cout << "      pool method: "
+             << param.PoolMethod_Name(param.pool()) << endl;
+      if (param.has_kernel_size())
+        cout << "      kernel size: " << param.kernel_size() << endl;
+      if (param.has_pad())
+        cout << "      pad: " << param.pad() << endl;
+      if (param.has_stride())
+        cout << "      stride: " << param.stride() << endl;
+    }
+
+    // has_relu_param
+    if (layer_param.has_relu_param()) {
+      const ReLUParameter& param = layer_param.relu_param();
+    }
+
+    // has_inner_product_param
+    if (layer_param.has_inner_product_param()) {
+      const InnerProductParameter& param = layer_param.inner_product_param();
+      cout << "    [inner_product_param]" << endl;
+      if (param.has_num_output())
+        cout << "      num_output: " << param.num_output() << endl;
+      if (param.has_bias_term())
+        cout << "      bias_term: " << param.bias_term() << endl;
+    }
   }
   const vector<string>& blob_names = lenet.blob_names();
   cout << "network blobs : " << blob_names.size() << endl;
