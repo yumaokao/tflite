@@ -24,3 +24,11 @@ $ make run_libtoco
 ## another git repo
 - TODOs
   + should have another git repo to keep track really things with `libtoco.so`
+
+## use model.h (copied from tflite)
+- required modification and headers
+  + `#include <set>`
+  + headers generated from `model_flags.proto` and `types.proto`
+  + `runtime/types.h` and the three header files it includes
+  + `logging.h` for `DCHECK` and `CHECK` function
+  + need to modify the include path of all the above files
