@@ -53,6 +53,9 @@ $ cd caffe/lenetcpp
 $ mkdir build && cd build
 $ cmake ../
 $ make get_lenet_model
+# lenet eval
 $ make run_lenetinf
   res: 1 0.999654
+# dump lenet
+$ make run_lenetdump
 ```

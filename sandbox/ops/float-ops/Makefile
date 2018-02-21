@@ -15,6 +15,7 @@ FIXED_TARGETS += relu relu6 sigmoid tanh softmax floor
 FIXED_TARGETS += resize_bilinear mean
 FIXED_TARGETS += space_to_depth depth_to_space
 FIXED_TARGETS += l2_normalize local_response_normalization
+FIXED_TARGETS += leaky_relu
 
 # float-ops not passed with compare_tflite
 #    1. no tflite kernels:
