@@ -45,4 +45,4 @@ build_libtoco:
 
 # bazelrc
 bazelrc:
-	@ echo "startup --max_idle_secs=100000000" ~/.bazelrc
+	@ echo "startup --max_idle_secs=100000000" > ~/.bazelrc
