@@ -207,6 +207,7 @@ class ModelExecutor:
     self.file = QLabel('Model file')
     self.file_edit = QLineEdit()
     self.file_edit.setReadOnly(True)
+    self.file_edit.textChanged.connect(self.setModelFile)
     self.file_btn = createButtonWithText('...', set_fixed_width=True)
     self.file_btn.clicked.connect(lambda : openFileDialogAndDisplay(self.file_btn, self.file_edit, filter_list=['TensorFlow model (*.pb)', 'TensorFlow Lite model (*.tflite *.lite)']))
     self.data = QLabel('Data file')
@@ -220,10 +221,13 @@ class ModelExecutor:
     self.uint8_btn = QRadioButton('uint8')
     self.type_btn_group.addButton(self.uint8_btn)
     self.type_btn_group.addButton(self.float_btn)
+    self.node_completer = QCompleter()
     self.input_edit = QLineEdit()
     self.input_edit.setPlaceholderText('Input node name')
+    #self.input_edit.setCompleter(self.node_completer)
     self.output_edit = QLineEdit()
     self.output_edit.setPlaceholderText('Output node name')
+    #self.output_edit.setCompleter(self.node_completer)
     self.run_btn = createButtonWithText('Run', set_min_width=True)
     self.run_btn.clicked.connect(self.run)
     self.clear_btn = createButtonWithText('Clear', set_min_width=True)
@@ -245,6 +249,22 @@ class ModelExecutor:
     self.layout.addWidget(getHBoxLayout([self.run_btn, self.clear_btn, self.save_btn], margin=0), 7, 0)
     self.layout.setRowStretch(9, 1)
     self.group_box.setLayout(self.layout)
+
+  def setModelFile(self, fn):
+    # FIXME: Use more efficient model, say tree model
+    # check https://gist.github.com/jason-s/9dcef741288b6509d362
+    model_fn = str(fn)
+    model_ext = os.path.splitext(model_fn)[1]
+    completer_model = QStringListModel()
+    if model_ext == '.pb':
+      graph_def = tf.GraphDef()
+      with tf.gfile.GFile(model_fn, "rb") as f:
+        graph_def.ParseFromString(f.read())
+      completer_model.setStringList([node.name for node in graph_def.node])
+      self.node_completer.setModel(completer_model)
+    elif model_ext == '.tflite' or model_ext == '.lite':
+      # TODO: Add support of tflite model
+      pass
 
   def executorStarted(self):
     self.light.setColor(Qt.red)
@@ -411,6 +431,8 @@ class Visualizer(QMainWindow):
     result_b = self.model_b.getNumpyResult()
     data_list = []
     fn_list = []
+
+    # FIXME: if batch > 1 ?
     if result_a is not None:
       data = result_a.flatten()
       data_list.append(data)
