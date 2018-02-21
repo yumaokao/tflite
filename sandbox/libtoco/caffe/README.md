@@ -52,7 +52,10 @@ examples/mnist/lenet_iter_10000.solverstate
 $ cd caffe/lenetcpp
 $ mkdir build && cd build
 $ cmake ../
-$ make make get_lenet_model
-$ make run_lenetcpp
+$ make get_lenet_model
+# lenet eval
+$ make run_lenetinf
   res: 1 0.999654
+# dump lenet
+$ make run_lenetdump
 ```
