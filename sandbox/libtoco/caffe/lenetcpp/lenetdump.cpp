@@ -9,17 +9,26 @@ int main(int argc, char* argv[]) {
   // set cpu running software
   Caffe::set_mode(Caffe::CPU);
 
-  // load net file, caffe::TEST
+#if 0
+  // load NetParameter with caffe::TEST
+  NetParameter param;
+  ReadNetParamsFromTextFileOrDie(argv[1], &param);
+  param.mutable_state()->set_phase(caffe::TEST);
+#endif
+
+  // load Net with caffe::TEST
   Net<float> lenet(argv[1], caffe::TEST);
 
   // load net train file caffemodel
   lenet.CopyTrainedLayersFrom(argv[2]);
 
-  /* Blob<type>* input_ptr = lenet.input_blobs()[0];
+#if 0
+  Blob<type>* input_ptr = lenet.input_blobs()[0];
   input_ptr->Reshape(1, 1, 28, 28);
 
   Blob<type>* output_ptr = lenet.output_blobs()[0];
-  output_ptr->Reshape(1, 10, 1, 1); */
+  output_ptr->Reshape(1, 10, 1, 1);
+#endif
 
   string network_name = lenet.name();
   cout << "network name : [" << network_name << "]" << endl;
@@ -34,6 +43,20 @@ int main(int argc, char* argv[]) {
          // << ", blobs " << layer_param.blobs_size()
          << ", bottoms " << layer_param.bottom_size()
          << ", tops " << layer_param.top_size() << endl;
+    // bottoms
+    if (layer_param.bottom_size() > 0) {
+      cout << "    [bottoms]" << endl;
+      for (int i = 0; i < layer_param.bottom_size(); i++) {
+        cout << "      bottom[" << i << "]: " << layer_param.bottom(i) << endl;
+      }
+    }
+    // tops
+    if (layer_param.top_size() > 0) {
+      cout << "    [tops]" << endl;
+      for (int i = 0; i < layer_param.top_size(); i++) {
+        cout << "      top[" << i << "]: " << layer_param.top(i) << endl;
+      }
+    }
     // parameter blobs
     if (blobs.size() > 0) {
       cout << "    [parameter blobs]" << endl;
@@ -45,7 +68,7 @@ int main(int argc, char* argv[]) {
 
         // dump with cpu_data(), since read only
         const float* bdata = b->cpu_data();
-        cout << "      ->data:";
+        cout << "        data:";
         for (int i = 0; i < b->count(); i++) {
           cout << " " << bdata[i];
           if ( i > 8)
@@ -101,8 +124,10 @@ int main(int argc, char* argv[]) {
   }
   const vector<string>& blob_names = lenet.blob_names();
   cout << "network blobs : " << blob_names.size() << endl;
-  for (const auto s : blob_names)
-    cout << "    " << s << endl;
+  for (const auto s : blob_names) {
+    const boost::shared_ptr<Blob<float> >& blob = lenet.blob_by_name(s);
+    cout << "    " << s << ": " << blob->shape_string() << endl;
+  }
 
   return 0;
 }
