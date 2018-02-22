@@ -45,7 +45,7 @@ libtoco_test
 toco_model_test
 
 # include directory for toco_model_test
-include/
+/include
 
 # libtoco caffe repo
 caffe/caffe/
