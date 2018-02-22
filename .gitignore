@@ -35,11 +35,6 @@ tags
 # csv
 *.csv
 
-# tensorflow
-tensorflow
-models
-datasets
-
 # mnist ckpts
 sandbox/mnist/*/*.pb
 sandbox/mnist/*/ckpts

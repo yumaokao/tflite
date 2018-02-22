@@ -29,6 +29,7 @@ $ make run_libtoco
 - required modification and headers
   + `#include <set>`
   + headers generated from `model_flags.proto` and `types.proto`
-  + `runtime/types.h` and the three header files it includes
+  + `runtime/types.h` and the `kernels/internal/types.h` file it includes
   + `logging.h` for `DCHECK` and `CHECK` function
+  + `toco_types.h`
   + need to modify the include path of all the above files
