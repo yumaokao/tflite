@@ -18,7 +18,7 @@ find_package(Protobuf REQUIRED)
 
 # setup flatbuffers
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers)
-  execute_process(COMMAND git clone https://github.com/google/flatbuffers.git ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers)
+  MESSAGE(FATAL_ERROR "Please clone the flatbuffer source code first")
 endif()
 set(FLATBUFFERS_BUILD_TESTS OFF)
 set(FLATBUF_SRC_ROOT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers)
