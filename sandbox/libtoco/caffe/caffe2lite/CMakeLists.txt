@@ -30,5 +30,6 @@ include_directories(${FLATBUF_INCLUDE_DIR})
 include_directories(FLATBUF_INCLUDE_DIR)
 add_executable(genlite genlite.cpp)
 add_custom_target(run_genlite DEPENDS genlite
-    COMMAND ./genlite model.lite
+    COMMAND ./genlite model.lite)
+add_custom_target(run_dump_tflite DEPENDS genlite
     COMMAND ${TFLITE_ROOT_PATH}/tensorflow/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite model.lite)
