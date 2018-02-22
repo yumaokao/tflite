@@ -20,11 +20,11 @@ find_package(Protobuf REQUIRED)
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers)
   MESSAGE(FATAL_ERROR "Please clone the flatbuffer source code first")
 endif()
-set(FLATBUFFERS_BUILD_TESTS OFF)
+# set(FLATBUFFERS_BUILD_TESTS OFF)
 set(FLATBUF_SRC_ROOT_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers)
 set(FLATBUF_INCLUDE_DIR ${FLATBUF_SRC_ROOT_FOLDER}/include)
 include_directories(${FLATBUF_INCLUDE_DIR})
-add_subdirectory(${FLATBUF_SRC_ROOT_FOLDER})
+# add_subdirectory(${FLATBUF_SRC_ROOT_FOLDER})
 
 # genlite
 include_directories(FLATBUF_INCLUDE_DIR)
