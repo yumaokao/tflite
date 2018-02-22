@@ -53,5 +53,22 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < 10; i++) cout << i << "\t" << begin[i] << endl;
 
   cout << "res: " << index << " " << begin[index] << endl;
+
+  // dump blobs
+  const vector<string>& blob_names = lenet.blob_names();
+  cout << "network blobs : " << blob_names.size() << endl;
+  for (const auto s : blob_names) {
+    const boost::shared_ptr<Blob<float> >& b = lenet.blob_by_name(s);
+    cout << "    " << s << ": " << b->shape_string() << endl;
+    // dump with cpu_data(), since read only
+    const float* bdata = b->cpu_data();
+    cout << "      :";
+    for (int i = 0; i < b->count(); i++) {
+      cout << " " << bdata[i];
+      if ( i > 8)
+        break;
+    }
+    cout << endl;
+  }
   return 0;
 }
