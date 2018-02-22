@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   auto operators = builder.CreateVector(operator_list, 1);
 
   /* Tensor */
-  flatbuffers::Offset<tflite::Tensor> tensor_list[2];
+  flatbuffers::Offset<Tensor> tensor_list[2];
   int input_shape_list[] = {batch_count, src_height, src_width, src_channel};
   int output_shape_list[] = {new_batch, new_height, new_width, new_channel};
   auto input_shape = builder.CreateVector(input_shape_list, 4);
