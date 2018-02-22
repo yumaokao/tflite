@@ -45,3 +45,5 @@ target_link_libraries(caffe2lite caffe boost_system ${PROTOBUF_LIBRARIES})
 add_custom_target(run_caffe2lite DEPENDS caffe2lite
     COMMAND ./caffe2lite ./lenet.prototxt ./lenet_iter_10000.caffemodel model.lite
     COMMAND ${TFLITE_ROOT_PATH}/tensorflow/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite model.lite)
+
+add_executable(modelbuilder modelbuilder.cpp)
