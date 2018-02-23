@@ -15,7 +15,7 @@ include_directories("./include")
 include_directories(FLATBUF_INCLUDE_DIR)
 link_directories("../caffe/build/lib")
 
-# find_package(Protobuf REQUIRED)
+find_package(Protobuf REQUIRED)
 
 # setup flatbuffers
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/flatbuffers)
