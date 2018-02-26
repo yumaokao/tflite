@@ -9,10 +9,10 @@ OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/ops/float-ops
 
 VARIABLE_TARGETS := fully_connected concat multiply
 VARIABLE_TARGETS += conv2d depthwise_conv2d conv2d_transpose
-VARIABLE_TARGETS += atrous_conv2d
+VARIABLE_TARGETS += atrous_conv2d pad_conv2d
 FIXED_TARGETS := avg_pool max_pool l2_pool
 FIXED_TARGETS += relu relu6 sigmoid tanh softmax floor
-FIXED_TARGETS += resize_bilinear mean
+FIXED_TARGETS += resize_bilinear mean pad pad_max_pool pad_avg_pool
 FIXED_TARGETS += space_to_depth depth_to_space
 FIXED_TARGETS += l2_normalize local_response_normalization
 FIXED_TARGETS += leaky_relu
