@@ -78,3 +78,8 @@ include mks/resnet_v1_50.mk
 # for resnet_v2
 ########################################################
 include mks/resnet_v2_50.mk
+
+########################################################
+# for googlenet (batch 1) from caffe model
+########################################################
+include mks/googlenet.mk
