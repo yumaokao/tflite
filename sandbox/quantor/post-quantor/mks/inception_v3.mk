@@ -120,7 +120,7 @@ eval_quantor_inception_v3_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_v3/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=20 --input_size=299 --batch_size=50
+		--max_num_batches=200 --input_size=299 --batch_size=50
 
 eval_inception_v3_tflite:
 	@ echo $@
@@ -129,7 +129,7 @@ eval_inception_v3_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_v3/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 --input_size=299
+		--max_num_batches=10000 --input_size=299
 
 
 ########################################################

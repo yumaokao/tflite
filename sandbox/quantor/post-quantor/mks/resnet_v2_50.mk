@@ -37,7 +37,7 @@ eval_resnet_v2_50:
 		--dataset_name=imagenet --dataset_split_name=validation \
 		--preprocessing_name=inception \
 		--eval_image_size=299 \
-		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=resnet_v2_50 --max_num_batches=20
+		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=resnet_v2_50 --max_num_batches=200
 
 quantor_resnet_v2_50: ${QUANTOR_RESNET_v2_50_TARGETS}
 
@@ -68,7 +68,7 @@ eval_resnet_v2_50_frozen:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=resnet_v2_50/predictions/Reshape_1 \
 		--input_size=224 --preprocess_name=inception \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v2_50/frozen_resnet_v2_50.pb --max_num_batches=20
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v2_50/frozen_resnet_v2_50.pb --max_num_batches=200
 
 quantor_resnet_v2_50_frozen:
 	@ quantor_frozen \
@@ -77,7 +77,7 @@ quantor_resnet_v2_50_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v2_50/frozen_resnet_v2_50.pb \
 		--output_node_name=resnet_v2_50/predictions/Reshape_1 \
 		--input_size=224 --preprocess_name=inception \
-		--output_dir=$(QUANTOR_BASE)/resnet_v2_50/quantor --max_num_batches=20
+		--output_dir=$(QUANTOR_BASE)/resnet_v2_50/quantor --max_num_batches=200
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v2_50/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v2_50/quantor/model.ckpt \
@@ -89,7 +89,7 @@ quantor_resnet_v2_50_frozen:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--output_node_name=resnet_v2_50/predictions/Reshape_1 \
 		--input_size=224 --preprocess_name=inception \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v2_50/quantor/frozen.pb --max_num_batches=20
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v2_50/quantor/frozen.pb --max_num_batches=200
 
 toco_quantor_resnet_v2_50:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v2_50/quantor/dots
@@ -123,7 +123,7 @@ eval_quantor_resnet_v2_50_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v2_50/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--preprocess_name=inception \
-		--max_num_batches=20 --input_size=224 --batch_size=50
+		--max_num_batches=200 --input_size=224 --batch_size=50
 
 eval_resnet_v2_50_tflite:
 	@ echo $@
@@ -133,7 +133,7 @@ eval_resnet_v2_50_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v2_50/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--preprocess_name=inception \
-		--max_num_batches=1000 --input_size=224
+		--max_num_batches=10000 --input_size=224
 
 
 ########################################################
