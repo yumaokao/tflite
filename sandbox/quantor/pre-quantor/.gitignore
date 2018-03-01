@@ -12,3 +12,6 @@ google_mobilenet_v1_quantize
 
 # slim dataset imagenet labels
 labels.txt
+
+# tar.gz
+*.tar.gz
