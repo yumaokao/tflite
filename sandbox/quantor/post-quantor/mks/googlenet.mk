@@ -37,7 +37,7 @@ eval_googlenet_frozen:
 		--output_node_name=prob \
 		--input_node_name=data \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
-		--frozen_pb=$(QUANTOR_BASE)/googlenet/frozen_googlenet_batch1.pb --max_num_batches=2000 --batch_size=1
+		--frozen_pb=$(QUANTOR_BASE)/googlenet/frozen_googlenet_batch1.pb --max_num_batches=10000 --batch_size=1
 
 quantor_googlenet_frozen:
 	@ quantor_frozen \
@@ -47,7 +47,7 @@ quantor_googlenet_frozen:
 		--output_node_name=prob \
 		--input_node_name=data \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
-		--output_dir=$(QUANTOR_BASE)/googlenet/quantor --max_num_batches=2000 --batch_size=1
+		--output_dir=$(QUANTOR_BASE)/googlenet/quantor --max_num_batches=10000 --batch_size=1
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/googlenet/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/googlenet/quantor/model.ckpt \
@@ -61,7 +61,7 @@ quantor_googlenet_frozen:
 		--output_node_name=prob \
 		--input_node_name=data \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
-		--frozen_pb=$(QUANTOR_BASE)/googlenet/quantor/frozen.pb --max_num_batches=2000 --batch_size=1
+		--frozen_pb=$(QUANTOR_BASE)/googlenet/quantor/frozen.pb --max_num_batches=10000 --batch_size=1
 
 toco_quantor_googlenet:
 	@ mkdir -p $(QUANTOR_BASE)/googlenet/quantor/dots
@@ -96,7 +96,7 @@ eval_quantor_googlenet_tflite:
 		--tflite_model=$(QUANTOR_BASE)/googlenet/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=20 --input_size=224 --batch_size=50
+		--max_num_batches=200 --input_size=224 --batch_size=50
 
 eval_googlenet_tflite:
 	@ echo $@
@@ -106,5 +106,5 @@ eval_googlenet_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/googlenet/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=1000 --input_size=224
+		--max_num_batches=10000 --input_size=224
 

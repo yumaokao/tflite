@@ -123,7 +123,7 @@ eval_quantor_resnet_v1_50_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=20 --input_size=224 --batch_size=50
+		--max_num_batches=200 --input_size=224 --batch_size=50
 
 eval_resnet_v1_50_tflite:
 	@ echo $@
