@@ -9,9 +9,9 @@ MOBILENET_V1_EVAL_TARGETS += eval_tflite_mobilenet_v1
 .PHONY: $(MOBILENET_V1_EVAL_TARGETS)
 # mobilenet_v1_quantize
 .PHONY: train_mobilenet_v1_quantize eval_mobilenet_v1_quantize
-MOBILENET_V1_QUANTIZE_EVAL_TARGETS := eval_slim_mobilenet_v1_quantize
-MOBILENET_V1_QUANTIZE_EVAL_TARGETS += eval_frozen_mobilenet_v1_quantize
+# MOBILENET_V1_QUANTIZE_EVAL_TARGETS := eval_slim_mobilenet_v1_quantize
 MOBILENET_V1_QUANTIZE_EVAL_TARGETS += freeze_mobilenet_v1_quantize
+MOBILENET_V1_QUANTIZE_EVAL_TARGETS += eval_frozen_mobilenet_v1_quantize
 MOBILENET_V1_QUANTIZE_EVAL_TARGETS += toco_mobilenet_v1_quantize
 MOBILENET_V1_QUANTIZE_EVAL_TARGETS += eval_tflite_mobilenet_v1_quantize
 .PHONY: $(MOBILENET_V1_QUANTIZE_EVAL_TARGETS)
