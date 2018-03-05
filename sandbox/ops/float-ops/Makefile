@@ -23,7 +23,12 @@ FIXED_TARGETS += leaky_relu
 #
 #    2. --allow_custom_ops:
 #       conv2d_transpose -> TransposeConv
-
+#
+#    3. newly add but not resolve
+#       atrous_conv2d (dilated conv)
+#
+#    4. registration fail:
+#       depth_to_space
 
 .PHONY: $(VARIABLE_TARGETS)
 .PHONY: $(FIXED_TARGETS)
@@ -50,7 +55,7 @@ define toco
 		--inference_input_type=FLOAT --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5
-	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
+	@ cd $1/dots && dot -Tpdf -O ./toco_*.dot
 endef
 
 define compare_tflite

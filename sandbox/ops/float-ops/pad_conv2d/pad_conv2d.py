@@ -7,7 +7,7 @@ def model(x):
   W = weight_variable([3, 3, 4, 32], name='W')
   b = bias_variable([32], name='b')
 
-  pad_value = [[0, 0], [7, 6], [8, 7], [0, 0]]
+  pad_value = [[0, 0], [2, 2], [2, 2], [0, 0]]
   pad_x2d = tf.pad(x_2d, pad_value, "CONSTANT")
   x_dconv2d = tf.nn.conv2d(pad_x2d, W, strides=[1, 1, 1, 1], padding='VALID')
   y = tf.nn.relu(x_dconv2d + b, name='ys')
