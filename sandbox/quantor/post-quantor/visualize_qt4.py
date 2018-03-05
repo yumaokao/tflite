@@ -146,7 +146,30 @@ class Executor(QThread):
         output_data = sess.run(y, feed_dict={x: input_data})
       return output_data
 
-    def processTfliteModel(model_fn, input_fn, input_node, output_node):
+    def processTfliteModelFloat(model_fn, input_fn, input_node, output_node):
+      def getTfliteNodeIndex(model_fn, node_name):
+        cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn]
+        out = subprocess.check_output(cmd)
+        for line in out.splitlines():
+          if 'name ' + node_name in line:
+            result = re.search('(?P<index>[0-9]+): name ' + node_name, line)
+            return int(result.group('index'))
+        raise ValueError('The given output node is not found inside the TFLITE model')
+
+      output_index = getTfliteNodeIndex(model_fn, output_node)
+      tmp_output_fn = input_fn + '.out.tmp'
+      cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
+          '--tflite_file={}'.format(model_fn),
+          '--batch_xs={}'.format(input_fn),
+          '--batch_ys={}'.format(tmp_output_fn),
+          '--output_tensor_idx={}'.format(output_index),
+          '--inference_type=' + self.param['type']]
+      subprocess.check_output(cmd)
+      output_data = np.load(tmp_output_fn)
+      subprocess.check_output(['rm', tmp_output_fn])
+      return output_data
+
+    def processTfliteModelUint8(model_fn, input_fn, input_node, output_node):
       def getTfliteNodeIndexAndQuantizationInfo(model_fn, node_name):
         cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn]
         out = subprocess.check_output(cmd)
@@ -174,8 +197,12 @@ class Executor(QThread):
       result = processFrozenPb(self.param['model'], self.param['data'], self.param['input_node'], self.param['output_node'])
       self.emit(SIGNAL('Result'), result)
     elif model_ext == '.tflite' or model_ext == '.lite':
-      result = processTfliteModel(self.param['model'], self.param['data'], self.param['input_node'], self.param['output_node'])
-      self.emit(SIGNAL('Result'), result)
+      if self.param['type'] == 'float':
+        result = processTfliteModelFloat(self.param['model'], self.param['data'], self.param['input_node'], self.param['output_node'])
+        self.emit(SIGNAL('Result'), result)
+      elif self.param['type'] == 'uint8':
+        result = processTfliteModelUint8(self.param['model'], self.param['data'], self.param['input_node'], self.param['output_node'])
+        self.emit(SIGNAL('Result'), result)
 
 
 class ModelExecutor:

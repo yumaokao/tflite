@@ -1,0 +1,51 @@
+# vim
+*.swp
+
+# cmake
+build
+out
+
+# proto
+*.bin
+
+# caffemodel
+*.caffemodel
+
+# python cache
+__pycache__
+
+# dot image
+*.png
+
+# json
+*.json
+
+# dot
+*.dot
+
+# pdf
+*.pdf
+
+# ctag
+tags
+
+# exec_json
+*.exec_json
+
+# csv
+*.csv
+
+# so
+*.so
+
+# libtoco_test
+libtoco_test
+
+# toco_model_test
+toco_model_test
+
+# include directory for toco_model_test
+/include
+
+# libtoco caffe repo
+caffe/caffe/

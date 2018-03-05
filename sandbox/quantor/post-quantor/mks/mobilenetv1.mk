@@ -37,7 +37,7 @@ eval_mobilenet_v1_224:
 		--checkpoint_path=$(QUANTOR_BASE)/mobilenet_v1_224/mobilenet_v1_1.0_224.ckpt \
 		--eval_dir=$(QUANTOR_BASE)/mobilenet_v1_224 \
 		--dataset_name=imagenet --dataset_split_name=validation \
-		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=mobilenet_v1 --max_num_batches=50
+		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=mobilenet_v1 --max_num_batches=200
 
 quantor_mobilenet_v1_224: $(QUANTOR_MOBILENETV1_224_TARGETS)
 
@@ -120,7 +120,7 @@ eval_quantor_mobilenet_v1_224_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/model.lite --tensorflow_dir=$(TF_BASE) \
 		--inference_type=uint8 \
-		--max_num_batches=20 --input_size=224 --batch_size=50
+		--max_num_batches=200 --input_size=224 --batch_size=50
 
 eval_mobilenet_v1_224_tflite:
 	@ echo $@
@@ -129,7 +129,7 @@ eval_mobilenet_v1_224_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/mobilenet_v1_224/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 --input_size=224
+		--max_num_batches=10000 --input_size=224
 
 ########################################################
 # compare_toco

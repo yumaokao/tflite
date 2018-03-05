@@ -9,11 +9,13 @@ OPS_BASE := $(TFLITE_ROOT_PATH)/sandbox/ops/float-ops
 
 VARIABLE_TARGETS := fully_connected concat multiply
 VARIABLE_TARGETS += conv2d depthwise_conv2d conv2d_transpose
-FIXED_TARGETS := avg_pool max_pool l2_pool
+VARIABLE_TARGETS += atrous_conv2d pad_conv2d
+FIXED_TARGETS := avg_pool max_pool_2x2_s2 max_pool_3x3_s2 l2_pool
 FIXED_TARGETS += relu relu6 sigmoid tanh softmax floor
-FIXED_TARGETS += resize_bilinear mean
+FIXED_TARGETS += resize_bilinear mean pad pad_max_pool pad_avg_pool
 FIXED_TARGETS += space_to_depth depth_to_space
 FIXED_TARGETS += l2_normalize local_response_normalization
+FIXED_TARGETS += leaky_relu
 
 # float-ops not passed with compare_tflite
 #    1. no tflite kernels:
@@ -21,7 +23,12 @@ FIXED_TARGETS += l2_normalize local_response_normalization
 #
 #    2. --allow_custom_ops:
 #       conv2d_transpose -> TransposeConv
-
+#
+#    3. newly add but not resolve
+#       atrous_conv2d (dilated conv)
+#
+#    4. registration fail:
+#       depth_to_space
 
 .PHONY: $(VARIABLE_TARGETS)
 .PHONY: $(FIXED_TARGETS)
@@ -48,7 +55,7 @@ define toco
 		--inference_input_type=FLOAT --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5
-	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
+	@ cd $1/dots && dot -Tpdf -O ./toco_*.dot
 endef
 
 define compare_tflite
