@@ -48,6 +48,8 @@ build_lite_utils:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:run_tflite
+	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:transform_graph
 
 build_libtoco:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:libtoco.so
