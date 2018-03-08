@@ -13,7 +13,7 @@ def create_training_graph(*args, **kwargs):
 def create_eval_graph(*args, **kwargs):
   quantize_graph.create_eval_graph(*args, **kwargs)
 
-def create_training_graph_and_return(input_graph=None, quant_delay=0):
+def create_training_graph_and_return(input_graph=None, quant_delay=0, is_batch_norm_training=False):
 
   if quant_delay == 0:
     freeze_bn_delay = int(2e5)
@@ -27,7 +27,7 @@ def create_training_graph_and_return(input_graph=None, quant_delay=0):
     fold_batch_norms.FoldBatchNorms(
         g,
         freeze_batch_norm_delay=freeze_bn_delay,
-        is_training=False)
+        is_training=is_batch_norm_training)
     quantize.Quantize(
         g,
         is_training=True,
