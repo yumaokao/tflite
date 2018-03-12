@@ -16,13 +16,13 @@ echo "Cloning tensorflow for container '$CONTAINER_NAME'..."
 if [ -d ./tensorflow ]; then
     :
 else
-    git clone https://yumaokao@github.com/yumaokao/tensorflow
+    git clone git@mtkgitlab.ddns.net:mtk07832/tensorflow.git
     cd tensorflow && git checkout origin/lite-utils -b lite-utils && cd -
 fi
 if [ -d ./models ]; then
     :
 else
-    git clone https://yumaokao@github.com/yumaokao/models
+    git clone https://github.com/tensorflow/models.git
 fi
 
 echo "Running container '$CONTAINER_NAME' from image '$IMAGE_NAME' with '$DOCKER'..."

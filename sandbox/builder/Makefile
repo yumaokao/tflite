@@ -1,7 +1,7 @@
 .PHONY: all clean configure
 .PHONY: build_tf_pip_gpu build_tf_pip_cpu build_lite_utils
 .PHONY: install_tf_pip build_install_tf_pip_cpu build_tf_pip_gpu
-.PHONY: bazelrc
+.PHONY: bazelrc install_bazel
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -57,3 +57,8 @@ build_libtoco:
 # bazelrc
 bazelrc:
 	@ echo "startup --max_idle_secs=100000000" > ~/.bazelrc
+
+install_bazel:
+	@ wget https://github.com/bazelbuild/bazel/releases/download/0.11.1/bazel-0.11.1-installer-linux-x86_64.sh
+	@ sudo chmod +x bazel-0.11.1-installer-linux-x86_64.sh
+	@ sudo ./bazel-0.11.1-installer-linux-x86_64.sh
