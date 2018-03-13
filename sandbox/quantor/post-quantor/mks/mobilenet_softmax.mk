@@ -85,7 +85,7 @@ eval_quantor_mobilenet_softmax_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/mobilenet_softmax/quantor/model.lite --tensorflow_dir=$(TF_BASE) \
 		--inference_type=uint8 \
-		--max_num_batches=10000 --input_size=224 --batch_size=1
+		--max_num_batches=1000 --input_size=224 --batch_size=10
 
 toco_mobilenet_softmax:
 	@ mkdir -p $(QUANTOR_BASE)/mobilenet_softmax/dots

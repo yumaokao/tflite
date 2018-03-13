@@ -123,7 +123,7 @@ eval_quantor_resnet_v2_50_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v2_50/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--preprocess_name=inception \
-		--max_num_batches=200 --input_size=224 --batch_size=50
+		--max_num_batches=1000 --input_size=224 --batch_size=10
 
 eval_resnet_v2_50_tflite:
 	@ echo $@

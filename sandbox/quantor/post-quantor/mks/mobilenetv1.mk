@@ -120,7 +120,7 @@ eval_quantor_mobilenet_v1_224_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/mobilenet_v1_224/quantor/model.lite --tensorflow_dir=$(TF_BASE) \
 		--inference_type=uint8 \
-		--max_num_batches=200 --input_size=224 --batch_size=50
+		--max_num_batches=1000 --input_size=224 --batch_size=10
 
 eval_mobilenet_v1_224_tflite:
 	@ echo $@
