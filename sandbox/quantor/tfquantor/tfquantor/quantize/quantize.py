@@ -35,7 +35,7 @@ _QUANTIZABLE_TYPES = {'Conv2D', 'MatMul', 'DepthwiseConv2dNative'}
 _ACTIVATION_TYPES = {'Relu', 'Relu6', 'Identity'}
 
 # Weight types that are supported by the quantization rewrite.
-_WEIGHT_TYPES = {'Variable', 'VariableV2', 'VarHandleOp'}
+_WEIGHT_TYPES = {'Variable', 'VariableV2', 'VarHandleOp', 'Const'}
 
 
 def Quantize(graph,
