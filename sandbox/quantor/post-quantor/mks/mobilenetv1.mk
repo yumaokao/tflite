@@ -1,7 +1,7 @@
 # float model
 QUANTOR_MOBILENETV1_224_TARGETS := freeze_mobilenet_v1_224
 QUANTOR_MOBILENETV1_224_TARGETS += eval_mobilenet_v1_224_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_MOBILENETV1_224_TARGETS += toco_mobilenet_v1_224
 QUANTOR_MOBILENETV1_224_TARGETS += eval_mobilenet_v1_224_tflite
 # uint8 model

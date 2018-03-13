@@ -1,7 +1,7 @@
 # float model
 QUANTOR_RESNET_v2_50_TARGETS := freeze_resnet_v2_50
 QUANTOR_RESNET_v2_50_TARGETS += eval_resnet_v2_50_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_RESNET_v2_50_TARGETS += toco_resnet_v2_50
 QUANTOR_RESNET_v2_50_TARGETS += eval_resnet_v2_50_tflite
 # uint8 model

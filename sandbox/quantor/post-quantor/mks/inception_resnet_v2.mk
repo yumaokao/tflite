@@ -1,7 +1,7 @@
 # float model
 QUANTOR_INCPETIONRESNETV2_TARGETS := freeze_inception_resnet_v2
 QUANTOR_INCPETIONRESNETV2_TARGETS += eval_inception_resnet_v2_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_INCPETIONRESNETV2_TARGETS += toco_inception_resnet_v2
 QUANTOR_INCPETIONRESNETV2_TARGETS += eval_inception_resnet_v2_tflite
 # uint8 model

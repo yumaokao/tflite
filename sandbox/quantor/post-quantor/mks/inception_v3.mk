@@ -1,7 +1,7 @@
 # float model
 QUANTOR_INCEPTIONV3_TARGETS := freeze_inception_v3
 QUANTOR_INCEPTIONV3_TARGETS += eval_inception_v3_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_INCEPTIONV3_TARGETS += toco_inception_v3
 QUANTOR_INCEPTIONV3_TARGETS += eval_inception_v3_tflite
 # uint8 model

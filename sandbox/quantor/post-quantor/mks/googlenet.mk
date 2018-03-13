@@ -1,6 +1,6 @@
 # float model
 QUANTOR_GOOGLENET_TARGETS += eval_googlenet_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_GOOGLENET_TARGETS += toco_googlenet
 QUANTOR_GOOGLENET_TARGETS += eval_googlenet_tflite
 # uint8 model
