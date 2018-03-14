@@ -215,6 +215,8 @@ def _FindLayersToQuantize(graph):
   for match_result in final_layer_matcher.match_graph(graph):
     layer_op = match_result.get_op(layer_pattern)
     weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
     activation_op = match_result.get_op(bias_add_pattern)
     yield _LayerMatch(layer_op, weight_tensor, activation_op, None, None)
 
