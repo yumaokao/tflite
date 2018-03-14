@@ -19,7 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.contrib.quantize import experimental_create_training_graph
+from tfquantor import experimental_create_training_graph
+# from tensorflow.contrib.quantize import experimental_create_training_graph
 # from tensorflow.contrib.quantize import create_training_graph
 # from tensorflow.contrib.quantize.python import fold_batch_norms
 # from tensorflow.contrib.quantize.python import quantize

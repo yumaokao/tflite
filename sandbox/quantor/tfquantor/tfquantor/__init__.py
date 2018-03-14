@@ -10,11 +10,20 @@ from .quantize import copy_graph
 def create_training_graph(*args, **kwargs):
   quantize_graph.create_training_graph(*args, **kwargs)
 
+
 def create_eval_graph(*args, **kwargs):
   quantize_graph.create_eval_graph(*args, **kwargs)
 
-def create_training_graph_and_return(input_graph=None, quant_delay=0, is_batch_norm_training=False):
 
+def experimental_create_training_graph(*args, **kwargs):
+  quantize_graph.experimental_create_training_graph(*args, **kwargs)
+
+
+def experimental_create_eval_graph(*args, **kwargs):
+  quantize_graph.experimental_create_eval_graph(*args, **kwargs)
+
+
+def create_training_graph_and_return(input_graph=None, quant_delay=0, is_batch_norm_training=False):
   if quant_delay == 0:
     freeze_bn_delay = int(2e5)
   else:
@@ -35,6 +44,7 @@ def create_training_graph_and_return(input_graph=None, quant_delay=0, is_batch_n
         weight_bits=weight_bits,
         activation_bits=activation_bits)
   return g
+
 
 def create_eval_graph_and_return(input_graph, *args, **kwargs):
   g = copy_graph.CopyGraph(input_graph)
