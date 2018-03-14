@@ -57,8 +57,9 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.contrib.quantize.python import fold_batch_norms
-from tensorflow.contrib.quantize.python import quantize
+from tensorflow.contrib.quantize import create_eval_graph
+# from tensorflow.contrib.quantize.python import fold_batch_norms
+# from tensorflow.contrib.quantize.python import quantize
 
 from tensorflow.python.platform import gfile
 from datasets import dataset_factory
@@ -119,10 +120,11 @@ def main(_):
     network_fn(placeholder)
 
     # Quantize inference graph
-    fold_batch_norms.FoldBatchNorms(graph,
-                                    freeze_batch_norm_delay=None,
-                                    is_training=False)
-    quantize.Quantize(graph, is_training=False)
+    create_eval_graph()
+    # fold_batch_norms.FoldBatchNorms(graph,
+                                    # freeze_batch_norm_delay=None,
+                                    # is_training=False)
+    # quantize.Quantize(graph, is_training=False)
 
     graph_def = graph.as_graph_def()
     with gfile.GFile(FLAGS.output_file, 'wb') as f:

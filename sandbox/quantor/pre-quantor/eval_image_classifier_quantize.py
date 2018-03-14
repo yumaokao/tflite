@@ -20,8 +20,9 @@ from __future__ import print_function
 
 import math
 import tensorflow as tf
-from tensorflow.contrib.quantize.python import fold_batch_norms
-from tensorflow.contrib.quantize.python import quantize
+from tensorflow.contrib.quantize import create_eval_graph
+# from tensorflow.contrib.quantize.python import fold_batch_norms
+# from tensorflow.contrib.quantize.python import quantize
 
 from datasets import dataset_factory
 from nets import nets_factory
@@ -140,12 +141,13 @@ def main(_):
     ####################
     logits, _ = network_fn(images)
 
-    # Quantize training graph
-    g = tf.get_default_graph()
-    fold_batch_norms.FoldBatchNorms(g,
-                                    freeze_batch_norm_delay=None,
-                                    is_training=False)
-    quantize.Quantize(g, is_training=True)
+    # Quantize inference graph
+    create_eval_graph()
+    # g = tf.get_default_graph()
+    # fold_batch_norms.FoldBatchNorms(g,
+                                    # freeze_batch_norm_delay=None,
+                                    # is_training=False)
+    # quantize.Quantize(g, is_training=False)
 
     if FLAGS.moving_average_decay:
       variable_averages = tf.train.ExponentialMovingAverage(
