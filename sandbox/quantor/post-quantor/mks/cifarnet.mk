@@ -110,7 +110,7 @@ eval_quantor_cifarnet_tflite:
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--tflite_model=$(QUANTOR_BASE)/cifarnet/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--batch_size=50
+		--batch_size=10
 
 eval_cifarnet_tflite:
 	@ eval_tflite \
@@ -118,7 +118,7 @@ eval_cifarnet_tflite:
 		--dataset_name=cifar10 --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--tflite_model=$(QUANTOR_BASE)/cifarnet/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--batch_size=50
+		--batch_size=10
 
 ########################################################
 # compare_toco

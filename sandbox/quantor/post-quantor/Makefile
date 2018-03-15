@@ -83,3 +83,8 @@ include mks/resnet_v2_50.mk
 # for googlenet (batch 1) from caffe model
 ########################################################
 include mks/googlenet.mk
+
+########################################################
+# for mobilenet (+ softmax layer) from caffe model
+########################################################
+include mks/mobilenet_softmax.mk
