@@ -1,0 +1,7 @@
+# fcn models
+Model_zoo
+Data_zoo
+logs
+
+# python modules
+*.pyc
