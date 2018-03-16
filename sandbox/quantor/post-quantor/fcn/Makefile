@@ -26,3 +26,5 @@ clean:
 
 train_fcn:
 	@ python FCN.py
+
+# pretrained checkpoints could be found in swrd:/proj/mtk06790/shared/models/fcn/logs.tar.gz
