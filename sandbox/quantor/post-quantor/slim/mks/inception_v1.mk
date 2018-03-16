@@ -1,7 +1,7 @@
 # float model
 QUANTOR_INCEPTIONV1_TARGETS := freeze_inception_v1
 QUANTOR_INCEPTIONV1_TARGETS += eval_inception_v1_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_INCEPTIONV1_TARGETS += toco_inception_v1
 QUANTOR_INCEPTIONV1_TARGETS += eval_inception_v1_tflite
 # uint8 model
@@ -112,7 +112,7 @@ eval_quantor_inception_v1_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_v1/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=200 --input_size=224 --batch_size=50
+		--max_num_batches=1000 --input_size=224 --batch_size=10
 
 eval_inception_v1_tflite:
 	@ echo $@

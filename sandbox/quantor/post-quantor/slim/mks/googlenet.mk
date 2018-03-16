@@ -1,6 +1,6 @@
 # float model
 QUANTOR_GOOGLENET_TARGETS += eval_googlenet_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_GOOGLENET_TARGETS += toco_googlenet
 QUANTOR_GOOGLENET_TARGETS += eval_googlenet_tflite
 # uint8 model
@@ -96,7 +96,7 @@ eval_quantor_googlenet_tflite:
 		--tflite_model=$(QUANTOR_BASE)/googlenet/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=200 --input_size=224 --batch_size=50
+		--max_num_batches=1000 --input_size=224 --batch_size=10
 
 eval_googlenet_tflite:
 	@ echo $@

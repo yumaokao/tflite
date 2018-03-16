@@ -1,7 +1,7 @@
 # float model
 QUANTOR_INCPETIONRESNETV2_TARGETS := freeze_inception_resnet_v2
 QUANTOR_INCPETIONRESNETV2_TARGETS += eval_inception_resnet_v2_frozen
-# float (fake quanted) model
+# float model
 QUANTOR_INCPETIONRESNETV2_TARGETS += toco_inception_resnet_v2
 QUANTOR_INCPETIONRESNETV2_TARGETS += eval_inception_resnet_v2_tflite
 # uint8 model
@@ -116,7 +116,7 @@ eval_quantor_inception_resnet_v2_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_resnet_v2/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 --input_size=299
+		--max_num_batches=10000 --input_size=299
 
 eval_inception_resnet_v2_tflite:
 	@ echo $@
@@ -125,7 +125,7 @@ eval_inception_resnet_v2_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_resnet_v2/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 --input_size=299
+		--max_num_batches=10000 --input_size=299
 
 
 ########################################################
