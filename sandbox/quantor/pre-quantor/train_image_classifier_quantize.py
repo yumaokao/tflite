@@ -19,8 +19,11 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow.contrib.quantize.python import fold_batch_norms
-from tensorflow.contrib.quantize.python import quantize
+from tfquantor import experimental_create_training_graph
+# from tensorflow.contrib.quantize import experimental_create_training_graph
+# from tensorflow.contrib.quantize import create_training_graph
+# from tensorflow.contrib.quantize.python import fold_batch_norms
+# from tensorflow.contrib.quantize.python import quantize
 
 from datasets import dataset_factory
 from deployment import model_deploy
@@ -547,12 +550,16 @@ def main(_):
       train_tensor = tf.identity(total_loss, name='train_op')
 
     # Quantize training graph
-    g = tf.get_default_graph()
-    fold_batch_norms.FoldBatchNorms(g, is_training=True)
-    quantize.Quantize(g, is_training=True)
-    for var in g.get_collection('variables'):
-      if var.name.endswith('min:0') or var.name.endswith('max:0'):
-        summaries.add(tf.summary.scalar(var.name[:-2], var))
+    experimental_create_training_graph(freeze_bn_delay=None)
+    for var in tf.get_collection('variables'):
+     if var.name.endswith('min:0') or var.name.endswith('max:0'):
+       summaries.add(tf.summary.scalar(var.name[:-2], var))
+    #  g = tf.get_default_graph()
+    #  fold_batch_norms.FoldBatchNorms(g, is_training=True)
+    #  quantize.Quantize(g, is_training=True)
+    #  for var in g.get_collection('variables'):
+     #  if var.name.endswith('min:0') or var.name.endswith('max:0'):
+       #  summaries.add(tf.summary.scalar(var.name[:-2], var))
 
     # Add the summaries from the first clone. These contain the summaries
     # created by model_fn and either optimize_clones() or _gather_clone_loss().
