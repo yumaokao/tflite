@@ -64,7 +64,8 @@ define compare_tflite
 		--tflite_file=$1/export/model.lite \
 		--batch_xs=$1/export/batch_xs.npy \
 		--batch_ys=$1/export/ys.npy \
-		--inference_type=UINT8
+		--inference_type=UINT8 \
+		--input_type=UINT8
 endef
 
 
