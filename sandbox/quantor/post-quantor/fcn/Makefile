@@ -27,4 +27,8 @@ clean:
 train_fcn:
 	@ python FCN.py
 
+eval_fcn:
+	@ mkdir -p model
+	@ python eval_FCN.py --output_file=model/FCN_model.pb --num_batches=100
+
 # pretrained checkpoints could be found in swrd:/proj/mtk06790/shared/models/fcn/logs.tar.gz
