@@ -7,6 +7,7 @@ import read_MITSceneParsingData as scene_parsing
 import datetime
 import BatchDatsetReader as dataset
 from six.moves import xrange
+from tensorflow.python.framework import graph_util
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_integer("batch_size", "2", "batch size for evaluation")
@@ -94,7 +95,9 @@ def inference(image, keep_prob):
 
         W7 = utils.weight_variable([1, 1, 4096, 4096], name="W7")
         b7 = utils.bias_variable([4096], name="b7")
-        conv7 = utils.conv2d_basic(relu_dropout6, W7, b7)
+        # Toco does not support RandomUniform in dropout op
+        #conv7 = utils.conv2d_basic(relu_dropout6, W7, b7)
+        conv7 = utils.conv2d_basic(relu6, W7, b7)
         relu7 = tf.nn.relu(conv7, name="relu7")
         if FLAGS.debug:
             utils.add_activation_summary(relu7)
@@ -102,7 +105,9 @@ def inference(image, keep_prob):
 
         W8 = utils.weight_variable([1, 1, 4096, NUM_OF_CLASSESS], name="W8")
         b8 = utils.bias_variable([NUM_OF_CLASSESS], name="b8")
-        conv8 = utils.conv2d_basic(relu_dropout7, W8, b8)
+        # Toco does not support RandomUniform in dropout op
+        #conv8 = utils.conv2d_basic(relu_dropout7, W8, b8)
+        conv8 = utils.conv2d_basic(relu7, W8, b8)
         # annotation_pred1 = tf.argmax(conv8, dimension=3, name="prediction1")
 
         # now to upscale to actual image size
@@ -161,8 +166,10 @@ def main(argv=None):
 
     print("Export the Model...")
     graph_def = sess.graph.as_graph_def()
+    #freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["inference/relu7"]) # toco passed
+    freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["inference/prediction"]) # toco failed
     with open(FLAGS.output_file, 'wb') as f:
-        f.write(graph_def.SerializeToString())
+        f.write(freeze_graph_def.SerializeToString())
 
     total_loss = 0
     for itr in xrange(FLAGS.num_batches):
