@@ -75,7 +75,7 @@ def main(_):
 	#  print(result)
 	#  break
 
-  tf.logging.info('Prepare Dataset from tfrecord[0] '.format(tfrecords[0]))
+  tf.logging.info('Prepare Dataset from tfrecord[0] {}'.format(tfrecords[0]))
   filenames = tf.placeholder(tf.string, shape=[None])
   dataset = prepare_dataset(filenames, FLAGS.dataset_name, FLAGS.input_size,
                             preprocess_name=FLAGS.preprocess_name,

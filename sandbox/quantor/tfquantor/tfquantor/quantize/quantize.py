@@ -111,17 +111,24 @@ def Quantize(graph,
           quant_delay=quant_delay,
           vars_collection=vars_collection,
           bits=activation_bits)
-      _InsertQuantOp(
-          add_context,
-          'add_quant',
-          layer_match.bypass_op,
-          input_to_ops_map.ConsumerOperations(layer_match.bypass_op),
-          is_training,
-          moving_avg=True,
-          ema_decay=ema_decay,
-          quant_delay=quant_delay,
-          vars_collection=vars_collection,
-          bits=activation_bits)
+      #
+      # (Chia-Lin Yu @ Mediatek 20180316)
+      # Since there would be a Relu op after this add op, where the Relu op
+      # will be quantized and merged into the current add op (done by toco).
+      # Adding a fakequant op after the add op would lead to an error that
+      # the Relu op cannot be successfully merged.
+      #
+      # _InsertQuantOp(
+      #     add_context,
+      #     'add_quant',
+      #     layer_match.bypass_op,
+      #     input_to_ops_map.ConsumerOperations(layer_match.bypass_op),
+      #     is_training,
+      #     moving_avg=True,
+      #     ema_decay=ema_decay,
+      #     quant_delay=quant_delay,
+      #     vars_collection=vars_collection,
+      #     bits=activation_bits)
 
 
 def _FindLayersToQuantize(graph):

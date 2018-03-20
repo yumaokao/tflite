@@ -1,7 +1,8 @@
 .PHONY: all build clean
 
 ifeq ($(TFLITE_ROOT_PATH),)
-TFLITE_ROOT_PATH := /home/tflite
+# TFLITE_ROOT_PATH := /home/tflite
+TFLITE_ROOT_PATH := /home/weiche/workspace/tensor_lab/tflite
 endif
 
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
@@ -31,7 +32,9 @@ define toco
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
-		--dump_graphviz=$1/dots $5
+		--dump_graphviz=$1/dots $5 \
+		--allow_custom_ops
+	@ cd $1/dots && dot -Tpdf -O ./toco_*.dot
 	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
 endef
 
@@ -46,7 +49,7 @@ define toco_dequantize
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=$3 \
 		--output_arrays=$4 --input_shapes=10,784 \
 		--dump_graphviz=$1/dots $5
-	# echo "cd $1/dots && dot -Tpdf -O ./toco_*.dot"
+	@ cd $1/dots && dot -Tpdf -O ./toco_*.dot
 endef
 
 define compare_tflite
@@ -54,7 +57,9 @@ define compare_tflite
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/compare_tflite \
 		--tflite_file=$1/export/model.lite \
 		--batch_xs=$1/export/batch_xs.npy \
-		--batch_ys=$1/export/ys.npy
+		--batch_ys=$1/export/ys.npy \
+		--input_type=$2 \
+		--inference_type=$3
 endef
 
 
@@ -75,10 +80,10 @@ dequantize:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call toco_dequantize,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
-	$(call compare_tflite,$(OPS_BASE)/$@)
+	$(call compare_tflite,$(OPS_BASE)/$@,UINT8,FLOAT)
 
 quantize_v2 quantize:
 	@ mkdir -p $@/export
 	@ python $@/$@.py
 	$(call toco,$(OPS_BASE)/$@,model.pb,Placeholder,ys)
-	$(call compare_tflite,$(OPS_BASE)/$@)
+	$(call compare_tflite,$(OPS_BASE)/$@,FLOAT,FLOAT)
