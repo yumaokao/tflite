@@ -1,0 +1,10 @@
+# tf-image-segmentation
+tf-image-segmentation
+
+# fcn dataset and weight
+*.tar.gz
+*.tar
+vgg_16.ckpt
+
+# python modules
+*.pyc
