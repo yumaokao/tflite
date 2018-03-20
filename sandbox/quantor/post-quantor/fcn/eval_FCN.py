@@ -13,10 +13,8 @@ tf.flags.DEFINE_integer("batch_size", "2", "batch size for evaluation")
 tf.flags.DEFINE_integer("num_batches", "10000", "number of batch for evaluation")
 tf.flags.DEFINE_string("logs_dir", "logs/", "path to logs directory")
 tf.flags.DEFINE_string("data_dir", "Data_zoo/MIT_SceneParsing/", "path to dataset")
-tf.flags.DEFINE_float("learning_rate", "1e-4", "Learning rate for Adam Optimizer")
 tf.flags.DEFINE_string("model_dir", "Model_zoo/", "Path to vgg model mat")
 tf.flags.DEFINE_bool('debug', "False", "Debug mode: True/ False")
-tf.flags.DEFINE_string('mode', "train", "Mode train/ test/ visualize")
 tf.flags.DEFINE_string('output_file', "FCN_graph.pb", "output model file name")
 
 MODEL_URL = 'http://www.vlfeat.org/matconvnet/models/beta16/imagenet-vgg-verydeep-19.mat'
@@ -131,41 +129,18 @@ def inference(image, keep_prob):
     return tf.expand_dims(annotation_pred, dim=3), conv_t3
 
 
-def train(loss_val, var_list):
-    optimizer = tf.train.AdamOptimizer(FLAGS.learning_rate)
-    grads = optimizer.compute_gradients(loss_val, var_list=var_list)
-    if FLAGS.debug:
-        # print(len(var_list))
-        for grad, var in grads:
-            utils.add_gradient_summary(grad, var)
-    return optimizer.apply_gradients(grads)
-
-
 def main(argv=None):
     keep_probability = tf.placeholder(tf.float32, name="keep_probabilty")
     image = tf.placeholder(tf.float32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 3], name="input_image")
     annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1], name="annotation")
 
     pred_annotation, logits = inference(image, keep_probability)
-    tf.summary.image("input_image", image, max_outputs=2)
-    tf.summary.image("ground_truth", tf.cast(annotation, tf.uint8), max_outputs=2)
-    tf.summary.image("pred_annotation", tf.cast(pred_annotation, tf.uint8), max_outputs=2)
     loss = tf.reduce_mean((tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
                                                                           labels=tf.squeeze(annotation, squeeze_dims=[3]),
                                                                           name="entropy")))
-    tf.summary.scalar("entropy", loss)
-
-    trainable_var = tf.trainable_variables()
-    if FLAGS.debug:
-        for var in trainable_var:
-            utils.add_to_regularization_and_summary(var)
-
-    print("Setting up summary op...")
-    summary_op = tf.summary.merge_all()
 
     print("Setting up image reader...")
-    train_records, valid_records = scene_parsing.read_dataset(FLAGS.data_dir)
-    print(len(train_records))
+    _, valid_records = scene_parsing.read_dataset(FLAGS.data_dir)
     print(len(valid_records))
 
     print("Setting up dataset reader")
