@@ -127,7 +127,7 @@ def inference(image, keep_prob):
         deconv_shape3 = tf.stack([shape[0], shape[1], shape[2], NUM_OF_CLASSESS])
         W_t3 = utils.weight_variable([16, 16, NUM_OF_CLASSESS, deconv_shape2[3].value], name="W_t3")
         b_t3 = utils.bias_variable([NUM_OF_CLASSESS], name="b_t3")
-        conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8)
+        conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8, name="conv_t3")
 
         annotation_pred = tf.argmax(conv_t3, dimension=3, name="prediction")
 
@@ -166,8 +166,7 @@ def main(argv=None):
 
     print("Export the Model...")
     graph_def = sess.graph.as_graph_def()
-    #freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["inference/relu7"]) # toco passed
-    freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["inference/prediction"]) # toco failed
+    freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["inference/conv_t3"])
     with open(FLAGS.output_file, 'wb') as f:
         f.write(freeze_graph_def.SerializeToString())
 
