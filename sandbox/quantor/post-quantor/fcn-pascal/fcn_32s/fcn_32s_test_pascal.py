@@ -51,6 +51,11 @@ pred, fcn_32s_variables_mapping = FCN_32s(image_batch_tensor=image_batch_tensor,
 # Take away the masked out values from evaluation
 weights = tf.to_float( tf.not_equal(annotation_batch_tensor, 255) )
 
+# replace annotation 255 with 0, since already has weight mask
+annotation_batch_tensor = tf.where(tf.equal(annotation_batch_tensor, 255),
+                                   tf.zeros_like(annotation_batch_tensor),
+                                   annotation_batch_tensor)
+
 # Define the accuracy metric: Mean Intersection Over Union
 miou, update_op = slim.metrics.streaming_mean_iou(predictions=pred,
                                                    labels=annotation_batch_tensor,
@@ -73,6 +78,7 @@ with tf.Session() as sess:
     
     # There are 904 images in restricted validation dataset
     for i in xrange(904):
+        print('val {}'.format(i))
         
         image_np, annotation_np, pred_np, tmp = sess.run([image, annotation, pred, update_op])
         
