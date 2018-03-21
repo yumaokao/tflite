@@ -131,42 +131,33 @@ saver = tf.train.Saver(model_variables)
 
 
 with tf.Session()  as sess:
-    # sess.run(combined_op)
-    # sess.run(global_vars_init_op)
-    sess.run(tf.local_variables_initializer())
-    # init_fn(sess)
+    sess.run(combined_op)
+    init_fn(sess)
 
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
-    for i in xrange(num_training_images * num_epochs):
-        print("i {}".format(i))
-        # print("Step: " + str(i))
-
-    # coord.request_stop()
-    # coord.join(threads)
-
     # 10 epochs
-    # for i in xrange(num_training_images * num_epochs):
+    for i in xrange(num_training_images * num_epochs):
 
 
-        #  cross_entropy, summary_string, _ = sess.run([ cross_entropy_sum,
-                                                      #  merged_summary_op,
-                                                      #  train_step ])
+        cross_entropy, summary_string, _ = sess.run([ cross_entropy_sum,
+                                                      merged_summary_op,
+                                                      train_step ])
 
-        #  print("Step: " + str(i) + " Loss: " + str(cross_entropy))
+        print("Step: " + str(i) + " Loss: " + str(cross_entropy))
 
-        #  summary_string_writer.add_summary(summary_string, i)
+        summary_string_writer.add_summary(summary_string, i)
 
-        #  if i > 0 and i % num_training_images == 0:
-            #  save_path = saver.save(sess, FLAGS.save_dir + "model_fcn32s_epoch_" + str(i) + ".ckpt")
-            #  print("Model saved in file: %s" % save_path)
+        if i > 0 and i % num_training_images == 0:
+            save_path = saver.save(sess, FLAGS.save_dir + "/model_fcn32s_epoch_" + str(i) + ".ckpt")
+            print("Model saved in file: %s" % save_path)
 
 
-    #  coord.request_stop()
-    #  coord.join(threads)
+    coord.request_stop()
+    coord.join(threads)
 
-    #  save_path = saver.save(sess, FLAGS.save_dir + "model_fcn32s_final.ckpt")
-    #  print("Model saved in file: %s" % save_path)
+    save_path = saver.save(sess, FLAGS.save_dir + "/model_fcn32s_final.ckpt")
+    print("Model saved in file: %s" % save_path)
 
 summary_string_writer.close()

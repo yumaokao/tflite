@@ -58,10 +58,16 @@ image, annotation = read_tfrecord_and_decode_into_image_annotation_pair_tensors(
 # Various data augmentation stages
 image, annotation = flip_randomly_left_right_image_with_annotation(image, annotation)
 resized_image, resized_annotation = scale_randomly_image_with_annotation_with_fixed_size_output(image, annotation, image_train_size)
+# resized_annotation = tf.image.convert_image_dtype(resized_annotation, dtype=tf.float32)
+# resized_annotation = tf.image.resize_image_with_crop_or_pad(resized_annotation, 384, 384)
 resized_annotation = tf.squeeze(resized_annotation)
 
+image_batch = tf.train.shuffle_batch([resized_image],
+                                     batch_size=1, capacity=3000, num_threads=2, min_after_dequeue=1000)
+annotation_batch = tf.train.shuffle_batch([resized_annotation],
+                                     batch_size=1, capacity=3000, num_threads=2, min_after_dequeue=1000)
 #  image_batch, annotation_batch = tf.train.shuffle_batch( [resized_image, resized_annotation],
-                                             #  batch_size=10,
+                                             #  batch_size=1,
                                              #  capacity=3000,
                                              #  num_threads=2,
                                              #  min_after_dequeue=1000)
@@ -134,8 +140,16 @@ with tf.Session() as sess:
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
 
-    val = sess.run(resized_image)
-    print(val)
+    # val = sess.run(image)
+    # val = sess.run(resized_image)
+    # val = sess.run(image_batch)
+
+    for i in xrange(10):
+        # val = sess.run(annotation)
+        # val = sess.run(resized_annotation)
+        val = sess.run(annotation_batch)
+        print(val.shape)
+        print(val.dtype)
     import ipdb
     ipdb.set_trace()
 

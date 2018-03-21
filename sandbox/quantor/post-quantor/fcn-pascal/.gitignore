@@ -12,3 +12,7 @@ tf-image-segmentation
 
 # python modules
 *.pyc
+
+# fcn_32s
+fcn_32s/ckpts/
+fcn_32s/logs/
