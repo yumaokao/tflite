@@ -18,7 +18,7 @@ overall_train_image_annotation_filename_pairs, overall_val_image_annotation_file
 # You can create your own tfrecords file by providing
 # your list with (image, annotation) filename pairs here
 write_image_annotation_pairs_to_tfrecord(filename_pairs=overall_val_image_annotation_filename_pairs,
-                                         tfrecords_filename='./datasets/pascal_augmented_valeee.tfrecords')
+                                         tfrecords_filename='./datasets/pascal_augmented_val.tfrecords')
 
 write_image_annotation_pairs_to_tfrecord(filename_pairs=overall_train_image_annotation_filename_pairs,
                                          tfrecords_filename='./datasets/pascal_augmented_train.tfrecords')

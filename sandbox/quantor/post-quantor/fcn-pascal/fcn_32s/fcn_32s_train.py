@@ -4,7 +4,7 @@ import numpy as np
 import skimage.io as io
 import os, sys
 import argparse
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 sys.path.append("./tf-image-segmentation")
 sys.path.append("/home/tflite/models/research/slim")
