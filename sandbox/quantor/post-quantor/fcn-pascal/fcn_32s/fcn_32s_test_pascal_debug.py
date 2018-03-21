@@ -4,6 +4,7 @@ import numpy as np
 import skimage.io as io
 import os, sys
 import argparse
+from PIL import Image
 
 sys.path.append("./tf-image-segmentation")
 sys.path.append("/home/tflite/models/research/slim")
@@ -81,9 +82,20 @@ with tf.Session() as sess:
         print('val {}'.format(i))
         # image_np, annotation_np, pred_np = sess.run([image, annotation, pred])
         image_np, annotation_np, pred_np, tmp = sess.run([image, annotation, pred, update_op])
-        import ipdb
-        ipdb.set_trace()
         print(annotation_np)
+        img = Image.fromarray(image_np, 'RGB')
+        img.save(os.path.join(FLAGS.log_dir, 'image_{}.png'.format(i)))
+        annotation_np = annotation_np.astype('uint8')
+        annotation_np = np.squeeze(annotation_np, axis=2)
+        img = Image.fromarray(annotation_np, 'L')
+        img.save(os.path.join(FLAGS.log_dir, 'annotation_{}.png'.format(i)))
+        pred_np = pred_np.astype('uint8')
+        pred_np = np.squeeze(pred_np, axis=3)
+        pred_np = np.squeeze(pred_np, axis=0)
+        img = Image.fromarray(pred_np, 'L')
+        img.save(os.path.join(FLAGS.log_dir, 'pred_{}.png'.format(i)))
+        if i > 8:
+            break
         
         # Display the image and the segmentation result
         # upsampled_predictions = pred_np.squeeze()
