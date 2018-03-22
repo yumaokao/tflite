@@ -100,7 +100,7 @@ toco_quantor_resnet_v2_50:
 		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=resnet_v2_50/predictions/Reshape_1 --input_shapes=1,224,224,3 \
+		--output_arrays=resnet_v2_50/predictions/Reshape_1 --input_shapes=10,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v2_50/quantor/dots
 
 toco_resnet_v2_50:

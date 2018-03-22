@@ -88,7 +88,7 @@ toco_quantor_cifarnet:
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--mean_values=128 --std_values=127 \
-		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
+		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=10,32,32,3 \
 		--default_ranges_min=0 --default_ranges_max=10 --partial_quant \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/quantor/dots
 
@@ -100,7 +100,7 @@ toco_cifarnet:
 		--output_file=$(QUANTOR_BASE)/cifarnet/float_model.lite \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=1,32,32,3 \
+		--output_arrays=CifarNet/Predictions/Reshape --input_shapes=10,32,32,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/cifarnet/dots
 
 eval_quantor_cifarnet_tflite:

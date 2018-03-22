@@ -98,7 +98,7 @@ toco_quantor_inception_v3:
 		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=1,299,299,3 \
+		--output_arrays=InceptionV3/Predictions/Reshape --input_shapes=10,299,299,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/inception_v3/quantor/dots
 
 toco_inception_v3:
