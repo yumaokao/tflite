@@ -1,4 +1,3 @@
-# coding: utf-8
 import tensorflow as tf
 import numpy as np
 import os, sys
@@ -7,13 +6,11 @@ import argparse
 sys.path.append("./tf-image-segmentation")
 sys.path.append("/home/tflite/models/research/slim")
 
-# FLAGS = set_paths.FLAGS
-
 # replace with python argsparse
-parser = argparse.ArgumentParser(description='FCN 16s Train')
+parser = argparse.ArgumentParser(description='FCN 8s Train')
 parser.add_argument('--checkpoints_dir', default='./vgg_16_ckpts', help='checkpoints_dir')
-parser.add_argument('--log_dir', default='./fcn_16s/logs', help='log_dir')
-parser.add_argument('--save_dir', default='./fcn_16s/ckpts', help='save_dir')
+parser.add_argument('--log_dir', default='./fcn_8s/logs', help='log_dir')
+parser.add_argument('--save_dir', default='./fcn_8s/ckpts', help='save_dir')
 FLAGS = parser.parse_args()
 
 checkpoints_dir = FLAGS.checkpoints_dir
@@ -22,7 +19,7 @@ log_folder = FLAGS.log_dir
 slim = tf.contrib.slim
 
 from tf_image_segmentation.utils.tf_records import read_tfrecord_and_decode_into_image_annotation_pair_tensors
-from tf_image_segmentation.models.fcn_16s import FCN_16s
+from tf_image_segmentation.models.fcn_8s import FCN_8s
 
 from tf_image_segmentation.utils.pascal_voc import pascal_segmentation_lut
 
@@ -40,7 +37,7 @@ num_training_images = 11127
 pascal_voc_lut = pascal_segmentation_lut()
 class_labels = pascal_voc_lut.keys()
 
-fcn_32s_checkpoint_path = './fcn_32s/ckpts/model_fcn32s_final.ckpt'
+fcn_16s_checkpoint_path = './fcn_16s/ckpts/model_fcn16s_final.ckpt'
 
 filename_queue = tf.train.string_input_producer(
     [tfrecord_filename], num_epochs=num_epochs)
@@ -63,7 +60,7 @@ image_batch, annotation_batch = tf.train.shuffle_batch( [resized_image, resized_
                                              num_threads=2,
                                              min_after_dequeue=1000)
 
-upsampled_logits_batch, fcn_32s_variables_mapping = FCN_16s(image_batch_tensor=image_batch,
+upsampled_logits_batch, fcn_16s_variables_mapping = FCN_8s(image_batch_tensor=image_batch,
                                                            number_of_classes=number_of_classes,
                                                            is_training=True)
 
@@ -87,14 +84,14 @@ probabilities = tf.nn.softmax(upsampled_logits_batch)
 
 
 with tf.variable_scope("adam_vars"):
-    train_step = tf.train.AdamOptimizer(learning_rate=0.00000001).minimize(cross_entropy_sum)
+    train_step = tf.train.AdamOptimizer(learning_rate=0.000000001).minimize(cross_entropy_sum)
 
 
 #adam_optimizer_variables = slim.get_variables_to_restore(include=['adam_vars'])
 
 # Variable's initialization functions
-init_fn = slim.assign_from_checkpoint_fn(model_path=fcn_32s_checkpoint_path,
-                                         var_list=fcn_32s_variables_mapping)
+init_fn = slim.assign_from_checkpoint_fn(model_path=fcn_16s_checkpoint_path,
+                                         var_list=fcn_16s_variables_mapping)
 
 global_vars_init_op = tf.global_variables_initializer()
 
@@ -143,14 +140,14 @@ with tf.Session()  as sess:
         print("Step :" + str(i) + " Loss: " + str(cross_entropy))
 
         if i > 0 and i % num_training_images == 0:
-            save_path = saver.save(sess, FLAGS.save_dir + "/model_fcn16s_epoch_" + str(i) + ".ckpt")
+            save_path = saver.save(sess, FLAGS.save_dir + "/model_fcn8s_epoch_" + str(i) + ".ckpt")
             print("Model saved in file: %s" % save_path)
 
 
     coord.request_stop()
     coord.join(threads)
 
-    save_path = saver.save(sess, FLAGS.save_dir + "/model_fcn16s_final.ckpt")
+    save_path = saver.save(sess, FLAGS.save_dir + "/model_fcn8s_final.ckpt")
     print("Model saved in file: %s" % save_path)
 
 summary_string_writer.close()

@@ -20,3 +20,7 @@ fcn_32s/logs/
 # fcn_16s
 fcn_16s/ckpts/
 fcn_16s/logs/
+
+# fcn_8s
+fcn_8s/ckpts/
+fcn_8s/logs/
