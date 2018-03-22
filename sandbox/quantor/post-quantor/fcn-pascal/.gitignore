@@ -16,3 +16,7 @@ tf-image-segmentation
 # fcn_32s
 fcn_32s/ckpts/
 fcn_32s/logs/
+
+# fcn_16s
+fcn_16s/ckpts/
+fcn_16s/logs/
