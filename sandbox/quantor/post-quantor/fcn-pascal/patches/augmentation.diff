@@ -1,0 +1,36 @@
+diff --git a/tf_image_segmentation/utils/augmentation.py b/tf_image_segmentation/utils/augmentation.py
+index 598eca5..268d1ad 100644
+--- a/tf_image_segmentation/utils/augmentation.py
++++ b/tf_image_segmentation/utils/augmentation.py
+@@ -1,7 +1,8 @@
+ import tensorflow as tf
+ from tensorflow.python.ops import control_flow_ops
+ import tensorflow.contrib.slim as slim
+-from slim.preprocessing.inception_preprocessing import distort_color, apply_with_random_selector
++# from slim.preprocessing.inception_preprocessing import distort_color, apply_with_random_selector
++from preprocessing.inception_preprocessing import distort_color, apply_with_random_selector
+ 
+ def flip_randomly_left_right_image_with_annotation(image_tensor, annotation_tensor):
+     """Accepts image tensor and annotation tensor and returns randomly flipped tensors of both.
+@@ -169,9 +170,11 @@ def scale_randomly_image_with_annotation_with_fixed_size_output(img_tensor,
+ 
+     cropped_padded_img = tf.image.resize_image_with_crop_or_pad( resized_img, output_shape[0], output_shape[1] )
+ 
++    annotation_shifted_classes = tf.to_float(annotation_shifted_classes)
+     cropped_padded_annotation = tf.image.resize_image_with_crop_or_pad(annotation_shifted_classes,
+                                                                        output_shape[0],
+                                                                        output_shape[1])
++    cropped_padded_annotation = tf.to_int32(cropped_padded_annotation)
+ 
+     # TODO: accept the classes lut instead of mask out
+     # value as an argument
+@@ -179,4 +182,7 @@ def scale_randomly_image_with_annotation_with_fixed_size_output(img_tensor,
+ 
+     cropped_padded_annotation = cropped_padded_annotation + annotation_additional_mask_out - 1
+ 
+-    return cropped_padded_img, cropped_padded_annotation
+\ No newline at end of file
++    return cropped_padded_img, cropped_padded_annotation
++    # return resized_img, cropped_padded_annotation
++    # return cropped_padded_img, annotation_shifted_classes
++    # return cropped_padded_img, annotation_additional_mask_out

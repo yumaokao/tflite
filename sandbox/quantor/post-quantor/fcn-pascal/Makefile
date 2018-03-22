@@ -53,3 +53,9 @@ download_pretrained_vgg16:
 clone_tf_image_segmentation:
 	# @ git clone https://github.com/warmspringwinds/tf-image-segmentation.git
 	@ git clone https://github.com/barryridge/tf-image-segmentation.git
+
+# TODO: makefile 
+# tf-image-implementaion needs patch to work with newer tensorflow (1.6 tested)
+# train_32s --> train_16s --> train_8s
+# test_pascal_32s --> test_pascal_16s --> test_pascal_8s
+# test with images
