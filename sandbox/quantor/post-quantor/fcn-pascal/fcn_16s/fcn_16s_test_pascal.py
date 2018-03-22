@@ -1,22 +1,20 @@
-# coding: utf-8
 import tensorflow as tf
 import numpy as np
-import skimage.io as io
 import os, sys
 import argparse
 
 sys.path.append("./tf-image-segmentation")
 sys.path.append("/home/tflite/models/research/slim")
 
-parser = argparse.ArgumentParser(description='FCN 32s Test')
+parser = argparse.ArgumentParser(description='FCN 16s Test')
 parser.add_argument('--checkpoints_dir', default='./vgg_16_ckpts', help='checkpoints_dir')
-parser.add_argument('--log_dir', default='./fcn_32s/logs', help='log_dir')
-parser.add_argument('--save_dir', default='./fcn_32s/ckpts', help='save_dir')
+parser.add_argument('--log_dir', default='./fcn_16s/logs', help='log_dir')
+parser.add_argument('--save_dir', default='./fcn_16s/ckpts', help='save_dir')
 FLAGS = parser.parse_args()
 
 slim = tf.contrib.slim
 
-from tf_image_segmentation.models.fcn_32s import FCN_32s
+from tf_image_segmentation.models.fcn_16s import FCN_16s
 
 from tf_image_segmentation.utils.pascal_voc import pascal_segmentation_lut
 from tf_image_segmentation.utils.tf_records import read_tfrecord_and_decode_into_image_annotation_pair_tensors
@@ -41,10 +39,10 @@ annotation_batch_tensor = tf.expand_dims(annotation, axis=0)
 
 # Be careful: after adaptation, network returns final labels
 # and not logits
-FCN_32s = adapt_network_for_any_size_input(FCN_32s, 32)
+FCN_16s = adapt_network_for_any_size_input(FCN_16s, 32)
 
 
-pred, fcn_32s_variables_mapping = FCN_32s(image_batch_tensor=image_batch_tensor,
+pred, fcn_32s_variables_mapping = FCN_16s(image_batch_tensor=image_batch_tensor,
                                           number_of_classes=number_of_classes,
                                           is_training=False)
 
@@ -71,7 +69,7 @@ with tf.Session() as sess:
     
     sess.run(initializer)
 
-    saver.restore(sess, FLAGS.save_dir + "/model_fcn32s_final.ckpt")
+    saver.restore(sess, FLAGS.save_dir + "/model_fcn16s_final.ckpt")
     
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
@@ -83,9 +81,10 @@ with tf.Session() as sess:
         image_np, annotation_np, pred_np, tmp = sess.run([image, annotation, pred, update_op])
         
         # Display the image and the segmentation result
-        # upsampled_predictions = pred_np.squeeze()
+        #upsampled_predictions = pred_np.squeeze()
         #plt.imshow(image_np)
         #plt.show()
+        
         #visualize_segmentation_adaptive(upsampled_predictions, pascal_voc_lut)
         
     coord.request_stop()
@@ -94,4 +93,3 @@ with tf.Session() as sess:
     res = sess.run(miou)
     
     print("Pascal VOC 2012 Restricted (RV-VOC12) Mean IU: " + str(res))
-
