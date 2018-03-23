@@ -35,6 +35,7 @@ clean:
 pip_install_requirements:
 	@ pip install --user scikit-image
 
+# dataset.tar.gz will be placed in /proj/mtk06790/shared/models/fcn-pascal/
 download_dataset:
 	@ mkdir -p datasets
 	@ cd datasets && wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
