@@ -7,20 +7,20 @@ import read_MITSceneParsingData as scene_parsing
 import datetime
 import BatchDatsetReader as dataset
 from six.moves import xrange
+from tensorflow.python.framework import graph_util
 
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_integer("batch_size", "2", "batch size for training")
+tf.flags.DEFINE_integer("batch_size", "2", "batch size for evaluation")
+tf.flags.DEFINE_integer("num_batches", "10000", "number of batch for evaluation")
 tf.flags.DEFINE_string("logs_dir", "logs/", "path to logs directory")
 tf.flags.DEFINE_string("data_dir", "Data_zoo/MIT_SceneParsing/", "path to dataset")
-tf.flags.DEFINE_float("learning_rate", "1e-4", "Learning rate for Adam Optimizer")
 tf.flags.DEFINE_string("model_dir", "Model_zoo/", "Path to vgg model mat")
 tf.flags.DEFINE_bool('debug', "False", "Debug mode: True/ False")
-tf.flags.DEFINE_string('mode', "train", "Mode train/ test/ visualize")
+tf.flags.DEFINE_string('output_file', "FCN_graph.pb", "output model file name")
 
 MODEL_URL = 'http://www.vlfeat.org/matconvnet/models/beta16/imagenet-vgg-verydeep-19.mat'
 
-MAX_ITERATION = int(4e5 + 1)
-NUM_OF_CLASSESS = 151
+NUM_OF_CLASSES = 151
 IMAGE_SIZE = 224
 
 
@@ -79,6 +79,9 @@ def inference(image, keep_prob):
 
     processed_image = utils.process_image(image, mean_pixel)
 
+    # Used as the first layer of tflite model
+    processed_image = tf.identity(processed_image, name="input")
+
     with tf.variable_scope("inference"):
         image_net = vgg_net(weights, processed_image)
         conv_final_layer = image_net["conv5_3"]
@@ -95,7 +98,9 @@ def inference(image, keep_prob):
 
         W7 = utils.weight_variable([1, 1, 4096, 4096], name="W7")
         b7 = utils.bias_variable([4096], name="b7")
-        conv7 = utils.conv2d_basic(relu_dropout6, W7, b7)
+        # Toco does not support RandomUniform in dropout op
+        #conv7 = utils.conv2d_basic(relu_dropout6, W7, b7)
+        conv7 = utils.conv2d_basic(relu6, W7, b7)
         relu7 = tf.nn.relu(conv7, name="relu7")
         if FLAGS.debug:
             utils.add_activation_summary(relu7)
@@ -103,7 +108,9 @@ def inference(image, keep_prob):
 
         W8 = utils.weight_variable([1, 1, 4096, NUM_OF_CLASSES], name="W8")
         b8 = utils.bias_variable([NUM_OF_CLASSES], name="b8")
-        conv8 = utils.conv2d_basic(relu_dropout7, W8, b8)
+        # Toco does not support RandomUniform in dropout op
+        #conv8 = utils.conv2d_basic(relu_dropout7, W8, b8)
+        conv8 = utils.conv2d_basic(relu7, W8, b8)
         # annotation_pred1 = tf.argmax(conv8, dimension=3, name="prediction1")
 
         # now to upscale to actual image size
@@ -119,25 +126,16 @@ def inference(image, keep_prob):
         conv_t2 = utils.conv2d_transpose_strided(fuse_1, W_t2, b_t2, output_shape=tf.shape(image_net["pool3"]))
         fuse_2 = tf.add(conv_t2, image_net["pool3"], name="fuse_2")
 
-        shape = tf.shape(image)
+        # Use processed_image instead of image since the preprocess part would not be included in the tflite model
+        shape = tf.shape(processed_image)
         deconv_shape3 = tf.stack([shape[0], shape[1], shape[2], NUM_OF_CLASSES])
         W_t3 = utils.weight_variable([16, 16, NUM_OF_CLASSES, deconv_shape2[3].value], name="W_t3")
         b_t3 = utils.bias_variable([NUM_OF_CLASSES], name="b_t3")
-        conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8)
+        conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8, name="conv_t3")
 
         annotation_pred = tf.argmax(conv_t3, dimension=3, name="prediction")
 
     return tf.expand_dims(annotation_pred, dim=3), conv_t3
-
-
-def train(loss_val, var_list):
-    optimizer = tf.train.AdamOptimizer(FLAGS.learning_rate)
-    grads = optimizer.compute_gradients(loss_val, var_list=var_list)
-    if FLAGS.debug:
-        # print(len(var_list))
-        for grad, var in grads:
-            utils.add_gradient_summary(grad, var)
-    return optimizer.apply_gradients(grads)
 
 
 def main(argv=None):
@@ -146,77 +144,43 @@ def main(argv=None):
     annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1], name="annotation")
 
     pred_annotation, logits = inference(image, keep_probability)
-    tf.summary.image("input_image", image, max_outputs=2)
-    tf.summary.image("ground_truth", tf.cast(annotation, tf.uint8), max_outputs=2)
-    tf.summary.image("pred_annotation", tf.cast(pred_annotation, tf.uint8), max_outputs=2)
     loss = tf.reduce_mean((tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
                                                                           labels=tf.squeeze(annotation, squeeze_dims=[3]),
                                                                           name="entropy")))
-    tf.summary.scalar("entropy", loss)
-
-    trainable_var = tf.trainable_variables()
-    if FLAGS.debug:
-        for var in trainable_var:
-            utils.add_to_regularization_and_summary(var)
-    train_op = train(loss, trainable_var)
-
-    print("Setting up summary op...")
-    summary_op = tf.summary.merge_all()
 
     print("Setting up image reader...")
-    train_records, valid_records = scene_parsing.read_dataset(FLAGS.data_dir)
-    print(len(train_records))
+    _, valid_records = scene_parsing.read_dataset(FLAGS.data_dir)
     print(len(valid_records))
 
     print("Setting up dataset reader...")
     image_options = {'resize': True, 'resize_size': IMAGE_SIZE}
-    if FLAGS.mode == 'train':
-        train_dataset_reader = dataset.BatchDatset(train_records, image_options)
     validation_dataset_reader = dataset.BatchDatset(valid_records, image_options)
 
     sess = tf.Session()
 
     print("Setting up Saver...")
     saver = tf.train.Saver()
-    summary_writer = tf.summary.FileWriter(FLAGS.logs_dir, sess.graph)
 
-    sess.run(tf.global_variables_initializer())
     ckpt = tf.train.get_checkpoint_state(FLAGS.logs_dir)
     if ckpt and ckpt.model_checkpoint_path:
         saver.restore(sess, ckpt.model_checkpoint_path)
         print("Model restored...")
+    else:
+        sys.exit("No checkpoint file is found.")
 
-    if FLAGS.mode == "train":
-        for itr in xrange(MAX_ITERATION):
-            train_images, train_annotations = train_dataset_reader.next_batch(FLAGS.batch_size)
-            feed_dict = {image: train_images, annotation: train_annotations, keep_probability: 0.85}
+    print("Export the Model...")
+    graph_def = sess.graph.as_graph_def()
+    freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["inference/conv_t3"])
+    with open(FLAGS.output_file, 'wb') as f:
+        f.write(freeze_graph_def.SerializeToString())
 
-            sess.run(train_op, feed_dict=feed_dict)
-
-            if itr % 10 == 0:
-                train_loss, summary_str = sess.run([loss, summary_op], feed_dict=feed_dict)
-                print("Step: %d, Train_loss:%g" % (itr, train_loss))
-                summary_writer.add_summary(summary_str, itr)
-
-            if itr % 500 == 0:
-                valid_images, valid_annotations = validation_dataset_reader.next_batch(FLAGS.batch_size)
-                valid_loss = sess.run(loss, feed_dict={image: valid_images, annotation: valid_annotations,
-                                                       keep_probability: 1.0})
-                print("%s ---> Validation_loss: %g" % (datetime.datetime.now(), valid_loss))
-                saver.save(sess, FLAGS.logs_dir + "model.ckpt", itr)
-
-    elif FLAGS.mode == "visualize":
-        valid_images, valid_annotations = validation_dataset_reader.get_random_batch(FLAGS.batch_size)
-        pred = sess.run(pred_annotation, feed_dict={image: valid_images, annotation: valid_annotations,
-                                                    keep_probability: 1.0})
-        valid_annotations = np.squeeze(valid_annotations, axis=3)
-        pred = np.squeeze(pred, axis=3)
-
-        for itr in range(FLAGS.batch_size):
-            utils.save_image(valid_images[itr].astype(np.uint8), FLAGS.logs_dir, name="inp_" + str(5+itr))
-            utils.save_image(valid_annotations[itr].astype(np.uint8), FLAGS.logs_dir, name="gt_" + str(5+itr))
-            utils.save_image(pred[itr].astype(np.uint8), FLAGS.logs_dir, name="pred_" + str(5+itr))
-            print("Saved image: %d" % itr)
+    total_loss = 0
+    for itr in xrange(FLAGS.num_batches):
+        valid_images, valid_annotations = validation_dataset_reader.next_batch(FLAGS.batch_size)
+        valid_loss = sess.run(loss, feed_dict={image: valid_images, annotation: valid_annotations, keep_probability: 1.0})
+        total_loss += valid_loss
+        if itr != 0 and itr % 10 == 0:
+            print('%d iteration: Average validation loss = %g' % (itr, total_loss / itr))
 
     sess.close()
 

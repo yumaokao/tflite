@@ -186,6 +186,11 @@ def _FindLayersToQuantize(graph):
               [bias_add_pattern, folded_bias_add_pattern])
       ])
 
+  # TODO (Chia-Lin Yu @ Mediatek 20180316)
+  # For resnet_v1 model where both inputs of bypass pattern are convolution,
+  # this approach would only quantize one of these convolution ops, and the other
+  # convolution op will be matched again by the `final_layer_matcher`.
+
   # The input to the activation can come from bias add, fold bias add or the
   # bypasses.
   activation_pattern = graph_matcher.OpTypePattern(

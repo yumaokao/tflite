@@ -90,7 +90,7 @@ toco_quantor_inception_v1:
 		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=InceptionV1/Logits/Predictions/Reshape --input_shapes=1,224,224,3 \
+		--output_arrays=InceptionV1/Logits/Predictions/Reshape --input_shapes=10,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/inception_v1/quantor/dots
 
 toco_inception_v1:
@@ -121,7 +121,7 @@ eval_inception_v1_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/inception_v1/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 --input_size=224
+		--max_num_batches=10000 --input_size=224
 
 
 ########################################################

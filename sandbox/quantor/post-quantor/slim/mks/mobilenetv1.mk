@@ -98,7 +98,7 @@ toco_quantor_mobilenet_v1_224:
 		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=1,224,224,3 \
+		--output_arrays=MobilenetV1/Predictions/Reshape --input_shapes=10,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/mobilenet_v1_224/dots
 
 toco_mobilenet_v1_224:

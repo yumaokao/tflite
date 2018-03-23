@@ -38,7 +38,7 @@ tf.app.flags.DEFINE_string(
 tf.app.flags.DEFINE_string(
     'inference_type', 'float', 'The inference type to run the tflie model')
 tf.app.flags.DEFINE_string(
-    'tensorflow_dir', 'string', 'The directory where the tensorflow are stored')
+    'tensorflow_dir', None, 'The directory where the tensorflow are stored')
 tf.app.flags.DEFINE_integer(
     'input_size', 299, 'The width/height of the input image.')
 FLAGS = tf.app.flags.FLAGS
@@ -66,6 +66,8 @@ def main(_):
     raise ValueError('You must supply the frozen pb with --tflite_model')
   if FLAGS.inference_type != 'float' and FLAGS.inference_type != 'uint8':
     raise ValueError('--inference_type must be one of float or uint8')
+  if not FLAGS.tensorflow_dir:
+    raise ValueError('You must supply the tensorflow directory with --tensorflow_dir')
 
   tf.logging.set_verbosity(tf.logging.INFO)
   tfrecords = prepare_tfrecords(FLAGS.dataset_name, FLAGS.dataset_dir,
