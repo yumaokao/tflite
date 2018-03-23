@@ -20,7 +20,7 @@ tf.flags.DEFINE_string('output_file', "FCN_graph.pb", "output model file name")
 
 MODEL_URL = 'http://www.vlfeat.org/matconvnet/models/beta16/imagenet-vgg-verydeep-19.mat'
 
-NUM_OF_CLASSESS = 151
+NUM_OF_CLASSES = 151
 IMAGE_SIZE = 224
 
 
@@ -79,6 +79,9 @@ def inference(image, keep_prob):
 
     processed_image = utils.process_image(image, mean_pixel)
 
+    # Used as the first layer of tflite model
+    processed_image = tf.identity(processed_image, name="input")
+
     with tf.variable_scope("inference"):
         image_net = vgg_net(weights, processed_image)
         conv_final_layer = image_net["conv5_3"]
@@ -103,8 +106,8 @@ def inference(image, keep_prob):
             utils.add_activation_summary(relu7)
         relu_dropout7 = tf.nn.dropout(relu7, keep_prob=keep_prob)
 
-        W8 = utils.weight_variable([1, 1, 4096, NUM_OF_CLASSESS], name="W8")
-        b8 = utils.bias_variable([NUM_OF_CLASSESS], name="b8")
+        W8 = utils.weight_variable([1, 1, 4096, NUM_OF_CLASSES], name="W8")
+        b8 = utils.bias_variable([NUM_OF_CLASSES], name="b8")
         # Toco does not support RandomUniform in dropout op
         #conv8 = utils.conv2d_basic(relu_dropout7, W8, b8)
         conv8 = utils.conv2d_basic(relu7, W8, b8)
@@ -112,7 +115,7 @@ def inference(image, keep_prob):
 
         # now to upscale to actual image size
         deconv_shape1 = image_net["pool4"].get_shape()
-        W_t1 = utils.weight_variable([4, 4, deconv_shape1[3].value, NUM_OF_CLASSESS], name="W_t1")
+        W_t1 = utils.weight_variable([4, 4, deconv_shape1[3].value, NUM_OF_CLASSES], name="W_t1")
         b_t1 = utils.bias_variable([deconv_shape1[3].value], name="b_t1")
         conv_t1 = utils.conv2d_transpose_strided(conv8, W_t1, b_t1, output_shape=tf.shape(image_net["pool4"]))
         fuse_1 = tf.add(conv_t1, image_net["pool4"], name="fuse_1")
@@ -123,10 +126,11 @@ def inference(image, keep_prob):
         conv_t2 = utils.conv2d_transpose_strided(fuse_1, W_t2, b_t2, output_shape=tf.shape(image_net["pool3"]))
         fuse_2 = tf.add(conv_t2, image_net["pool3"], name="fuse_2")
 
-        shape = tf.shape(image)
-        deconv_shape3 = tf.stack([shape[0], shape[1], shape[2], NUM_OF_CLASSESS])
-        W_t3 = utils.weight_variable([16, 16, NUM_OF_CLASSESS, deconv_shape2[3].value], name="W_t3")
-        b_t3 = utils.bias_variable([NUM_OF_CLASSESS], name="b_t3")
+        # Use processed_image instead of image since the preprocess part would not be included in the tflite model
+        shape = tf.shape(processed_image)
+        deconv_shape3 = tf.stack([shape[0], shape[1], shape[2], NUM_OF_CLASSES])
+        W_t3 = utils.weight_variable([16, 16, NUM_OF_CLASSES, deconv_shape2[3].value], name="W_t3")
+        b_t3 = utils.bias_variable([NUM_OF_CLASSES], name="b_t3")
         conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8, name="conv_t3")
 
         annotation_pred = tf.argmax(conv_t3, dimension=3, name="prediction")
@@ -148,7 +152,7 @@ def main(argv=None):
     _, valid_records = scene_parsing.read_dataset(FLAGS.data_dir)
     print(len(valid_records))
 
-    print("Setting up dataset reader")
+    print("Setting up dataset reader...")
     image_options = {'resize': True, 'resize_size': IMAGE_SIZE}
     validation_dataset_reader = dataset.BatchDatset(valid_records, image_options)
 
@@ -177,6 +181,8 @@ def main(argv=None):
         total_loss += valid_loss
         if itr != 0 and itr % 10 == 0:
             print('%d iteration: Average validation loss = %g' % (itr, total_loss / itr))
+
+    sess.close()
 
 
 if __name__ == "__main__":

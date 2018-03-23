@@ -104,8 +104,8 @@ def conv2d_transpose_strided(x, W, b, output_shape=None, stride = 2, name=None):
         output_shape[2] *= stride
         output_shape[3] = W.get_shape().as_list()[2]
     # print output_shape
-    conv = tf.nn.conv2d_transpose(x, W, output_shape, strides=[1, stride, stride, 1], padding="SAME", name=name)
-    return tf.nn.bias_add(conv, b)
+    conv = tf.nn.conv2d_transpose(x, W, output_shape, strides=[1, stride, stride, 1], padding="SAME")
+    return tf.nn.bias_add(conv, b, name=name)
 
 
 def leaky_relu(x, alpha=0.0, name=""):
