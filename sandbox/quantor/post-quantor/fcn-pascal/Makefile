@@ -25,7 +25,7 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
 
 clean:
-	@ rm -rf logs
+	@ rm -rf *.tar.gz
 
 # The fcn implementaion is derived from https://github.com/warmspringwinds/tf-image-segmentation
 # But clone https://github.com/barryridge/tf-image-segmentation.git for newer tensorflow support
