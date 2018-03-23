@@ -56,6 +56,26 @@ clone_tf_image_segmentation:
 
 # TODO: makefile 
 # tf-image-implementaion needs patch to work with newer tensorflow (1.6 tested)
-# train_32s --> train_16s --> train_8s
-# test_pascal_32s --> test_pascal_16s --> test_pascal_8s
-# test with images
+
+# fcn_32s:
+# (RV-VOC12) Mean IU: 0.6182407
+train_fcn_32s:
+	@ python fcn_32s/fcn_32s_train.py
+test_fcn_32s:
+	@ python fcn_32s/fcn_32s_test_pascal.py
+gen_samples_fcn_32s:
+	@ python fcn_32s/fcn_32s_test_pascal_samples.py
+
+# fcn_16s:
+# (RV-VOC12) Mean IU: 0.63535184
+train_fcn_16s:
+	@ python fcn_16s/fcn_16s_train.py
+test_fcn_16s:
+	@ python fcn_16s/fcn_16s_test_pascal.py
+
+# fcn_8s:
+# (RV-VOC12) Mean IU: 0.6364892
+train_fcn_8s:
+	@ python fcn_8s/fcn_8s_train.py
+test_fcn_8s:
+	@ python fcn_8s/fcn_8s_test_pascal.py
