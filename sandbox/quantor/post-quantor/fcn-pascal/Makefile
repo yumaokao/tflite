@@ -2,6 +2,10 @@
 .PHONY: download_dataset prepare_dataset convert_tfrecords
 .PHONY: download_pretrained_vgg16
 .PHONY: clone_tf_image_segmentation pip_install_requirements
+.PHONY: train_fcn_32s train_fcn_16s train_fcn_8s
+.PHONY: test_fcn_32s test_fcn_16s test_fcn_8s
+.PHONY: tar_fcn_32s tar_fcn_16s tar_fcn_8s
+.PHONY: gen_samples_fcn_32s
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -63,6 +67,8 @@ train_fcn_32s:
 	@ python fcn_32s/fcn_32s_train.py
 test_fcn_32s:
 	@ python fcn_32s/fcn_32s_test_pascal.py
+tar_fcn_32s:
+	@ tar zcvf fcn_32s.tar.gz fcn_32s
 gen_samples_fcn_32s:
 	@ python fcn_32s/fcn_32s_test_pascal_samples.py
 
@@ -72,6 +78,8 @@ train_fcn_16s:
 	@ python fcn_16s/fcn_16s_train.py
 test_fcn_16s:
 	@ python fcn_16s/fcn_16s_test_pascal.py
+tar_fcn_16s:
+	@ tar zcvf fcn_16s.tar.gz fcn_16s
 
 # fcn_8s:
 # (RV-VOC12) Mean IU: 0.6364892
@@ -79,3 +87,7 @@ train_fcn_8s:
 	@ python fcn_8s/fcn_8s_train.py
 test_fcn_8s:
 	@ python fcn_8s/fcn_8s_test_pascal.py
+tar_fcn_8s:
+	@ tar zcvf fcn_8s.tar.gz fcn_8s
+
+# *.tar.gz will be placed in /proj/mtk06790/shared/models/fcn-pascal/
