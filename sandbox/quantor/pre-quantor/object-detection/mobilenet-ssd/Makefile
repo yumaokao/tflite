@@ -1,5 +1,6 @@
 .PHONY: all clean build
-.PHONY: pip_install_dep protobuf_compilation test_installation download_pets
+.PHONY: pip_install_dep protobuf_compilation test_installation
+.PHONY: download_pets prepare_pets
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -44,10 +45,18 @@ test_installation:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python $(TF_RESEARCH_BASE)/object_detection/builders/model_builder_test.py
 
-# download Oxford-IIIT Pets dataset
+# download and prepare Oxford-IIIT Pets dataset
 download_pets:
 	@ mkdir -p datasets/pets
 	@ cd datasets/pets && wget http://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz
 	@ cd datasets/pets && wget http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz
 	@ cd datasets/pets && tar zxvf images.tar.gz
 	@ cd datasets/pets && tar zxvf annotations.tar.gz
+	@ cd datasets/pets && $(TF_OBJDECT_BASE)/data/pet_label_map.pbtxt ./
+
+# run this in docker env.
+prepare_pets:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python $(TF_RESEARCH_BASE)/object_detection/dataset_tools/create_pet_tf_record.py \
+			-label_map_path=$(TF_RESEARCH_BASE)/object_detection/data/pet_label_map.pbtxt \
+			--data_dir=datasets/pets --output_dir=datasets/pets
