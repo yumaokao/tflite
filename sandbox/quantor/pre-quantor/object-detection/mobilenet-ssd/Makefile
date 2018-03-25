@@ -1,6 +1,7 @@
 .PHONY: all clean build
 .PHONY: pip_install_dep protobuf_compilation test_installation
 .PHONY: download_pets prepare_pets
+.PHONY: train_mobilenet_ssd_pets
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -60,3 +61,10 @@ prepare_pets:
 		python $(TF_RESEARCH_BASE)/object_detection/dataset_tools/create_pet_tf_record.py \
 			-label_map_path=$(TF_RESEARCH_BASE)/object_detection/data/pet_label_map.pbtxt \
 			--data_dir=datasets/pets --output_dir=datasets/pets
+
+# run this in docker env.
+train_mobilenet_ssd_pets:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python $(TF_OBJDECT_BASE)/train.py \
+			--train_dir mobilenet_ssd_pets \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
