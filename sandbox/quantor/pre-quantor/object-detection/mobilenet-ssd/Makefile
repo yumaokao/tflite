@@ -1,7 +1,7 @@
 .PHONY: all clean build
-.PHONY: pip_install_dep protobuf_compilation test_installation
+.PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
 .PHONY: download_pets prepare_pets
-.PHONY: train_mobilenet_ssd_pets
+.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -31,10 +31,20 @@ clean:
 # object detection api install.md
 # run this in docker env.
 pip_install_dep:
+	@ sudo apt-get install protobuf-compiler
+	@ sudo apt-get install python-tk
+	@ pip install --user Cython
 	@ pip install --user pillow
 	@ pip install --user lxml
 	@ pip install --user jupyter
 	@ pip install --user matplotlib
+
+# coco api installation
+# run this in docker env.
+coco_api_installation:
+	@ git clone https://github.com/cocodataset/cocoapi.git
+	@ cd cocoapi/PythonAPI && make
+	@ cd cocoapi/PythonAPI && cp -r pycocotools $(TF_RESEARCH_BASE)
 
 # protobuf compilation
 # run this in docker env. $ sudo apt-get install protobuf-compiler
@@ -66,5 +76,16 @@ prepare_pets:
 train_mobilenet_ssd_pets:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python $(TF_OBJDECT_BASE)/train.py \
-			--train_dir mobilenet_ssd_pets \
+			--train_dir train_mobilenet_ssd_pets \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# run this in docker env.
+# needed to view mAP in tensorboard
+#     PascalBoxes_Precision/mAP@0.5IOU: @ckpt-371443 78.29%
+eval_mobilenet_ssd_pets:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python $(TF_OBJDECT_BASE)/eval.py \
+			--logtostderr \
+			--checkpoint_dir train_mobilenet_ssd_pets \
+			--eval_dir eval_mobilenet_ssd_pets \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config

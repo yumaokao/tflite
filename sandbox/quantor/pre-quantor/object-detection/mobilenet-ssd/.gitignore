@@ -1,2 +1,9 @@
 # datasets
 datasets
+
+# cocoapi
+cocoapi
+
+# mobilenet-ssd-pets
+train_mobilenet_ssd_pets*
+eval_mobilenet_ssd_pets*
