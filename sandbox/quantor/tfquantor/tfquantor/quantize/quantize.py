@@ -84,7 +84,11 @@ def Quantize(graph,
         layer_match.activation_op)
     add_context = context
     if layer_match.bypass_op:
-      add_context = re.search(r'^(.*)/([^/]+)', context).group(1)
+      # (Chia-Lin Yu @ Mediatek 20180323)
+      # For cases that only a single hierarchy of namespace is used
+      context_match = re.search(r'^(.*)/([^/]+)', context)
+      if context_match:
+        add_context = context_match.group(1)
     _InsertQuantOp(
         add_context,
         'act_quant',
@@ -188,8 +192,8 @@ def _FindLayersToQuantize(graph):
 
   # TODO (Chia-Lin Yu @ Mediatek 20180316)
   # For resnet_v1 model where both inputs of bypass pattern are convolution,
-  # this approach would only quantize one of these convolution ops, and the other
-  # convolution op will be matched again by the `final_layer_matcher`.
+  # following activation_pattern would only quantize one of these convolution ops, and
+  # the other convolution op will be matched again by the `final_layer_matcher`.
 
   # The input to the activation can come from bias add, fold bias add or the
   # bypasses.
