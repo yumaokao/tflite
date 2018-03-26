@@ -179,8 +179,7 @@ def main(argv=None):
         valid_images, valid_annotations = validation_dataset_reader.next_batch(FLAGS.batch_size)
         valid_loss = sess.run(loss, feed_dict={image: valid_images, annotation: valid_annotations, keep_probability: 1.0})
         total_loss += valid_loss
-        if itr != 0 and itr % 10 == 0:
-            print('%d iteration: Average validation loss = %g' % (itr, total_loss / itr))
+        print('%d iteration: validation loss = %g' % (itr+1, valid_loss))
 
     sess.close()
 

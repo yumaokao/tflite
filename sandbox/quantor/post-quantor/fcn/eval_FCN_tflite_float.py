@@ -21,9 +21,7 @@ tf.flags.DEFINE_string("data_dir", "Data_zoo/MIT_SceneParsing/", "path to datase
 tf.flags.DEFINE_string("model_dir", "Model_zoo/", "Path to vgg model mat")
 tf.flags.DEFINE_bool('debug', "False", "Debug mode: True/ False")
 tf.flags.DEFINE_string(
-    'tflite_model', None, 'The TFLite model file is stored with toco.')
-tf.flags.DEFINE_string(
-    'inference_type', 'float', 'The inference type to run the tflie model')
+    'tflite_model', None, 'The input float TFLite model file.')
 tf.flags.DEFINE_string(
     'tensorflow_dir', None, 'The directory where the tensorflow are stored')
 
@@ -37,15 +35,13 @@ def prepare_run_tflite_commands(eval_dir):
           '--tflite_file={}'.format(FLAGS.tflite_model),
           '--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npy')),
           '--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npy')),
-          '--inference_type={}'.format(FLAGS.inference_type)]
+          '--inference_type=float']
 
 def main(argv=None):
     if not FLAGS.tensorflow_dir:
         raise ValueError('You must supply the tensorflow directory with --tensorflow_dir')
     if not FLAGS.tflite_model:
         raise ValueError('You must supply the frozen pb with --tflite_model')
-    if FLAGS.inference_type != 'float' and FLAGS.inference_type != 'uint8':
-        raise ValueError('--inference_type must be one of float or uint8')
 
     logits = tf.placeholder(tf.float32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, NUM_OF_CLASSES], name="logits")
     annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1], name="annotation")
@@ -78,11 +74,9 @@ def main(argv=None):
         ys = np.load(os.path.join(eval_dir, 'output_ys.npy'))
 
         with tf.Session() as sess:
-          valid_loss = sess.run(loss, feed_dict={logits: ys, annotation: valid_annotations})
-          total_loss += valid_loss
-
-        if itr != 0 and itr % 10 == 0:
-            print('%d iteration: Average validation loss = %g' % (itr, total_loss / itr))
+            valid_loss = sess.run(loss, feed_dict={logits: ys, annotation: valid_annotations})
+            total_loss += valid_loss
+            print('%d iteration: validation loss = %g' % (itr+1, valid_loss))
 
     sess.close()
 
