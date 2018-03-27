@@ -2,7 +2,7 @@
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets
-.PHONY: train_mobilenet_ssd_pets_quant
+.PHONY: train_mobilenet_ssd_pets_quant eval_mobilenet_ssd_pets_quant
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -96,4 +96,12 @@ train_mobilenet_ssd_pets_quant:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./train.py \
 			--train_dir train_mobilenet_ssd_pets_quant \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+eval_mobilenet_ssd_pets_quant:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--logtostderr \
+			--checkpoint_dir train_mobilenet_ssd_pets \
+			--eval_dir eval_mobilenet_ssd_pets_test \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
