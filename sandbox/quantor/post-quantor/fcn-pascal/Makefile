@@ -5,6 +5,7 @@
 .PHONY: train_fcn_32s train_fcn_16s train_fcn_8s
 .PHONY: test_fcn_32s test_fcn_16s test_fcn_8s
 .PHONY: tar_fcn_32s tar_fcn_16s tar_fcn_8s
+.PHONY: export_fcn_32s toco_fcn_32s test_fcn_32s_tflite
 .PHONY: gen_samples_fcn_32s
 
 ifeq ($(TFLITE_ROOT_PATH),)
@@ -12,6 +13,8 @@ TFLITE_ROOT_PATH := /home/tflite
 endif
 
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
+TF_SLIM_BASE := $(TFLITE_ROOT_PATH)/models/research/slim
+FCN_BASE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 all:
 	@ echo "all models"
@@ -35,6 +38,9 @@ clean:
 pip_install_requirements:
 	@ pip install --user scikit-image
 
+pip_install_requirements_venv:
+	@ pip install scikit-image
+
 # dataset.tar.gz will be placed in /proj/mtk06790/shared/models/fcn-pascal/
 download_dataset:
 	@ mkdir -p datasets
@@ -47,7 +53,7 @@ prepare_dataset:
 
 # in docker with tensorflow
 convert_tfrecords:
-	@ python datasets/datasets/convert_pascal_berkeley_augmented_mat_annotations_to_png.py
+	@ python datasets/convert_pascal_berkeley_augmented_mat_annotations_to_png.py
 	@ python datasets/convert_pascal_voc_tfrecords.py
 
 download_pretrained_vgg16:
@@ -67,7 +73,28 @@ clone_tf_image_segmentation:
 train_fcn_32s:
 	@ python fcn_32s/fcn_32s_train.py
 test_fcn_32s:
-	@ python fcn_32s/fcn_32s_test_pascal.py
+	@ python fcn_32s/fcn_32s_test_pascal.py --slim_dir=$(TF_SLIM_BASE)
+export_fcn_32s:
+	@ mkdir -p fcn_32s/models
+	@ python fcn_32s/fcn_32s_export.py --slim_dir=$(TF_SLIM_BASE)
+toco_fcn_32s:
+	@ mkdir -p fcn_32s/models/dots
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(FCN_BASE)/fcn_32s/models/frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF \
+		--output_format=TFLITE \
+		--output_file=$(FCN_BASE)/fcn_32s/models/FCN_float.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT \
+		--input_arrays=fcn_32s/sub \
+		--output_arrays=fcn_32s/prediction \
+		--input_shapes=1,384,512,3 \
+		--dump_graphviz=$(FCN_BASE)/fcn_32s/models/dots
+test_fcn_32s_tflite:
+	@ python fcn_32s/fcn_32s_tflite_float.py \
+		--tensorflow_dir=$(TF_BASE) \
+		--tflite_model=$(FCN_BASE)/fcn_32s/models/FCN_float.lite \
+		--slim_dir=$(TF_SLIM_BASE)
 tar_fcn_32s:
 	@ tar zcvf fcn_32s.tar.gz fcn_32s
 gen_samples_fcn_32s:

@@ -7,16 +7,16 @@ tf-image-segmentation
 /datasets/VOCdevkit
 /datasets/benchmark_RELEASE
 /datasets/*.tfrecords
-/vgg_16_ckpts/vgg_16.ckpt
-/vgg_16_ckpts/vgg_16_2016_08_28.tar.gz
+/vgg_16_ckpts
 
 # python modules
 *.pyc
 
 # fcn_32s
-fcn_32s/ckpts/
-fcn_32s/logs/
+fcn_32s/ckpts
+fcn_32s/logs
 fcn_32s.tar.gz
+fcn_32s/models
 
 # fcn_16s
 fcn_16s/ckpts/
