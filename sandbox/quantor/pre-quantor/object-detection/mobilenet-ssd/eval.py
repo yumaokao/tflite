@@ -44,10 +44,12 @@ Example usage:
         --input_config_path=eval_input_config.pbtxt
 """
 import functools
+import logging
 import os
 import tensorflow as tf
 
-from object_detection import evaluator
+# from object_detection import evaluator
+from inherited import evaluator
 from object_detection.builders import dataset_builder
 from object_detection.builders import model_builder
 from object_detection.utils import config_util
@@ -127,6 +129,7 @@ def main(unused_argv):
   if FLAGS.run_once:
     eval_config.max_evals = 1
 
+  logging.basicConfig(level=logging.INFO)
   evaluator.evaluate(create_input_dict_fn, model_fn, eval_config, categories,
                      FLAGS.checkpoint_dir, FLAGS.eval_dir)
 

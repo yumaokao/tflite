@@ -47,7 +47,7 @@ import os
 import tensorflow as tf
 
 # from object_detection import trainer
-from quant import trainer
+from inherited import trainer
 from object_detection.builders import dataset_builder
 from object_detection.builders import model_builder
 from object_detection.utils import config_util
