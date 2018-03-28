@@ -88,3 +88,8 @@ include mks/googlenet.mk
 # for mobilenet (+ softmax layer) from caffe model
 ########################################################
 include mks/mobilenet_softmax.mk
+
+########################################################
+# for resnet34
+########################################################
+include mks/resnet34.mk

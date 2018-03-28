@@ -8,6 +8,7 @@ resnet_v1_50
 resnet_v2_50
 googlenet
 mobilenet_softmax
+resnet34
 
 # python modules
 *.pyc

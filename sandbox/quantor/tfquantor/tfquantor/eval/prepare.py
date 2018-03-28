@@ -49,6 +49,13 @@ def prepare_cifar10_dataset(filenames, width, height,
     image = tf.subtract(image, 114.8)
     return image, label
 
+  def _preprocessing_vgg_official(image, label):
+    image = tf.to_float(image)
+    image = tf.expand_dims(image, 0)
+    image = tf.subtract(image, 114.8)
+    image = image / 255.0
+    return image, label
+
   # proprocessing func
   _preprocessing_func = None
   if inference_type == 'float':
@@ -56,6 +63,8 @@ def prepare_cifar10_dataset(filenames, width, height,
       _preprocessing_func = _preprocessing_inception
     elif preprocess_name == 'vgg':
       _preprocessing_func = _preprocessing_vgg
+    elif preprocess_name == 'vgg_official':
+      _preprocessing_func = _preprocessing_vgg_official
 
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
@@ -106,6 +115,17 @@ def prepare_imagenet_dataset(filenames, width, height,
     image = tf.subtract(image, 114.8)
     return image, label
 
+  def _preprocessing_vgg_official(image, label):
+    image = tf.to_float(image)
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [width, height],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
+    image = tf.subtract(image, 114.8)
+    image = image / 255.0
+    return image, label
+
   def _resize_imagenet(image, label):
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
     image = tf.image.central_crop(image, central_fraction=0.875)
@@ -123,6 +143,8 @@ def prepare_imagenet_dataset(filenames, width, height,
       _preprocessing_func = _preprocessing_inception
     elif preprocess_name == 'vgg':
       _preprocessing_func = _preprocessing_vgg
+    elif preprocess_name == 'vgg_official':
+      _preprocessing_func = _preprocessing_vgg_official
   elif inference_type == 'uint8':
     _preprocessing_func = _resize_imagenet
 
@@ -162,7 +184,7 @@ def prepare_dataset(filenames, dataset_name, input_size,
     if dataset_name not in ['imagenet', 'cifar10']:
       tf.logging.error('Could not find preprocessing for dataset {}'.format(dataset_name))
       return None
-    if preprocess_name not in ['inception', 'vgg']:
+    if preprocess_name not in ['inception', 'vgg', 'vgg_official']:
       tf.logging.error('Could not find preprocessing method {}'.format(preprocess_name))
       return None
     if inference_type not in ['float', 'uint8']:
