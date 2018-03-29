@@ -1,0 +1,5 @@
+# official models
+resnet_v1_34
+
+# python modules
+*.pyc
