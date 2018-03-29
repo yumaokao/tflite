@@ -65,8 +65,7 @@ freeze_resnet_v1_34:
 		--output_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=IteratorGetNext \
-		--output_arrays=softmax_tensor --input_shapes=1,224,224,3 \
-		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_34/quantor/dots
+		--output_arrays=softmax_tensor --input_shapes=1,224,224,3
 	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb
 
 # Use IteratorGetNext will not work, FIXME
@@ -78,7 +77,7 @@ eval_resnet_v1_34_frozen:
 		--input_size=224 --preprocess_name=vgg \
 		--input_node_name=IteratorGetNext_1 \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
-		--max_num_batches=200  --batch_size=1
+		--max_num_batches=1000  --batch_size=1
 
 # Use IteratorGetNext will not work, FIXME
 quantor_resnet_v1_34_frozen:
@@ -89,7 +88,9 @@ quantor_resnet_v1_34_frozen:
 		--output_node_name=softmax_tensor \
 		--input_node_name=IteratorGetNext \
 		--input_size=224 --preprocess_name=vgg \
-		--output_dir=$(QUANTOR_BASE)/resnet_v1_34/quantor --max_num_batches=200 --batch_size=1
+		--output_dir=$(QUANTOR_BASE)/resnet_v1_34/quantor \
+		--max_num_batches=1000 \
+		--batch_size=1
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_34/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/quantor/model.ckpt \
@@ -102,7 +103,7 @@ quantor_resnet_v1_34_frozen:
 		--output_node_name=softmax_tensor \
 		--input_node_name=IteratorGetNext_1 \
 		--input_size=224 --preprocess_name=vgg \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb --max_num_batches=200 --batch_size=1
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb --max_num_batches=1000 --batch_size=1
 
 toco_quantor_resnet_v1_34:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_34/quantor/dots
@@ -119,7 +120,7 @@ toco_quantor_resnet_v1_34:
 toco_resnet_v1_34:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_34/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
-		--input_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_opt.pb \
+		--input_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/resnet_v1_34/float_model.lite \
 		--inference_type=FLOAT \
