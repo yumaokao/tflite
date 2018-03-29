@@ -29,9 +29,16 @@ QUANTOR_RESNET_V1_34_TARGETS += eval_quantor_resnet_v1_34_tflite
 TF_RESNET_BASE := $(TFLITE_ROOT_PATH)/models/official/resnet
 TF_MODELS_BASE := $(TFLITE_ROOT_PATH)/models
 
-# inference model can be found in 
+ifeq ($(RESNET_V1_34_CKPT),)
+RESNET_V1_34_CKPT := 404253
+endif
+
+# inference model can be found in /proj/mtk07832/shared_folder/resnet_v1_34_official
+# Note that we change the reduce_mean op to average pool (see commit d5663b3c04631b742623c64d2da497904d32bf05 in slim)
+# Also, we force the graph to be evaluation graph by fixing the `training` argument as false in class Model (see models/official/resnet/resnet_model.py)
 
 # resnet_v1_34_stage_0.tar.gz will be placed in /proj/mtk06790/shared/models/quantor
+
 train_resnet_v1_34:
 	@ PYTHONPATH=${TF_MODELS_BASE} \
 	  python $(TF_RESNET_BASE)/imagenet_main.py --data_dir=$(DATASET_BASE)/imagenet \
@@ -43,7 +50,7 @@ quantor_resnet_v1_34: ${QUANTOR_RESNET_V1_34_TARGETS}
 freeze_resnet_v1_34:
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_34/inf_graph.pbtxt \
-		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/model.ckpt-404253 \
+		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/model.ckpt-$(RESNET_V1_34_CKPT) \
 		--input_binary=false --output_graph=$(QUANTOR_BASE)/resnet_v1_34/frozen.pb \
 		--output_node_names=softmax_tensor
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/optimize_for_inference \
@@ -73,6 +80,7 @@ eval_resnet_v1_34_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
 		--max_num_batches=200  --batch_size=1
 
+# Use IteratorGetNext will not work, FIXME
 quantor_resnet_v1_34_frozen:
 	@ quantor_frozen \
 		--dataset_name=imagenet \
@@ -128,7 +136,7 @@ eval_quantor_resnet_v1_34_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_34/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--preprocess_name=vgg \
-		--max_num_batches=2 --input_size=224
+		--max_num_batches=1000 --input_size=224
 
 eval_resnet_v1_34_tflite:
 	@ echo $@
@@ -138,7 +146,7 @@ eval_resnet_v1_34_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_34/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--preprocess_name=vgg \
-		--max_num_batches=2 --input_size=224
+		--max_num_batches=1000 --input_size=224
 
 
 ########################################################
