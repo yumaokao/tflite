@@ -18,6 +18,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tensorflow as tf
 from tensorflow.contrib.framework.python.ops import add_arg_scope
 from tensorflow.contrib.framework.python.ops import model_variable
 from tensorflow.python.framework import ops
@@ -199,7 +200,7 @@ def MovingAvgQuantize(inputs,
   with variable_scope.variable_scope(
       None, default_name=name_prefix, values=[inputs], reuse=reuse):
     input_shape = inputs.get_shape()
-    input_dim = len(input_shape)
+    input_dim = 4 if inputs.shape == tf.TensorShape(None) else len(input_shape) # FIXME (Chia-Lin)
     if per_channel:
       # Only support quantizing 1-, 2- and 4-dimensional tensors.
       assert input_dim in [1, 2, 4], ('Expected 1D, 2D or 4D input, was: %s in '

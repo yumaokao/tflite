@@ -35,7 +35,7 @@ _QUANTIZABLE_TYPES = {'Conv2D', 'MatMul', 'DepthwiseConv2dNative'}
 _ACTIVATION_TYPES = {'Relu', 'Relu6', 'Identity'}
 
 # Weight types that are supported by the quantization rewrite.
-_WEIGHT_TYPES = {'Variable', 'VariableV2', 'VarHandleOp', 'Const'}
+_WEIGHT_TYPES = {'Variable', 'VariableV2', 'VarHandleOp', 'Const', 'Transpose'}
 
 
 def Quantize(graph,
@@ -157,7 +157,7 @@ def _FindLayersToQuantize(graph):
       '|'.join(_QUANTIZABLE_TYPES),
       inputs=[
           input_pattern,
-          graph_matcher.OneofPattern([weight_pattern, folded_weight_pattern])
+          graph_matcher.OneofPattern([weight_pattern, weight_var_pattern, folded_weight_pattern])
       ])
 
   folded_bias_mul_pattern = graph_matcher.OpTypePattern(
@@ -211,6 +211,8 @@ def _FindLayersToQuantize(graph):
     layer_op = match_result.get_op(layer_pattern)
     weight_tensor = match_result.get_tensor(weight_pattern)
     if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
       weight_tensor = match_result.get_tensor(folded_weight_pattern)
     activation_op = match_result.get_op(activation_pattern)
     bias_add_op = match_result.get_op(bias_add_pattern)
@@ -232,9 +234,25 @@ def _FindLayersToQuantize(graph):
     layer_op = match_result.get_op(layer_pattern)
     weight_tensor = match_result.get_tensor(weight_pattern)
     if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
       weight_tensor = match_result.get_tensor(folded_weight_pattern)
     activation_op = match_result.get_op(bias_add_pattern)
     yield _LayerMatch(layer_op, weight_tensor, activation_op, None, None)
+
+  # Match the first conv op in resnet_v2_34, where no bias and activation op is attached.
+  # Instead, the conv2d op will be followed by a maxpool op
+  pool_pattern = graph_matcher.OpTypePattern(
+      'MaxPool', inputs=[layer_pattern])
+  pool_layer_matcher = graph_matcher.GraphMatcher(pool_pattern)
+  for match_result in pool_layer_matcher.match_graph(graph):
+    layer_op = match_result.get_op(layer_pattern)
+    weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
+    yield _LayerMatch(layer_op, weight_tensor, layer_op, None, None)
 
 
 class _LayerMatch(object):

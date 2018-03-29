@@ -30,11 +30,13 @@ from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
 
 # Quantizable operation types that are supported by the quantization rewrite.
-_DECONV_TYPES = {'Conv2DBackpropInput'}
+_CONV_TYPES = {'Conv2D'}
 
 # Weight types that are supported by the quantization rewrite.
 _WEIGHT_TYPES = {'Variable', 'VariableV2', 'VarHandleOp', 'Const'}
 
+
+quant_cache = []
 
 def Quantize(graph,
              is_training,
@@ -63,43 +65,15 @@ def Quantize(graph,
   """
   input_to_ops_map = input_to_ops.InputToOps(graph)
   for layer_match in _FindLayersToQuantize(graph):
-    # Quantize the weights.
+
+    # Check if current match has already be quantized
+    name = layer_match.bypass_op.name + '_' + str(is_training)
+    if name in quant_cache:
+      continue
+    else:
+      quant_cache.append(name)
+
     context = quantize._GetContextFromOp(layer_match.layer_op)
-    quantize._InsertQuantOp(
-        context,
-        'weights_quant',
-        layer_match.weight_tensor.op, [layer_match.layer_op],
-        is_training,
-        moving_avg=False,
-        ema_decay=ema_decay,
-        quant_delay=quant_delay,
-        narrow_range=True,
-        vars_collection=vars_collection,
-        bits=weight_bits)
-
-    # Quantize the activations.
-    consumer_ops = input_to_ops_map.ConsumerOperations(
-        layer_match.bias_add_op)
-    add_context = context
-    if layer_match.bypass_op:
-      # (Chia-Lin Yu @ Mediatek 20180323)
-      # For cases that only a single hierarchy of namespace is used
-      context_match = re.search(r'^(.*)/([^/]+)', context)
-      if context_match:
-        add_context = context_match.group(1)
-
-    quantize._InsertQuantOp(
-        add_context,
-        'act_quant',
-        layer_match.bias_add_op,
-        consumer_ops,
-        is_training,
-        moving_avg=True,
-        ema_decay=ema_decay,
-        quant_delay=quant_delay,
-        vars_collection=vars_collection,
-        bits=activation_bits,
-        init_min=0.0)
 
     # Quantize the output to the bypass (if it exists). The input to
     # the bypass is the bias add.
@@ -126,21 +100,20 @@ def _FindLayersToQuantize(graph):
   Yields:
     _LayerMatches.
   """
+  # the convolution should be quantized by previous passes
+
   input_pattern = graph_matcher.OpTypePattern('*')
-  weight_var_pattern = graph_matcher.OpTypePattern('|'.join(_WEIGHT_TYPES))
-  weight_pattern = graph_matcher.OpTypePattern(
-      'Identity|ReadVariableOp', inputs=[weight_var_pattern])
+  weight_quant_pattern = graph_matcher.OpTypePattern('FakeQuantWithMinMaxVars')
 
   folded_weight_pattern = graph_matcher.OpTypePattern('Mul')
 
   # The weights inputs to the layer operation can either be from the Variable or
   # the folded weight (Mul).
   layer_pattern = graph_matcher.OpTypePattern(
-      '|'.join(_DECONV_TYPES),
+      '|'.join(_CONV_TYPES),
       inputs=[
-          '*',
-          graph_matcher.OneofPattern([weight_pattern, weight_var_pattern, folded_weight_pattern]),
-          input_pattern
+          input_pattern,
+          weight_quant_pattern,
       ])
 
   folded_bias_mul_pattern = graph_matcher.OpTypePattern(
@@ -158,85 +131,44 @@ def _FindLayersToQuantize(graph):
   bias_add_pattern = graph_matcher.OpTypePattern(
       'Add|BiasAdd', inputs=[layer_pattern, '*'])
 
+  act_quant_pattern = graph_matcher.OpTypePattern(
+      'FakeQuantWithMinMaxVars',
+      inputs=[
+          graph_matcher.OneofPattern(
+              [bias_add_pattern, folded_bias_add_pattern]), '*', '*'
+      ])
+
   # The bias can come from the bias add or the folded bias add.
   bypass_pattern_a = graph_matcher.OpTypePattern(
-      'Add',
-      inputs=[
-          graph_matcher.OneofPattern(
-              [bias_add_pattern, folded_bias_add_pattern]), '*'
-      ])
+      'Add', inputs=[act_quant_pattern, '*'])
   bypass_pattern_b = graph_matcher.OpTypePattern(
-      'Add',
-      inputs=[
-          '*',
-          graph_matcher.OneofPattern(
-              [bias_add_pattern, folded_bias_add_pattern])
-      ])
+      'Add', inputs=['*', act_quant_pattern])
 
   # Bypass add without a following activation op
   bypass_matcher_a = graph_matcher.GraphMatcher(bypass_pattern_a)
   for match_result in bypass_matcher_a.match_graph(graph):
     layer_op = match_result.get_op(layer_pattern)
-    weight_tensor = match_result.get_tensor(weight_pattern)
-    if weight_tensor is None:
-      weight_tensor = match_result.get_tensor(weight_var_pattern)
-    if weight_tensor is None:
-      weight_tensor = match_result.get_tensor(folded_weight_pattern)
-    bias_add_op = match_result.get_op(bias_add_pattern)
-    if bias_add_op is None:
-      bias_add_op = match_result.get_op(folded_bias_add_pattern)
     bypass_op = match_result.get_op(bypass_pattern_a)
-    yield _LayerMatch(layer_op, weight_tensor, bypass_op, bias_add_op)
+    yield _LayerMatch(layer_op, bypass_op)
 
   bypass_matcher_b = graph_matcher.GraphMatcher(bypass_pattern_b)
   for match_result in bypass_matcher_b.match_graph(graph):
     layer_op = match_result.get_op(layer_pattern)
-    weight_tensor = match_result.get_tensor(weight_pattern)
-    if weight_tensor is None:
-      weight_tensor = match_result.get_tensor(weight_var_pattern)
-    if weight_tensor is None:
-      weight_tensor = match_result.get_tensor(folded_weight_pattern)
-    bias_add_op = match_result.get_op(bias_add_pattern)
-    if bias_add_op is None:
-      bias_add_op = match_result.get_op(folded_bias_add_pattern)
     bypass_op = match_result.get_op(bypass_pattern_b)
-    yield _LayerMatch(layer_op, weight_tensor, bypass_op, bias_add_op)
-
-  # BiasAdd without a following activation op
-  bias_add_matcher = graph_matcher.GraphMatcher(bias_add_pattern)
-  for match_result in bias_add_matcher.match_graph(graph):
-    layer_op = match_result.get_op(layer_pattern)
-    weight_tensor = match_result.get_tensor(weight_pattern)
-    if weight_tensor is None:
-      weight_tensor = match_result.get_tensor(folded_weight_pattern)
-    bias_add_op = match_result.get_op(bias_add_pattern)
-    if bias_add_op is None:
-      bias_add_op = match_result.get_op(folded_bias_add_pattern)
-    yield _LayerMatch(layer_op, weight_tensor, None, bias_add_op)
+    yield _LayerMatch(layer_op, bypass_op)
 
 
 class _LayerMatch(object):
   """Contains all information related to a matched Layer."""
 
-  def __init__(self, layer_op, weight_tensor, bypass_op,
-               bias_add_op):
+  def __init__(self, layer_op, bypass_op):
     self._layer_op = layer_op
-    self._weight_tensor = weight_tensor
     self._bypass_op = bypass_op
-    self._bias_add_op = bias_add_op
 
   @property
   def layer_op(self):
     return self._layer_op
 
   @property
-  def weight_tensor(self):
-    return self._weight_tensor
-
-  @property
   def bypass_op(self):
     return self._bypass_op
-
-  @property
-  def bias_add_op(self):
-    return self._bias_add_op

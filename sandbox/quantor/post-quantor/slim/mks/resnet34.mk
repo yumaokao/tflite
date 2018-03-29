@@ -4,6 +4,7 @@ QUANTOR_RESNET34_TARGETS += eval_resnet34_frozen
 QUANTOR_RESNET34_TARGETS += toco_resnet34
 QUANTOR_RESNET34_TARGETS += eval_resnet34_tflite
 # uint8 model
+QUANTOR_RESNET34_TARGETS += optimize_resnet34_frozen
 QUANTOR_RESNET34_TARGETS += quantor_resnet34_frozen
 QUANTOR_RESNET34_TARGETS += toco_quantor_resnet34
 QUANTOR_RESNET34_TARGETS += eval_quantor_resnet34_tflite
@@ -34,35 +35,57 @@ eval_resnet34_frozen:
 		--input_size=224 \
 		--preprocess_name=vgg_official \
 		--frozen_pb=$(QUANTOR_BASE)/resnet34/frozen_resnet34.pb \
-		--max_num_batches=1000 \
+		--max_num_batches=10000 \
 		--batch_size=1
+
+transform_resnet34_frozen:
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/transform_graph \
+		--in_graph=$(QUANTOR_BASE)/resnet34/frozen_resnet34.pb \
+		--out_graph=$(QUANTOR_BASE)/resnet34/frozen_resnet34_transform.pb \
+		--inputs=input \
+		--outputs=resnet34/predictions/Reshape_1 \
+		--transforms='fold_old_batch_norms fold_batch_norms'
+
+optimize_resnet34_frozen:
+	@ mkdir -p $(QUANTOR_BASE)/resnet34/opt_dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/resnet34/frozen_resnet34.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  \
+		--output_format=TENSORFLOW_GRAPHDEF \
+		--output_file=$(QUANTOR_BASE)/resnet34/frozen_resnet34_opt.pb \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT \
+		--input_arrays=input \
+		--output_arrays=softmax_cross_entropy_loss/xentropy/Reshape \
+		--input_shapes=1,224,224,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/resnet34/opt_dots
 
 quantor_resnet34_frozen:
 	@ quantor_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--frozen_pb=$(QUANTOR_BASE)/resnet34/frozen_resnet34.pb \
-		--output_node_name=softmax_cross_entropy_loss/xentropy/Reshape \
+		--frozen_pb=$(QUANTOR_BASE)/resnet34/frozen_resnet34_opt.pb \
+		--output_node_name=softmax_cross_entropy_loss/xentropy/Reshape/act_quant/FakeQuantWithMinMaxVars \
 		--input_size=224 \
 		--preprocess_name=vgg_official \
 		--output_dir=$(QUANTOR_BASE)/resnet34/quantor \
-		--max_num_batches=200 \
+		--max_num_batches=10000 \
 		--batch_size=1
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet34/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet34/quantor/model.ckpt \
 		--input_binary=true \
 		--output_graph=$(QUANTOR_BASE)/resnet34/quantor/frozen.pb \
-		--output_node_names=softmax_cross_entropy_loss/xentropy/Reshape
+		--output_node_names=softmax_cross_entropy_loss/xentropy/Reshape/act_quant/FakeQuantWithMinMaxVars
 	@ save_summaries $(QUANTOR_BASE)/resnet34/quantor/frozen.pb
 	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=softmax_cross_entropy_loss/xentropy/Reshape \
+		--output_node_name=softmax_cross_entropy_loss/xentropy/Reshape/act_quant/FakeQuantWithMinMaxVars \
 		--input_size=224 \
 		--preprocess_name=vgg_official \
 		--frozen_pb=$(QUANTOR_BASE)/resnet34/quantor/frozen.pb \
-		--max_num_batches=200 \
+		--max_num_batches=10000 \
 		--batch_size=1
 
 toco_resnet34:
@@ -88,6 +111,7 @@ eval_resnet34_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet34/float_model.lite \
 		--tensorflow_dir=$(TF_BASE) \
+		--preprocess_name=vgg_official \
 		--max_num_batches=10000 \
 		--input_size=224
 
@@ -98,11 +122,10 @@ toco_quantor_resnet34:
 		--input_format=TENSORFLOW_GRAPHDEF  \
 		--output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/resnet34/quantor/model.lite \
-		--preprocess_name=vgg_official \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
 		--mean_values=114.8 --std_values=255.0 \
-		--output_arrays=softmax_cross_entropy_loss/xentropy/Reshape \
+		--output_arrays=softmax_cross_entropy_loss/xentropy/Reshape/act_quant/FakeQuantWithMinMaxVars \
 		--input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet34/quantor/dots
 
@@ -114,8 +137,8 @@ eval_quantor_resnet34_tflite:
 		--dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet34/quantor/model.lite \
+		--preprocess_name=vgg_official \
 		--inference_type=uint8 \
 		--tensorflow_dir=$(TF_BASE) \
-		--max_num_batches=1000 \
+		--max_num_batches=10000 \
 		--input_size=224
-
