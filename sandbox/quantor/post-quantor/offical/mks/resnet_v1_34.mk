@@ -29,6 +29,7 @@ QUANTOR_RESNET_V1_34_TARGETS += eval_quantor_resnet_v1_34_tflite
 TF_RESNET_BASE := $(TFLITE_ROOT_PATH)/models/official/resnet
 TF_MODELS_BASE := $(TFLITE_ROOT_PATH)/models
 
+# resnet_v1_34_stage_0.tar.gz will be placed in /proj/mtk06790/shared/models/quantor
 train_resnet_v1_34:
 	@ PYTHONPATH=${TF_MODELS_BASE} \
 	  python $(TF_RESNET_BASE)/imagenet_main.py --data_dir=$(DATASET_BASE)/imagenet \
