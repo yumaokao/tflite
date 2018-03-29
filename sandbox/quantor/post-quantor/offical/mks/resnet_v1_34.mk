@@ -29,73 +29,73 @@ QUANTOR_RESNET_V1_34_TARGETS += eval_quantor_resnet_v1_34_tflite
 TF_RESNET_BASE := $(TFLITE_ROOT_PATH)/models/official/resnet
 TF_MODELS_BASE := $(TFLITE_ROOT_PATH)/models
 
+# inference model can be found in 
+
 # resnet_v1_34_stage_0.tar.gz will be placed in /proj/mtk06790/shared/models/quantor
 train_resnet_v1_34:
 	@ PYTHONPATH=${TF_MODELS_BASE} \
 	  python $(TF_RESNET_BASE)/imagenet_main.py --data_dir=$(DATASET_BASE)/imagenet \
 		--resnet_size=34 --version 1 --model_dir=./resnet_v1_34
 
-eval_resnet_v1_34:
-	@ cd $(TF_SLIM_BASE) && python eval_image_classifier.py \
-		--checkpoint_path=$(QUANTOR_BASE)/resnet_v1_34/resnet_v1_34.ckpt \
-		--eval_dir=$(QUANTOR_BASE)/resnet_v1_34 \
-		--dataset_name=imagenet --dataset_split_name=validation \
-		--labels_offset=1 \
-		--dataset_dir=$(DATASET_BASE)/imagenet --model_name=resnet_v1_34 --max_num_batches=200
-
 quantor_resnet_v1_34: ${QUANTOR_RESNET_V1_34_TARGETS}
 
 # sub targets
 freeze_resnet_v1_34:
-	@ cd $(TF_SLIM_BASE) && python export_inference_graph.py \
-		--alsologtostderr --labels_offset=1 \
-		--model_name=resnet_v1_34 --dataset_name=imagenet \
-		--output_file=$(QUANTOR_BASE)/resnet_v1_34/resnet_v1_34_inf_graph.pb
-	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34/resnet_v1_34_inf_graph.pb
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
-		--input_graph=$(QUANTOR_BASE)/resnet_v1_34/resnet_v1_34_inf_graph.pb \
-		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/resnet_v1_34.ckpt \
-		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb \
-		--output_node_names=resnet_v1_34/predictions/Reshape_1
-	@ cd $(TF_BASE) && bazel-bin/tensorflow/tools/graph_transforms/transform_graph \
-		--in_graph=$(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb \
-		--out_graph=$(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34_tmp.pb \
-		--inputs=input \
-		--outputs=resnet_v1_34/predictions/Reshape_1 \
-		--transforms='fold_old_batch_norms fold_batch_norms'
-	@ mv $(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34_tmp.pb $(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb
-	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb
+		--input_graph=$(QUANTOR_BASE)/resnet_v1_34/inf_graph.pbtxt \
+		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/model.ckpt-404253 \
+		--input_binary=false --output_graph=$(QUANTOR_BASE)/resnet_v1_34/frozen.pb \
+		--output_node_names=softmax_tensor
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/optimize_for_inference \
+		--input=$(QUANTOR_BASE)/resnet_v1_34/frozen.pb \
+		--output=$(QUANTOR_BASE)/resnet_v1_34/frozen_inf.pb \
+		--frozen_graph true \
+		--input_names=IteratorGetNext \
+		--output_names=softmax_tensor 
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_inf.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TENSORFLOW_GRAPHDEF \
+		--output_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT --input_arrays=IteratorGetNext \
+		--output_arrays=softmax_tensor --input_shapes=1,224,224,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_34/quantor/dots
+	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb
 
+# Use IteratorGetNext will not work, FIXME
 eval_resnet_v1_34_frozen:
 	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=resnet_v1_34/predictions/Reshape_1 \
-		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb --max_num_batches=200
+		--output_node_name=softmax_tensor \
+		--input_size=224 --preprocess_name=vgg \
+		--input_node_name=IteratorGetNext_1 \
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
+		--max_num_batches=200  --batch_size=1
 
 quantor_resnet_v1_34_frozen:
 	@ quantor_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb \
-		--output_node_name=resnet_v1_34/predictions/Reshape_1 \
-		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
-		--output_dir=$(QUANTOR_BASE)/resnet_v1_34/quantor --max_num_batches=200
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
+		--output_node_name=softmax_tensor \
+		--input_node_name=IteratorGetNext \
+		--input_size=224 --preprocess_name=vgg \
+		--output_dir=$(QUANTOR_BASE)/resnet_v1_34/quantor --max_num_batches=200 --batch_size=1
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_34/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb \
-		--output_node_names=resnet_v1_34/predictions/Reshape_1
+		--output_node_names=softmax_tensor
 	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb
 	@ eval_frozen \
 		--dataset_name=imagenet \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
-		--output_node_name=resnet_v1_34/predictions/Reshape_1 \
-		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb --max_num_batches=200
+		--output_node_name=softmax_tensor \
+		--input_node_name=IteratorGetNext_1 \
+		--input_size=224 --preprocess_name=vgg \
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb --max_num_batches=200 --batch_size=1
 
-# --default_ranges_min=0 --default_ranges_max=10
 toco_quantor_resnet_v1_34:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_34/quantor/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -104,19 +104,19 @@ toco_quantor_resnet_v1_34:
 		--output_file=$(QUANTOR_BASE)/resnet_v1_34/quantor/model.lite \
 		--mean_values=114.8 --std_values=1.0 \
 		--inference_type=QUANTIZED_UINT8 \
-		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=resnet_v1_34/predictions/Reshape_1 --input_shapes=10,224,224,3 \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=IteratorGetNext \
+		--output_arrays=softmax_tensor --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_34/quantor/dots
 
 toco_resnet_v1_34:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_34/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
-		--input_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_resnet_v1_34.pb \
+		--input_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_opt.pb \
 		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
 		--output_file=$(QUANTOR_BASE)/resnet_v1_34/float_model.lite \
 		--inference_type=FLOAT \
-		--inference_input_type=FLOAT --input_arrays=input \
-		--output_arrays=resnet_v1_34/predictions/Reshape_1 --input_shapes=1,224,224,3 \
+		--inference_input_type=FLOAT --input_arrays=IteratorGetNext \
+		--output_arrays=softmax_tensor --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_34/dots
 
 eval_quantor_resnet_v1_34_tflite:
@@ -127,8 +127,8 @@ eval_quantor_resnet_v1_34_tflite:
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_34/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
-		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=1000 --input_size=224 --batch_size=10
+		--preprocess_name=vgg \
+		--max_num_batches=2 --input_size=224
 
 eval_resnet_v1_34_tflite:
 	@ echo $@
@@ -137,8 +137,8 @@ eval_resnet_v1_34_tflite:
 		--dataset_name=imagenet --dataset_split_name=test \
 		--dataset_dir=$(DATASET_BASE)/imagenet \
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_34/float_model.lite --tensorflow_dir=$(TF_BASE) \
-		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=10000 --input_size=224
+		--preprocess_name=vgg \
+		--max_num_batches=2 --input_size=224
 
 
 ########################################################
