@@ -61,6 +61,11 @@ freeze_vgg_16:
 	@ mv $(QUANTOR_BASE)/vgg_16/frozen_vgg_16_tmp.pb $(QUANTOR_BASE)/vgg_16/frozen_vgg_16.pb
 	@ save_summaries $(QUANTOR_BASE)/vgg_16/frozen_vgg_16.pb
 
+convert_vgg_16_fc:
+	@ python $(QUANTOR_BASE)/vgg_conv_to_fc.py \
+		--frozen_pb=$(QUANTOR_BASE)/vgg_16/frozen_vgg_16.pb \
+		--output_pb=$(QUANTOR_BASE)/vgg_16/frozen_vgg_16_fc.pb
+
 eval_vgg_16_frozen:
 	@ eval_frozen \
 		--dataset_name=imagenet \
@@ -68,6 +73,14 @@ eval_vgg_16_frozen:
 		--output_node_name=vgg_16/fc8/squeezed \
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/vgg_16/frozen_vgg_16.pb --max_num_batches=200
+
+eval_vgg_16_fc_frozen:
+	@ eval_frozen \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--output_node_name=vgg_16/fc8/fc/BiasAdd \
+		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
+		--frozen_pb=$(QUANTOR_BASE)/vgg_16/frozen_vgg_16_fc.pb --max_num_batches=200
 
 quantor_vgg_16_frozen:
 	@ quantor_frozen \

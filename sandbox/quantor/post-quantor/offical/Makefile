@@ -15,6 +15,7 @@ all:
 
 build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:optimize_for_inference
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:transform_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
