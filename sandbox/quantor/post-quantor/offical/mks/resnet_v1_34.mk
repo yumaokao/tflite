@@ -14,6 +14,9 @@ QUANTOR_RESNET_V1_34_TARGETS += eval_quantor_resnet_v1_34_tflite
 .PHONY: quantor_resnet_v1_34
 .PHONY: compare_toco_resnet_v1_34_float compare_toco_resnet_v1_34_uint8
 
+# pre-quantor
+.PHONY: train_quantized_resnet_v1_34
+
 ########################################################
 # should already defined these variables
 ########################################################
@@ -39,10 +42,33 @@ endif
 
 # resnet_v1_34_stage_0.tar.gz will be placed in /proj/mtk06790/shared/models/quantor
 
+# train with these settings
+# imagenet_main.py: boundary_epochs=[10, 20, 26, 30]
+# imagenet_preprocessing.py: _CHANNEL_MEANS = [114.8, 114.8, 114.8]
+# resnet_run_loop.py: save_checkpoints_secs=6e2,
 train_resnet_v1_34:
 	@ PYTHONPATH=${TF_MODELS_BASE} \
 	  python $(TF_RESNET_BASE)/imagenet_main.py --data_dir=$(DATASET_BASE)/imagenet \
 		--resnet_size=34 --version 1 --model_dir=./resnet_v1_34
+
+# train with these settings
+# imagenet_main.py: boundary_epochs=[10, 20, 26, 30]
+# imagenet_preprocessing.py: _CHANNEL_MEANS = [114.8, 114.8, 114.8]
+# resnet_run_loop.py: save_checkpoints_secs=6e2,
+# resnet_model.py:
+#   if training:
+#     experimental_create_training_graph(freeze_bn_delay=None)
+#   else:
+#     experimental_create_eval_graph()
+# /usr/local/lib/python2.7/dist-packages/tensorflow/contrib/quantize/python/fold_batch_norms.py
+#   # n = x.get_shape().num_elements() / grad_mean.get_shape().num_elements()
+#   nf64 = math_ops.reduce_prod(array_ops.shape(x)) / grad_mean.get_shape().num_elements()
+#   n = math_ops.to_float(nf64)
+train_quantized_resnet_v1_34:
+	@ PYTHONPATH=${TF_MODELS_BASE} \
+	  python $(TF_RESNET_BASE)/imagenet_main.py --data_dir=$(DATASET_BASE)/imagenet \
+		--resnet_size=34 --version 1 --data_format channels_last \
+		--model_dir=./resnet_v1_34_quant
 
 quantor_resnet_v1_34: ${QUANTOR_RESNET_V1_34_TARGETS}
 
