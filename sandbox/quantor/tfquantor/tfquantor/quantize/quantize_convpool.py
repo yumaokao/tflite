@@ -23,6 +23,7 @@ from tensorflow.contrib import graph_editor
 from tfquantor.quantize import common
 from tensorflow.contrib.quantize.python import graph_matcher
 from tfquantor.quantize import input_to_ops
+from tfquantor.quantize import quantize
 from tfquantor.quantize import quant_ops
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import control_flow_ops
@@ -65,10 +66,9 @@ def Quantize(graph,
   """
   input_to_ops_map = input_to_ops.InputToOps(graph)
   for layer_match in _FindLayersToQuantize(graph):
-    print('===== ' + layer_match.layer_op.name)
     # Quantize the weights.
-    context = _GetContextFromOp(layer_match.layer_op)
-    _InsertQuantOp(
+    context = quantize._GetContextFromOp(layer_match.layer_op)
+    quantize._InsertQuantOp(
         context,
         'weights_quant',
         layer_match.weight_tensor.op, [layer_match.layer_op],
@@ -84,7 +84,7 @@ def Quantize(graph,
     consumer_ops = input_to_ops_map.ConsumerOperations(
         layer_match.layer_op)
     add_context = context
-    _InsertQuantOp(
+    quantize._InsertQuantOp(
         add_context,
         'act_quant',
         layer_match.layer_op,
