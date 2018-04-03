@@ -26,25 +26,9 @@ from tf_image_segmentation.utils.inference import adapt_network_for_any_size_inp
 
 pascal_voc_lut = pascal_segmentation_lut()
 
-tfrecord_filename = './datasets/pascal_augmented_val.tfrecords'
-
 number_of_classes = 21
-
-filename_queue = tf.train.string_input_producer(
-    [tfrecord_filename], num_epochs=1)
-
-image, _ = read_tfrecord_and_decode_into_image_annotation_pair_tensors(filename_queue)
-
-# Fake batch for image and annotation by adding
-# leading empty axis.
-image_batch_tensor = tf.expand_dims(image, axis=0)
-
-# Be careful: after adaptation, network returns final labels
-# and not logits
-FCN_32s = adapt_network_for_any_size_input(FCN_32s, 32)
-
-
-pred, fcn_32s_variables_mapping = FCN_32s(image_batch_tensor=image_batch_tensor,
+image_holder = tf.placeholder(tf.float32, [None, None, None, None], name='input')
+logits, _ = FCN_32s(image_batch_tensor=image_holder,
                                           number_of_classes=number_of_classes,
                                           is_training=False)
 

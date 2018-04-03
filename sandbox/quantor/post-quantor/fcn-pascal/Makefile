@@ -75,10 +75,10 @@ train_fcn_32s:
 test_fcn_32s:
 	@ python fcn_32s/fcn_32s_test_pascal.py --slim_dir=$(TF_SLIM_BASE)
 export_fcn_32s:
-	@ mkdir -p fcn_32s/models
+	@ mkdir -p $(FCN_BASE)/fcn_32s/models
 	@ python fcn_32s/fcn_32s_export.py --slim_dir=$(TF_SLIM_BASE)
 toco_fcn_32s:
-	@ mkdir -p fcn_32s/models/dots
+	@ mkdir -p $(FCN_BASE)/fcn_32s/models/dots
 	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/toco/toco \
 		--input_file=$(FCN_BASE)/fcn_32s/models/frozen.pb \
 		--input_format=TENSORFLOW_GRAPHDEF \
@@ -95,6 +95,20 @@ test_fcn_32s_tflite:
 		--tensorflow_dir=$(TF_BASE) \
 		--tflite_model=$(FCN_BASE)/fcn_32s/models/FCN_float.lite \
 		--slim_dir=$(TF_SLIM_BASE)
+quantor_fcn_32s:
+	@ mkdir -p $(FCN_BASE)/fcn_32s/models/quantor
+	@ python fcn_32s/fcn_32s_quantor.py \
+		--frozen_pb=$(FCN_BASE)/fcn_32s/models/frozen.pb \
+		--input_node_name=fcn_32s/sub \
+		--output_node_name=fcn_32s/prediction \
+		--output_dir=$(FCN_BASE)/fcn_32s/models/quantor \
+		--slim_dir=$(TF_SLIM_BASE) \
+		--summary_dir=$(FCN_BASE)/fcn_32s/models/quantor/summary
+	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
+		--input_graph=$(FCN_BASE)/fcn_32s/models/quantor/quantor.pb \
+		--input_checkpoint=$(FCN_BASE)/fcn_32s/models/quantor/model.ckpt \
+		--input_binary=true --output_graph=$(FCN_BASE)/fcn_32s/models/quantor/frozen.pb \
+		--output_node_names=fcn_32s/prediction
 tar_fcn_32s:
 	@ tar zcvf fcn_32s.tar.gz fcn_32s
 gen_samples_fcn_32s:

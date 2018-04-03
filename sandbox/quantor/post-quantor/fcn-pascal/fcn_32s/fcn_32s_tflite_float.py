@@ -1,7 +1,6 @@
 # coding: utf-8
 import tensorflow as tf
 import numpy as np
-import skimage.io as io
 import os, sys
 import argparse
 import subprocess
@@ -22,11 +21,8 @@ sys.path.append(FLAGS.slim_dir)
 
 slim = tf.contrib.slim
 
-from tf_image_segmentation.models.fcn_32s import FCN_32s
-
 from tf_image_segmentation.utils.pascal_voc import pascal_segmentation_lut
 from tf_image_segmentation.utils.tf_records import read_tfrecord_and_decode_into_image_annotation_pair_tensors
-from tf_image_segmentation.utils.inference import adapt_network_for_any_size_input
 # from tf_image_segmentation.utils.visualization import visualize_segmentation_adaptive
 
 pascal_voc_lut = pascal_segmentation_lut()
