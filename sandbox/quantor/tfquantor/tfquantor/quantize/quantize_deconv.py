@@ -208,11 +208,24 @@ def _FindLayersToQuantize(graph):
     layer_op = match_result.get_op(layer_pattern)
     weight_tensor = match_result.get_tensor(weight_pattern)
     if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
       weight_tensor = match_result.get_tensor(folded_weight_pattern)
     bias_add_op = match_result.get_op(bias_add_pattern)
     if bias_add_op is None:
       bias_add_op = match_result.get_op(folded_bias_add_pattern)
     yield _LayerMatch(layer_op, weight_tensor, None, bias_add_op)
+
+  # Without a BiasAdd op
+  layer_matcher = graph_matcher.GraphMatcher(layer_pattern)
+  for match_result in layer_matcher.match_graph(graph):
+    layer_op = match_result.get_op(layer_pattern)
+    weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
+    yield _LayerMatch(layer_op, weight_tensor, None, layer_op)
 
 
 class _LayerMatch(object):
