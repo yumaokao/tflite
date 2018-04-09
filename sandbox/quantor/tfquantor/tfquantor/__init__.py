@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 # from tensorflow.contrib.quantize.python import quantize_graph
+from tensorflow.python.framework import ops
 from .quantize import quantize_graph, fold_batch_norms, quantize, quantize_deconv, quantize_batchnorm, quantize_convpool
 from .quantize import copy_graph
 
@@ -17,6 +18,24 @@ def create_eval_graph(*args, **kwargs):
 
 def experimental_create_training_graph(*args, **kwargs):
   quantize_graph.experimental_create_training_graph(*args, **kwargs)
+  # Default values
+  #  weight_bits = kwargs['weight_bits'] if 'weight_bits' in kwargs else 8
+  #  activation_bits = kwargs['activation_bits'] if 'activation_bits' in kwargs else 8
+  #  quant_delay = kwargs['quant_delay'] if 'quant_delay' in kwargs else 0
+  #  input_graph = ops.get_default_graph()
+  #  with input_graph.as_default():
+    #  quantize_batchnorm.Quantize(
+        #  input_graph,
+        #  is_training=True,
+        #  quant_delay=quant_delay,
+        #  weight_bits=weight_bits,
+        #  activation_bits=activation_bits)
+    #  quantize_convpool.Quantize(
+        #  input_graph,
+        #  is_training=True,
+        #  quant_delay=quant_delay,
+        #  weight_bits=weight_bits,
+        #  activation_bits=activation_bits)
 
 
 def experimental_create_eval_graph(*args, **kwargs):
