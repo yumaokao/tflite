@@ -90,25 +90,60 @@ toco_fcn_32s:
 		--output_arrays=fcn_32s/prediction \
 		--input_shapes=1,384,512,3 \
 		--dump_graphviz=$(FCN_BASE)/fcn_32s/models/dots
+# (RV-VOC12) Mean IU: 0.6150873(405 val images)
 test_fcn_32s_tflite:
-	@ python fcn_32s/fcn_32s_tflite_float.py \
+	@ echo $@
+	@ python fcn_32s/fcn_32s_tflite.py \
 		--tensorflow_dir=$(TF_BASE) \
 		--tflite_model=$(FCN_BASE)/fcn_32s/models/FCN_float.lite \
+		--inference_type=float \
+		--output_node_name=fcn_32s/prediction \
 		--slim_dir=$(TF_SLIM_BASE)
+# (RV-VOC12) Mean IU: 0.6137654(405 images)
 quantor_fcn_32s:
 	@ mkdir -p $(FCN_BASE)/fcn_32s/models/quantor
 	@ python fcn_32s/fcn_32s_quantor.py \
 		--frozen_pb=$(FCN_BASE)/fcn_32s/models/frozen.pb \
 		--input_node_name=fcn_32s/sub \
-		--output_node_name=fcn_32s/prediction \
+		--output_node_name=fcn_32s/act_quant/FakeQuantWithMinMaxVars \
 		--output_dir=$(FCN_BASE)/fcn_32s/models/quantor \
 		--slim_dir=$(TF_SLIM_BASE) \
+		--num_batches=1000 \
 		--summary_dir=$(FCN_BASE)/fcn_32s/models/quantor/summary
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(FCN_BASE)/fcn_32s/models/quantor/quantor.pb \
 		--input_checkpoint=$(FCN_BASE)/fcn_32s/models/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(FCN_BASE)/fcn_32s/models/quantor/frozen.pb \
-		--output_node_names=fcn_32s/prediction
+		--output_node_names=fcn_32s/act_quant/FakeQuantWithMinMaxVars
+	@ python fcn_32s/fcn_32s_test_frozen.py \
+		--frozen_pb=$(FCN_BASE)/fcn_32s/models/quantor/frozen.pb \
+		--input_node_name=fcn_32s/sub \
+		--output_node_name=fcn_32s/act_quant/FakeQuantWithMinMaxVars \
+		--output_dir=$(FCN_BASE)/fcn_32s/models/quantor \
+		--slim_dir=$(TF_SLIM_BASE)
+toco_quantor_fcn_32s:
+	@ mkdir -p $(FCN_BASE)/fcn_32s/models/quantor/dots
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(FCN_BASE)/fcn_32s/models/quantor/frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF \
+		--output_format=TFLITE \
+		--output_file=$(FCN_BASE)/fcn_32s/models/quantor/FCN_uint8.lite \
+		--inference_type=QUANTIZED_UINT8 \
+		--inference_input_type=QUANTIZED_UINT8 \
+		--input_arrays=fcn_32s/sub \
+		--output_arrays=fcn_32s/act_quant/FakeQuantWithMinMaxVars \
+		--mean_values=114.8 \
+		--std_values=1 \
+		--input_shapes=1,384,512,3 \
+		--dump_graphviz=$(FCN_BASE)/fcn_32s/models/quantor/dots
+test_quantor_fcn_32s_tflite:
+	@ echo $@
+	@ python fcn_32s/fcn_32s_tflite.py \
+		--tensorflow_dir=$(TF_BASE) \
+		--tflite_model=$(FCN_BASE)/fcn_32s/models/quantor/FCN_uint8.lite \
+		--inference_type=uint8 \
+		--output_node_name=fcn_32s/act_quant/FakeQuantWithMinMaxVars \
+		--slim_dir=$(TF_SLIM_BASE)
 tar_fcn_32s:
 	@ tar zcvf fcn_32s.tar.gz fcn_32s
 gen_samples_fcn_32s:

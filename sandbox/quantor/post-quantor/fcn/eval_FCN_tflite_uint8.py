@@ -23,6 +23,7 @@ tf.flags.DEFINE_string(
     'tflite_model', None, 'The input quantized TFLite model file.')
 tf.flags.DEFINE_string(
     'tensorflow_dir', None, 'The directory where the tensorflow are stored')
+# This should be parsed from the model, FIXME
 tf.flags.DEFINE_string('output_node_name', None, 'The name of the output node of the tflite model.')
 
 MODEL_URL = 'http://www.vlfeat.org/matconvnet/models/beta16/imagenet-vgg-verydeep-19.mat'
