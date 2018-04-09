@@ -124,12 +124,8 @@ def _FindLayersToQuantize(graph):
       ])
 
   # Match the convolution op where there is no bias and activation
-  # It would be followed by an identity and a maxpool op in resnet_v1_34
-  identity_pattern = graph_matcher.OpTypePattern('Identity', inputs=[layer_pattern])
-  pool_pattern = graph_matcher.OpTypePattern('MaxPool', inputs=[identity_pattern])
-
-  pool_layer_matcher = graph_matcher.GraphMatcher(pool_pattern)
-  for match_result in pool_layer_matcher.match_graph(graph):
+  layer_matcher = graph_matcher.GraphMatcher(layer_pattern)
+  for match_result in layer_matcher.match_graph(graph):
     layer_op = match_result.get_op(layer_pattern)
     weight_tensor = match_result.get_tensor(weight_pattern)
     if weight_tensor is None:
