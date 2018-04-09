@@ -111,5 +111,3 @@ with tf.Session() as sess:
   res = sess.run(miou)
 
   print("Pascal VOC 2012 Restricted (RV-VOC12) Mean IU: " + str(res) + '(' + str(num_process_image) + ' images)')
-
-  saver.save(sess, os.path.join(FLAGS.output_dir, "model.ckpt"))
