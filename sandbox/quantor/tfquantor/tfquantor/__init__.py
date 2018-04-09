@@ -40,6 +40,23 @@ def experimental_create_training_graph(*args, **kwargs):
 
 def experimental_create_eval_graph(*args, **kwargs):
   quantize_graph.experimental_create_eval_graph(*args, **kwargs)
+  # Default values
+  #  weight_bits = kwargs['weight_bits'] if 'weight_bits' in kwargs else 8
+  #  activation_bits = kwargs['activation_bits'] if 'activation_bits' in kwargs else 8
+  #  input_graph = ops.get_default_graph()
+  #  with input_graph.as_default():
+    #  quantize_batchnorm.Quantize(
+        #  input_graph,
+        #  is_training=False,
+        #  quant_delay=None,
+        #  weight_bits=weight_bits,
+        #  activation_bits=activation_bits)
+    #  quantize_convpool.Quantize(
+        #  input_graph,
+        #  is_training=False,
+        #  quant_delay=None,
+        #  weight_bits=weight_bits,
+        #  activation_bits=activation_bits)
 
 
 def create_training_graph_and_return(input_graph=None, quant_delay=0, is_batch_norm_training=False):

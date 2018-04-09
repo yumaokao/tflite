@@ -68,7 +68,59 @@ train_quantized_resnet_v1_34:
 	@ PYTHONPATH=${TF_MODELS_BASE} \
 	  python $(TF_RESNET_BASE)/imagenet_main.py --data_dir=$(DATASET_BASE)/imagenet \
 		--resnet_size=34 --version 1 --data_format channels_last \
-		--model_dir=./resnet_v1_34_quant
+		--model_dir=$(QUANTOR_BASE)/resnet_v1_34_quant
+
+freeze_train_quantized_resnet_v1_34:
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/freeze_graph \
+		--input_graph=$(QUANTOR_BASE)/resnet_v1_34_quant/graph.pbtxt \
+		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34_quant/model.ckpt-$(RESNET_V1_34_CKPT) \
+		--input_binary=false --output_graph=$(QUANTOR_BASE)/resnet_v1_34_quant/frozen.pb \
+		--output_node_names=dense/act_quant/FakeQuantWithMinMaxVars
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/python/tools/optimize_for_inference \
+		--input=$(QUANTOR_BASE)/resnet_v1_34_quant/frozen.pb \
+		--output=$(QUANTOR_BASE)/resnet_v1_34_quant/frozen_inf.pb \
+		--frozen_graph true \
+		--input_names=IteratorGetNext \
+		--output_names=dense/act_quant/FakeQuantWithMinMaxVars
+	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34_quant/frozen_inf.pb
+
+# Use IteratorGetNext will not work, FIXME
+# Top-1 acc: 70.7% (1000 val images under 1180063 ckpt)
+eval_train_quantized_resnet_v1_34_frozen:
+	@ eval_frozen \
+		--dataset_name=imagenet \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--output_node_name=dense/act_quant/FakeQuantWithMinMaxVars \
+		--input_size=224 --preprocess_name=vgg \
+		--input_node_name=IteratorGetNext_1 \
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34_quant/frozen_inf.pb \
+		--max_num_batches=1000  --batch_size=1
+
+# There would be two tensors without minmax info, which are batch_normalization_36/FusedBatchNorm_mul_0 and Relu_32
+toco_train_quantized_resnet_v1_34:
+	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_34_quant/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/resnet_v1_34_quant/frozen_inf.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(QUANTOR_BASE)/resnet_v1_34_quant/model.lite \
+		--mean_values=114.8 --std_values=1.0 \
+		--inference_type=QUANTIZED_UINT8 \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=IteratorGetNext \
+		--output_arrays=dense/act_quant/FakeQuantWithMinMaxVars --input_shapes=1,224,224,3 \
+		--default_ranges_min=-1 --default_ranges_max=48.6 \
+		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_34_quant/dots
+
+# Top-1 acc: 70.3% (1000 val images under 1180063 ckpt)
+eval_train_quantized_resnet_v1_34_tflite:
+	@ echo $@
+	@ eval_tflite \
+		--summary_dir=$(QUANTOR_BASE)/resnet_v1_34_quant/quantor/summary/$@ \
+		--dataset_name=imagenet --dataset_split_name=test \
+		--dataset_dir=$(DATASET_BASE)/imagenet \
+		--tflite_model=$(QUANTOR_BASE)/resnet_v1_34_quant/model.lite \
+		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
+		--preprocess_name=vgg \
+		--max_num_batches=1000 --input_size=224
 
 quantor_resnet_v1_34: ${QUANTOR_RESNET_V1_34_TARGETS}
 
