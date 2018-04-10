@@ -137,6 +137,7 @@ toco_quantor_fcn_32s:
 		--std_values=1 \
 		--input_shapes=1,384,512,3 \
 		--dump_graphviz=$(FCN_BASE)/fcn_32s/models/quantor/dots
+# (RV-VOC12) Mean IU: 0.6153046(405 images)
 test_quantor_fcn_32s_tflite:
 	@ echo $@
 	@ python fcn_32s/fcn_32s_tflite.py \
