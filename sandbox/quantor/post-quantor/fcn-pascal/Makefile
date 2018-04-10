@@ -61,13 +61,14 @@ download_pretrained_vgg16:
 	@ cd vgg_16_ckpts && wget http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz
 	@ cd vgg_16_ckpts && tar zxvf vgg_16_2016_08_28.tar.gz
 
+# No need to since already have one in repo, for reference only
+# tf-image-implementaion-upstream needs patch to work with newer tensorflow (1.6 tested)
+# See patches
 clone_tf_image_segmentation:
 	# @ git clone https://github.com/warmspringwinds/tf-image-segmentation.git
-	@ git clone https://github.com/barryridge/tf-image-segmentation.git
+	@ git clone https://github.com/barryridge/tf-image-segmentation.git tf-image-segmentation-upstream
 
-# TODO: makefile 
-# tf-image-implementaion needs patch to work with newer tensorflow (1.6 tested)
-
+# TODO: big target to combine them
 # fcn_32s:
 # (RV-VOC12) Mean IU: 0.6182407
 train_fcn_32s:
