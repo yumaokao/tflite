@@ -40,8 +40,6 @@ with tf.Session() as sess:
 
     print("Export the Model...")
     graph_def = sess.graph.as_graph_def()
-    for node in graph_def.node:
-      print(node.name)
     # import ipdb
     # ipdb.set_trace()
     freeze_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, ["fcn_32s/prediction"])
