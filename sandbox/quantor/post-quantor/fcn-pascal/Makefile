@@ -215,7 +215,7 @@ quantor_fcn_16s:
 	@ python fcn_16s/fcn_16s_quantor.py \
 		--frozen_pb=$(FCN_BASE)/fcn_16s/models/frozen.pb \
 		--input_node_name=fcn_16s/sub \
-		--output_node_name=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--output_node_name=fcn_16s/act_quant_1/FakeQuantWithMinMaxVars \
 		--output_dir=$(FCN_BASE)/fcn_16s/models/quantor \
 		--slim_dir=$(TF_SLIM_BASE) \
 		--num_batches=1000 \
@@ -224,11 +224,11 @@ quantor_fcn_16s:
 		--input_graph=$(FCN_BASE)/fcn_16s/models/quantor/quantor.pb \
 		--input_checkpoint=$(FCN_BASE)/fcn_16s/models/quantor/model.ckpt \
 		--input_binary=true --output_graph=$(FCN_BASE)/fcn_16s/models/quantor/frozen.pb \
-		--output_node_names=fcn_16s/act_quant/FakeQuantWithMinMaxVars
+		--output_node_names=fcn_16s/act_quant_1/FakeQuantWithMinMaxVars
 	@ python fcn_16s/fcn_16s_test_frozen.py \
 		--frozen_pb=$(FCN_BASE)/fcn_16s/models/quantor/frozen.pb \
 		--input_node_name=fcn_16s/sub \
-		--output_node_name=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--output_node_name=fcn_16s/act_quant_1/FakeQuantWithMinMaxVars \
 		--output_dir=$(FCN_BASE)/fcn_16s/models/quantor \
 		--slim_dir=$(TF_SLIM_BASE)
 toco_quantor_fcn_16s:
@@ -241,7 +241,7 @@ toco_quantor_fcn_16s:
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 \
 		--input_arrays=fcn_16s/sub \
-		--output_arrays=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--output_arrays=fcn_16s/act_quant_1/FakeQuantWithMinMaxVars \
 		--mean_values=114.8 \
 		--std_values=1 \
 		--input_shapes=1,384,512,3 \
@@ -253,7 +253,7 @@ test_quantor_fcn_16s_tflite:
 		--tensorflow_dir=$(TF_BASE) \
 		--tflite_model=$(FCN_BASE)/fcn_16s/models/quantor/FCN_uint8.lite \
 		--inference_type=uint8 \
-		--output_node_name=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--output_node_name=fcn_16s/act_quant_1/FakeQuantWithMinMaxVars \
 		--slim_dir=$(TF_SLIM_BASE)
 
 # ######################################
