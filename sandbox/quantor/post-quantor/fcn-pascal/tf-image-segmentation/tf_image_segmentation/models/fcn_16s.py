@@ -128,7 +128,8 @@ def FCN_16s(image_batch_tensor,
             fused_last_layer_and_pool4_upsampled_by_factor_16_logits = tf.nn.conv2d_transpose(fused_last_layer_and_pool4_logits,
                                                                         upsample_filter_factor_16_tensor,
                                                                         output_shape=fused_last_layer_and_pool4_upsampled_by_factor_16_logits_shape,
-                                                                        strides=[1, 16, 16, 1])
+                                                                        strides=[1, 16, 16, 1],
+                                                                        name='prediction')
 
             fcn_32s_variables_mapping = {}
 

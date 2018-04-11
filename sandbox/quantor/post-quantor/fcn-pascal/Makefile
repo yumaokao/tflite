@@ -15,6 +15,14 @@ TFLITE_FCN_32S_TARGETS += quantor_fcn_32s
 TFLITE_FCN_32S_TARGETS += toco_quantor_fcn_32s
 TFLITE_FCN_32S_TARGETS += test_quantor_fcn_32s_tflite
 .PHONY: $(TFLITE_FCN_32S_TARGETS)
+# tflite fcn_16s
+TFLITE_FCN_16S_TARGETS := export_fcn_16s
+TFLITE_FCN_16S_TARGETS += toco_fcn_16s
+TFLITE_FCN_16S_TARGETS += test_fcn_16s_tflite
+TFLITE_FCN_16S_TARGETS += quantor_fcn_16s
+TFLITE_FCN_16S_TARGETS += toco_quantor_fcn_16s
+TFLITE_FCN_16S_TARGETS += test_quantor_fcn_16s_tflite
+.PHONY: $(TFLITE_FCN_16S_TARGETS)
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -173,6 +181,80 @@ test_fcn_16s:
 	@ python fcn_16s/fcn_16s_test_pascal.py
 tar_fcn_16s:
 	@ tar zcvf fcn_16s.tar.gz fcn_16s
+
+tflite_fcn_16s: $(TFLITE_FCN_16S_TARGETS)
+
+export_fcn_16s:
+	@ mkdir -p $(FCN_BASE)/fcn_16s/models
+	@ python fcn_16s/fcn_16s_export.py --slim_dir=$(TF_SLIM_BASE)
+toco_fcn_16s:
+	@ mkdir -p $(FCN_BASE)/fcn_16s/models/dots
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(FCN_BASE)/fcn_16s/models/frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF \
+		--output_format=TFLITE \
+		--output_file=$(FCN_BASE)/fcn_16s/models/FCN_float.lite \
+		--inference_type=FLOAT \
+		--inference_input_type=FLOAT \
+		--input_arrays=fcn_16s/sub \
+		--output_arrays=fcn_16s/prediction \
+		--input_shapes=1,384,512,3 \
+		--dump_graphviz=$(FCN_BASE)/fcn_16s/models/dots
+# (RV-VOC12) Mean IU: 0.6150873(405 val images)
+test_fcn_16s_tflite:
+	@ echo $@
+	@ python fcn_16s/fcn_16s_tflite.py \
+		--tensorflow_dir=$(TF_BASE) \
+		--tflite_model=$(FCN_BASE)/fcn_16s/models/FCN_float.lite \
+		--inference_type=float \
+		--output_node_name=fcn_16s/prediction \
+		--slim_dir=$(TF_SLIM_BASE)
+# (RV-VOC12) Mean IU: 0.6137654(405 images)
+quantor_fcn_16s:
+	@ mkdir -p $(FCN_BASE)/fcn_16s/models/quantor
+	@ python fcn_16s/fcn_16s_quantor.py \
+		--frozen_pb=$(FCN_BASE)/fcn_16s/models/frozen.pb \
+		--input_node_name=fcn_16s/sub \
+		--output_node_name=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--output_dir=$(FCN_BASE)/fcn_16s/models/quantor \
+		--slim_dir=$(TF_SLIM_BASE) \
+		--num_batches=1000 \
+		--summary_dir=$(FCN_BASE)/fcn_16s/models/quantor/summary
+	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
+		--input_graph=$(FCN_BASE)/fcn_16s/models/quantor/quantor.pb \
+		--input_checkpoint=$(FCN_BASE)/fcn_16s/models/quantor/model.ckpt \
+		--input_binary=true --output_graph=$(FCN_BASE)/fcn_16s/models/quantor/frozen.pb \
+		--output_node_names=fcn_16s/act_quant/FakeQuantWithMinMaxVars
+	@ python fcn_16s/fcn_16s_test_frozen.py \
+		--frozen_pb=$(FCN_BASE)/fcn_16s/models/quantor/frozen.pb \
+		--input_node_name=fcn_16s/sub \
+		--output_node_name=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--output_dir=$(FCN_BASE)/fcn_16s/models/quantor \
+		--slim_dir=$(TF_SLIM_BASE)
+toco_quantor_fcn_16s:
+	@ mkdir -p $(FCN_BASE)/fcn_16s/models/quantor/dots
+	@ cd $(TF_BASE) && bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(FCN_BASE)/fcn_16s/models/quantor/frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF \
+		--output_format=TFLITE \
+		--output_file=$(FCN_BASE)/fcn_16s/models/quantor/FCN_uint8.lite \
+		--inference_type=QUANTIZED_UINT8 \
+		--inference_input_type=QUANTIZED_UINT8 \
+		--input_arrays=fcn_16s/sub \
+		--output_arrays=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--mean_values=114.8 \
+		--std_values=1 \
+		--input_shapes=1,384,512,3 \
+		--dump_graphviz=$(FCN_BASE)/fcn_16s/models/quantor/dots
+# (RV-VOC12) Mean IU: 0.6153046(405 images)
+test_quantor_fcn_16s_tflite:
+	@ echo $@
+	@ python fcn_16s/fcn_16s_tflite.py \
+		--tensorflow_dir=$(TF_BASE) \
+		--tflite_model=$(FCN_BASE)/fcn_16s/models/quantor/FCN_uint8.lite \
+		--inference_type=uint8 \
+		--output_node_name=fcn_16s/act_quant/FakeQuantWithMinMaxVars \
+		--slim_dir=$(TF_SLIM_BASE)
 
 # ######################################
 # fcn_8s:
