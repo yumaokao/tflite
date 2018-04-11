@@ -28,3 +28,4 @@ fcn_16s/models
 fcn_8s/ckpts/
 fcn_8s/logs/
 fcn_8s.tar.gz
+fcn_8s/models

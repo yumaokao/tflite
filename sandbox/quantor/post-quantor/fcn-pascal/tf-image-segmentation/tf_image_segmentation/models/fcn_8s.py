@@ -48,23 +48,24 @@ def FCN_8s(image_batch_tensor,
         checkpoint file. Look at ipython notebook for examples.
     """
 
-    # Convert image to float32 before subtracting the
-    # mean pixel value
-    image_batch_float = tf.to_float(image_batch_tensor)
-
-    # Subtract the mean pixel value from each pixel
-    mean_centered_image_batch = image_batch_float - [_R_MEAN, _G_MEAN, _B_MEAN]
-
-    upsample_filter_factor_2_np = bilinear_upsample_weights(factor=2,
-                                                            number_of_classes=number_of_classes)
-
-    upsample_filter_factor_8_np = bilinear_upsample_weights(factor=8,
-                                                             number_of_classes=number_of_classes)
-
-    upsample_filter_factor_2_tensor = tf.constant(upsample_filter_factor_2_np)
-    upsample_filter_factor_8_tensor = tf.constant(upsample_filter_factor_8_np)
-
     with tf.variable_scope("fcn_8s")  as fcn_8s_scope:
+
+        # Convert image to float32 before subtracting the
+        # mean pixel value
+        image_batch_float = tf.to_float(image_batch_tensor)
+
+        # Subtract the mean pixel value from each pixel
+        mean_centered_image_batch = image_batch_float - [_R_MEAN, _G_MEAN, _B_MEAN]
+
+        upsample_filter_factor_2_np = bilinear_upsample_weights(factor=2,
+                                                                number_of_classes=number_of_classes)
+
+        upsample_filter_factor_8_np = bilinear_upsample_weights(factor=8,
+                                                                 number_of_classes=number_of_classes)
+
+        upsample_filter_factor_2_tensor = tf.constant(upsample_filter_factor_2_np)
+        upsample_filter_factor_8_tensor = tf.constant(upsample_filter_factor_8_np)
+
         # Define the model that we want to use -- specify to use only two classes at the last layer
         # TODO: make pull request to get this custom vgg feature accepted
         # to avoid using custom slim repo.
@@ -170,7 +171,8 @@ def FCN_8s(image_batch_tensor,
             fused_last_layer_and_pool4_logits_and_pool_3_upsampled_by_factor_8_logits = tf.nn.conv2d_transpose(fused_last_layer_and_pool4_logits_and_pool_3_logits,
                                                                         upsample_filter_factor_8_tensor,
                                                                         output_shape=fused_last_layer_and_pool4_logits_and_pool_3_upsampled_by_factor_8_logits_shape,
-                                                                        strides=[1, 8, 8, 1])
+                                                                        strides=[1, 8, 8, 1],
+                                                                        name='prediction')
             
             
             
