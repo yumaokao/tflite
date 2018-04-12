@@ -101,7 +101,7 @@ train_fcn_32s:
 test_fcn_32s:
 	@ python fcn_32s/fcn_32s_test_pascal.py --slim_dir=$(TF_SLIM_BASE)
 tar_fcn_32s:
-	@ tar zcvf fcn_32s.tar.gz fcn_32s
+	@ tar zcvf fcn_32s.tar.gz fcn_32s/models
 gen_samples_fcn_32s:
 	@ python fcn_32s/fcn_32s_test_pascal_samples.py
 
@@ -188,7 +188,7 @@ train_fcn_16s:
 test_fcn_16s:
 	@ python fcn_16s/fcn_16s_test_pascal.py
 tar_fcn_16s:
-	@ tar zcvf fcn_16s.tar.gz fcn_16s
+	@ tar zcvf fcn_16s.tar.gz fcn_16s/models
 
 tflite_fcn_16s: $(TFLITE_FCN_16S_TARGETS)
 
@@ -273,7 +273,7 @@ train_fcn_8s:
 test_fcn_8s:
 	@ python fcn_8s/fcn_8s_test_pascal.py
 tar_fcn_8s:
-	@ tar zcvf fcn_8s.tar.gz fcn_8s
+	@ tar zcvf fcn_8s.tar.gz fcn_8s/models
 
 tflite_fcn_8s: $(TFLITE_FCN_8S_TARGETS)
 
