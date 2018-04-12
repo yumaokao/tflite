@@ -208,7 +208,7 @@ toco_fcn_16s:
 		--output_arrays=fcn_16s/prediction \
 		--input_shapes=1,384,512,3 \
 		--dump_graphviz=$(FCN_BASE)/fcn_16s/models/dots
-# (RV-VOC12) Mean IU: 0.6150873(405 val images)TODO
+# (RV-VOC12) Mean IU: 0.63442945(405 images)
 test_fcn_16s_tflite:
 	@ echo $@
 	@ python fcn_16s/fcn_16s_tflite.py \
@@ -217,7 +217,7 @@ test_fcn_16s_tflite:
 		--inference_type=float \
 		--output_node_name=fcn_16s/prediction \
 		--slim_dir=$(TF_SLIM_BASE)
-# (RV-VOC12) Mean IU: 0.6137654(405 images)TODO
+# (RV-VOC12) Mean IU: 0.63235575(405 images)
 quantor_fcn_16s:
 	@ mkdir -p $(FCN_BASE)/fcn_16s/models/quantor
 	@ python fcn_16s/fcn_16s_quantor.py \
@@ -339,7 +339,7 @@ toco_quantor_fcn_8s:
 		--std_values=1 \
 		--input_shapes=1,384,512,3 \
 		--dump_graphviz=$(FCN_BASE)/fcn_8s/models/quantor/dots
-# (RV-VOC12) Mean IU: 0.6153046(405 images)TODO
+# (RV-VOC12) Mean IU: 0.6315939(405 images)
 test_quantor_fcn_8s_tflite:
 	@ echo $@
 	@ python fcn_8s/fcn_8s_tflite.py \
