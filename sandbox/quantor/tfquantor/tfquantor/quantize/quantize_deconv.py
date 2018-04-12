@@ -173,6 +173,23 @@ def _FindLayersToQuantize(graph):
               [bias_add_pattern, folded_bias_add_pattern])
       ])
 
+  # The bypass add with fake quantized conv and deconv for FCN
+  pool_fc_biasadd_pattern = graph_matcher.OpTypePattern('BiasAdd')
+  pool_fc_pattern = graph_matcher.OpTypePattern(
+      'FakeQuantWithMinMaxVars', inputs=[pool_fc_biasadd_pattern, '*', '*'])
+  bypass_pattern_c = graph_matcher.OpTypePattern(
+      'Add',
+      inputs=[
+          layer_pattern,
+          pool_fc_pattern
+      ])
+  bypass_pattern_d = graph_matcher.OpTypePattern(
+      'Add',
+      inputs=[
+          pool_fc_pattern,
+          layer_pattern
+      ])
+
   # Bypass add without a following activation op
   bypass_matcher_a = graph_matcher.GraphMatcher(bypass_pattern_a)
   for match_result in bypass_matcher_a.match_graph(graph):
@@ -201,6 +218,29 @@ def _FindLayersToQuantize(graph):
       bias_add_op = match_result.get_op(folded_bias_add_pattern)
     bypass_op = match_result.get_op(bypass_pattern_b)
     yield _LayerMatch(layer_op, weight_tensor, bypass_op, bias_add_op)
+
+  # Bypass add without pool fc and deconv
+  bypass_matcher_c = graph_matcher.GraphMatcher(bypass_pattern_c)
+  for match_result in bypass_matcher_c.match_graph(graph):
+    layer_op = match_result.get_op(layer_pattern)
+    weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
+    bypass_op = match_result.get_op(bypass_pattern_d)
+    yield _LayerMatch(layer_op, weight_tensor, bypass_op, layer_op)
+
+  bypass_matcher_d = graph_matcher.GraphMatcher(bypass_pattern_d)
+  for match_result in bypass_matcher_d.match_graph(graph):
+    layer_op = match_result.get_op(layer_pattern)
+    weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
+    bypass_op = match_result.get_op(bypass_pattern_d)
+    yield _LayerMatch(layer_op, weight_tensor, bypass_op, layer_op)
 
   # BiasAdd without a following activation op
   bias_add_matcher = graph_matcher.GraphMatcher(bias_add_pattern)
