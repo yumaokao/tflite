@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
   name='tfquantor',
-  version='0.1.5',
+  version='1.8.1',
   author='yumaokao',
   author_email='yumao.kao@mediatek.com',
   description='Quantization module for tensorflow with FakeQuant*',
