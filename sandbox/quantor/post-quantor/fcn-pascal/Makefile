@@ -133,6 +133,7 @@ test_fcn_32s_tflite:
 		--output_node_name=fcn_32s/prediction \
 		--slim_dir=$(TF_SLIM_BASE)
 # (RV-VOC12) Mean IU: 0.6137654(405 images)
+# Requires tfquantor version >= 1.8.1
 quantor_fcn_32s:
 	@ mkdir -p $(FCN_BASE)/fcn_32s/models/quantor
 	@ python fcn_32s/fcn_32s_quantor.py \
@@ -218,6 +219,7 @@ test_fcn_16s_tflite:
 		--output_node_name=fcn_16s/prediction \
 		--slim_dir=$(TF_SLIM_BASE)
 # (RV-VOC12) Mean IU: 0.63235575(405 images)
+# Requires tfquantor version >= 1.8.1
 quantor_fcn_16s:
 	@ mkdir -p $(FCN_BASE)/fcn_16s/models/quantor
 	@ python fcn_16s/fcn_16s_quantor.py \
@@ -303,6 +305,7 @@ test_fcn_8s_tflite:
 		--output_node_name=fcn_8s/prediction \
 		--slim_dir=$(TF_SLIM_BASE)
 # (RV-VOC12) Mean IU: 0.6339157(405 images)
+# Requires tfquantor version >= 1.8.1
 quantor_fcn_8s:
 	@ mkdir -p $(FCN_BASE)/fcn_8s/models/quantor
 	@ python fcn_8s/fcn_8s_quantor.py \
