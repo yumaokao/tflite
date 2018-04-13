@@ -21,7 +21,7 @@ from __future__ import print_function
 import re
 from tensorflow.contrib import graph_editor
 from tfquantor.quantize import common
-from tensorflow.contrib.quantize.python import graph_matcher
+from tfquantor.quantize import graph_matcher
 from tfquantor.quantize import input_to_ops
 from tfquantor.quantize import quant_ops
 from tensorflow.python.framework import ops

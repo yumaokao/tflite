@@ -15,7 +15,7 @@ setup(
   license='LICENSE.txt',
   url='http://www.github.com',
 
-  packages=['tfquantor', 'tfquantor.quantize',
+  packages=['tfquantor', 'tfquantor.quantize', 'tfquantor.quantize.extra',
             'tfquantor.eval', 'tfquantor.tools'],
   scripts=['tfquantor/eval/bin/eval_frozen',
            'tfquantor/eval/bin/eval_tflite',
