@@ -4,7 +4,7 @@ from __future__ import print_function
 
 # from tensorflow.contrib.quantize.python import quantize_graph
 from tensorflow.python.framework import ops
-from .quantize import quantize_graph, fold_batch_norms, quantize, quantize_deconv, quantize_batchnorm, quantize_conv
+from .quantize import quantize_graph, fold_batch_norms, quantize, quantize_extra
 from .quantize import copy_graph
 
 
@@ -86,24 +86,30 @@ def create_training_graph_and_return(input_graph=None, quant_delay=0, is_batch_n
         quant_delay=quant_delay,
         weight_bits=weight_bits,
         activation_bits=activation_bits)
-    quantize_deconv.Quantize(
+    quantize_extra.Quantize(
         g,
         is_training=True,
         quant_delay=quant_delay,
         weight_bits=weight_bits,
         activation_bits=activation_bits)
-    quantize_batchnorm.Quantize(
-        g,
-        is_training=True,
-        quant_delay=quant_delay,
-        weight_bits=weight_bits,
-        activation_bits=activation_bits)
-    quantize_conv.Quantize(
-        g,
-        is_training=True,
-        quant_delay=quant_delay,
-        weight_bits=weight_bits,
-        activation_bits=activation_bits)
+    #  quantize_deconv.Quantize(
+    #      g,
+    #      is_training=True,
+    #      quant_delay=quant_delay,
+    #      weight_bits=weight_bits,
+    #      activation_bits=activation_bits)
+    #  quantize_batchnorm.Quantize(
+    #      g,
+    #      is_training=True,
+    #      quant_delay=quant_delay,
+    #      weight_bits=weight_bits,
+    #      activation_bits=activation_bits)
+    #  quantize_conv.Quantize(
+    #      g,
+    #      is_training=True,
+    #      quant_delay=quant_delay,
+    #      weight_bits=weight_bits,
+    #      activation_bits=activation_bits)
   return g
 
 
@@ -129,22 +135,28 @@ def create_eval_graph_and_return(input_graph=None):
         quant_delay=None,
         weight_bits=weight_bits,
         activation_bits=activation_bits)
-    quantize_deconv.Quantize(
+    quantize_extra.Quantize(
         g,
         is_training=False,
         quant_delay=None,
         weight_bits=weight_bits,
         activation_bits=activation_bits)
-    quantize_batchnorm.Quantize(
-        g,
-        is_training=False,
-        quant_delay=None,
-        weight_bits=weight_bits,
-        activation_bits=activation_bits)
-    quantize_conv.Quantize(
-        g,
-        is_training=False,
-        quant_delay=None,
-        weight_bits=weight_bits,
-        activation_bits=activation_bits)
+    #  quantize_deconv.Quantize(
+    #      g,
+    #      is_training=False,
+    #      quant_delay=None,
+    #      weight_bits=weight_bits,
+    #      activation_bits=activation_bits)
+    #  quantize_batchnorm.Quantize(
+    #      g,
+    #      is_training=False,
+    #      quant_delay=None,
+    #      weight_bits=weight_bits,
+    #      activation_bits=activation_bits)
+    #  quantize_conv.Quantize(
+    #      g,
+    #      is_training=False,
+    #      quant_delay=None,
+    #      weight_bits=weight_bits,
+    #      activation_bits=activation_bits)
   return g
