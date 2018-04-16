@@ -390,27 +390,65 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
 
   def _process_batch_steps(tensor_dict, sess, batch_index, counters,
                            losses_dict=None):
-    # first step: model.preprocess
+    # first step: model.preprocess,
+    #   with some fields keep in tensor_dict from input_fn
     preprocess_tensor_dict = {}
-    preprocess_tensor_dict['preprocessed_image'] = tensor_dict['preprocessed_image']
-    preprocess_tensor_dict['true_image_shapes'] = tensor_dict['true_image_shapes']
-    # preprocess_result_dict = sess.run(preprocess_tensor_dict)
+    preprocess_keys = ['preprocessed_image', 'true_image_shapes']
+    preprocess_keys.extend(['original_image', 'key',
+                            'groundtruth_is_crowd', 'groundtruth_is_crowd',
+                            'groundtruth_group_of', 'groundtruth_classes',
+                            'groundtruth_boxes', 'groundtruth_difficult'])
+    for k in preprocess_keys:
+      preprocess_tensor_dict[k] = tensor_dict[k]
+    preprocess_result_dict = sess.run(preprocess_tensor_dict)
 
+    feed_dict = {}
     # second step: model.predict
-    prediction_tensor_dict = {}
+    for k in preprocess_keys:
+      feed_dict[preprocess_tensor_dict[k]] = preprocess_result_dict[k]
 
-    # import ipdb
-    # ipdb.set_trace()
+    predict_tensor_dict = {}
+    predict_keys = ['class_predictions_with_background', 'feature_maps',
+                     'preprocessed_inputs', 'box_encodings', 'anchors']
+    for k in predict_keys:
+      predict_tensor_dict[k] = tensor_dict[k]
+    predict_result_dict = sess.run(predict_tensor_dict,
+            feed_dict=feed_dict)
 
+    # third step: model.postprocess
+    # predict_feed_dict = {}
+    for k in predict_keys:
+      if type(predict_tensor_dict[k]) == list:
+        # print(type(predict_tensor_dict[k]))
+        for i, a in enumerate(predict_tensor_dict[k]):
+          # print(a)
+          # print(predict_result_dict[k][i].shape)
+          feed_dict[a] = predict_result_dict[k][i]
+      else:
+        # print(predict_tensor_dict[k])
+        feed_dict[predict_tensor_dict[k]] = predict_result_dict[k]
+
+    # just get all tensor_dict with feed_dict={prediction_dict}
     try:
-      if not losses_dict:
-        losses_dict = {}
-      result_dict, result_losses_dict = sess.run([tensor_dict, losses_dict])
+      result_dict, result_losses_dict = sess.run([tensor_dict, {}],
+                                                 feed_dict=feed_dict)
       counters['success'] += 1
     except tf.errors.InvalidArgumentError:
       logging.info('Skipping image')
       counters['skipped'] += 1
       return {}
+
+    '''
+    try:
+     if not losses_dict:
+       losses_dict = {}
+     result_dict, result_losses_dict = sess.run([tensor_dict, losses_dict])
+     counters['success'] += 1
+    except tf.errors.InvalidArgumentError:
+     logging.info('Skipping image')
+     counters['skipped'] += 1
+     return {}
+    '''
 
     # print(result_dict.keys())
     # print('YMK original_image.shape {}'.format(result_dict['original_image'].shape))
