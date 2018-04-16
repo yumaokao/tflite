@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
   name='tfquantor',
-  version='0.1.5',
+  version='1.8.1',
   author='yumaokao',
   author_email='yumao.kao@mediatek.com',
   description='Quantization module for tensorflow with FakeQuant*',
@@ -15,7 +15,7 @@ setup(
   license='LICENSE.txt',
   url='http://www.github.com',
 
-  packages=['tfquantor', 'tfquantor.quantize',
+  packages=['tfquantor', 'tfquantor.quantize', 'tfquantor.quantize.extra',
             'tfquantor.eval', 'tfquantor.tools'],
   scripts=['tfquantor/eval/bin/eval_frozen',
            'tfquantor/eval/bin/eval_tflite',
