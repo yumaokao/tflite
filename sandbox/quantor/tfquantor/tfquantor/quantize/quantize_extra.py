@@ -33,12 +33,10 @@ from tensorflow.python.ops import math_ops
 
 _EXTRA_QUANTIZE_OPTION_LIST=['deconvolution', 'convolution', 'batchnorm']
 
-def _all_extra_option():
-  return ' '.join(_EXTRA_QUANTIZE_OPTION_LIST)
 
 def Quantize(graph,
              is_training,
-             extra_option=_all_extra_option(),
+             extra_option,
              weight_bits=8,
              activation_bits=8,
              ema_decay=0.999,
@@ -62,6 +60,9 @@ def Quantize(graph,
   Raises:
     ValueError: When quantization fails.
   """
+  if extra_option is None:
+    return
+
   input_to_ops_map = input_to_ops.InputToOps(graph)
   for layer_match in _FindLayersToQuantize(graph, extra_option):
 
@@ -102,10 +103,10 @@ def Quantize(graph,
 def _FindLayersToQuantize(graph, extra_option):
   option_list = extra_option.split()
   total_generator = itertools.chain(default_generator(graph))
-  if 'batchnorm' in option_list:
+  if 'batchnorm' in option_list or 'all' in option_list:
     total_generator = itertools.chain(total_generator, batchnorm_generator(graph))
-  if 'deconvolution' in option_list:
+  if 'deconvolution' in option_list or 'all' in option_list:
     total_generator = itertools.chain(total_generator, deconvolution_generator(graph))
-  if 'convolution' in option_list:
+  if 'convolution' in option_list or 'all' in option_list:
     total_generator = itertools.chain(total_generator, convolution_generator(graph))
   return total_generator

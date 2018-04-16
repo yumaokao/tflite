@@ -43,8 +43,8 @@ graph_def = load_graph_def(FLAGS.frozen_pb)
 origin_graph = tf.Graph()
 with tf.Session(graph=origin_graph) as sess:
   tf.import_graph_def(graph_def, name='')
-  quantized_graph = qg.create_training_graph_and_return(sess.graph)
-  quantized_inf_graph = qg.create_eval_graph_and_return(sess.graph)
+  quantized_graph = qg.create_direct_quant_training_graph(sess.graph, inplace=False, extra_quantize_option='all')
+  quantized_inf_graph = qg.create_direct_quant_eval_graph(sess.graph, inplace=False, extra_quantize_option='all')
   tf.train.write_graph(quantized_inf_graph, FLAGS.output_dir, 'quantor.pb', as_text=False)
 
 with tf.Session(graph=quantized_graph) as sess:
