@@ -94,6 +94,7 @@ def main():
   # TODO: scale_factor from argparse
   scale_factors = np.array([10.0, 10.0, 5.0, 5.0])
   # box_encodings is in [ycen, xcen, height, width]
+  box_encodings = np.squeeze(box_encodings)
   box_encodings = box_encodings / scale_factors
 
   w = np.exp(box_encodings[:, 3]) * anchors_center_size[:, 3]

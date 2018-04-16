@@ -99,6 +99,7 @@ def main():
 
   # class_predictions_with_background
   class_predictions_with_background = np.load('npys/class_predictions_with_background.npy')
+  class_predictions_with_background = np.squeeze(class_predictions_with_background)
 
   # TODO: only support score_converter SIGMOID
   scores = _sigmoid(class_predictions_with_background)

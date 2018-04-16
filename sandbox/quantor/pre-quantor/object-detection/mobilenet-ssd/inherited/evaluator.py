@@ -337,9 +337,10 @@ def _extract_anchros_and_losses(model,
 
   # model.predict
   result_dict['class_predictions_with_background'] = (
-      prediction_dict['class_predictions_with_background'][0])
+      prediction_dict['class_predictions_with_background'])
+  result_dict['feature_maps'] = prediction_dict['feature_maps']
   result_dict['preprocessed_inputs'] = prediction_dict['preprocessed_inputs']
-  result_dict['box_encodings'] = prediction_dict['box_encodings'][0]
+  result_dict['box_encodings'] = prediction_dict['box_encodings']
   result_dict['anchors'] = prediction_dict['anchors']
 
   # model.detections DEBUG ONLY
@@ -389,6 +390,18 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
 
   def _process_batch_steps(tensor_dict, sess, batch_index, counters,
                            losses_dict=None):
+    # first step: model.preprocess
+    preprocess_tensor_dict = {}
+    preprocess_tensor_dict['preprocessed_image'] = tensor_dict['preprocessed_image']
+    preprocess_tensor_dict['true_image_shapes'] = tensor_dict['true_image_shapes']
+    # preprocess_result_dict = sess.run(preprocess_tensor_dict)
+
+    # second step: model.predict
+    prediction_tensor_dict = {}
+
+    # import ipdb
+    # ipdb.set_trace()
+
     try:
       if not losses_dict:
         losses_dict = {}
@@ -405,6 +418,8 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
     # save to npys
     # import numpy as np
     # for k in result_dict.keys():
+    #   if k == 'feature_maps':
+    #     continue
     #   np.save('tests/post-processing/npys/{}.npy'.format(k), result_dict[k])
     # import ipdb
     # ipdb.set_trace()
