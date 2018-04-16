@@ -10,3 +10,6 @@ eval_mobilenet_ssd_pets*
 
 # pyc
 *.pyc
+
+# npy
+*.npy
