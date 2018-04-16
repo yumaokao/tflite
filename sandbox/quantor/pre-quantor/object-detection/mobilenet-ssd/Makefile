@@ -101,6 +101,8 @@ train_mobilenet_ssd_pets_quant:
 eval_mobilenet_ssd_pets_test:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./eval.py \
+			--evaluate_with_anchors \
+			--run_once \
 			--logtostderr \
 			--checkpoint_dir train_mobilenet_ssd_pets \
 			--eval_dir eval_mobilenet_ssd_pets_test \
