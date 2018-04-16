@@ -89,7 +89,8 @@ def main():
   preprocessed_inputs = np.load('npys/preprocessed_inputs.npy')
 
   # uses detection_boxes_all first
-  detection_boxes_all = np.load('npys/detection_boxes_all.npy')
+  # detection_boxes_all = np.load('npys/detection_boxes_all.npy')
+  detection_boxes_all = np.load('box_decoded.npy')
 
   # detection_scores, detection_classes detection_boxes
   detection_scores = np.load('npys/detection_scores.npy')
