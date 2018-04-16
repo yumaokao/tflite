@@ -206,6 +206,8 @@ def _FindLayersToQuantize(graph):
           ])
       ])
 
+  bypass_op_cache = set()
+
   layer_matcher = graph_matcher.GraphMatcher(activation_pattern)
   for match_result in layer_matcher.match_graph(graph):
     layer_op = match_result.get_op(layer_pattern)
@@ -221,8 +223,48 @@ def _FindLayersToQuantize(graph):
     bypass_op = match_result.get_op(bypass_pattern_a)
     if bypass_op is None:
       bypass_op = match_result.get_op(bypass_pattern_b)
+    if bypass_op is not None:
+      bypass_op_cache.add(bypass_op.name)
     yield _LayerMatch(layer_op, weight_tensor, activation_op, bypass_op,
                       bias_add_op)
+
+  # (Chia-Lin Yu @ Mediatek 20180416)
+  # Match the bypass pattern where there is no activation op attached
+  # To avoid duplicated fakequant ops, we track if the bypass op has already
+  # be quantized (by the previous (bypass + relu) pattern.
+  bypass_matcher = graph_matcher.GraphMatcher(bypass_pattern_a)
+  for match_result in bypass_matcher.match_graph(graph):
+    layer_op = match_result.get_op(layer_pattern)
+    weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
+    bias_add_op = match_result.get_op(bias_add_pattern)
+    if bias_add_op is None:
+      bias_add_op = match_result.get_op(folded_bias_add_pattern)
+    bypass_op = match_result.get_op(bypass_pattern_a)
+    if bypass_op.name not in bypass_op_cache:
+      bypass_op_cache.add(bypass_op.name)
+      yield _LayerMatch(layer_op, weight_tensor, bypass_op, bypass_op,
+                        bias_add_op)
+
+  bypass_matcher = graph_matcher.GraphMatcher(bypass_pattern_b)
+  for match_result in bypass_matcher.match_graph(graph):
+    layer_op = match_result.get_op(layer_pattern)
+    weight_tensor = match_result.get_tensor(weight_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(weight_var_pattern)
+    if weight_tensor is None:
+      weight_tensor = match_result.get_tensor(folded_weight_pattern)
+    bias_add_op = match_result.get_op(bias_add_pattern)
+    if bias_add_op is None:
+      bias_add_op = match_result.get_op(folded_bias_add_pattern)
+    bypass_op = match_result.get_op(bypass_pattern_b)
+    if bypass_op.name not in bypass_op_cache:
+      bypass_op_cache.add(bypass_op.name)
+      yield _LayerMatch(layer_op, weight_tensor, bypass_op, bypass_op,
+                        bias_add_op)
 
   # Match the final layer, where there will not be an activation and instead
   # the output of the final BiasAdd must be quantized, so we treat it as the
