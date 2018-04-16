@@ -9,14 +9,14 @@ from .quantize import copy_graph
 
 
 # APIs for post-quantize
-def create_direct_quant_training_graph(*args, **kwargs):
+def create_direct_quant_training_graph(input_graph=None,
+                                       quant_delay=0,
+                                       inplace=True,
+                                       extra_quantize_option=None):
   weight_bits = 8
   activation_bits = 8
-  quant_delay = kwargs['quant_delay'] if 'quant_delay' in kwargs else 0
-  freeze_bn_delay = None # This value will not be used
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+  freeze_bn_delay = None
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -47,12 +47,13 @@ def create_direct_quant_training_graph(*args, **kwargs):
     return input_graph
 
 
-def create_direct_quant_eval_graph(*args, **kwargs):
+def create_direct_quant_eval_graph(input_graph=None,
+                                   inplace=True,
+                                   extra_quantize_option=None):
+
   weight_bits = 8
   activation_bits = 8
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -82,14 +83,14 @@ def create_direct_quant_eval_graph(*args, **kwargs):
   if inplace is False:
     return input_graph
 
-def experimental_create_direct_quant_training_graph(*args, **kwargs):
-  weight_bits = kwargs['weight_bits'] if 'weight_bits' in kwargs else 8
-  activation_bits = kwargs['activation_bits'] if 'activation_bits' in kwargs else 8
-  quant_delay = kwargs['quant_delay'] if 'quant_delay' in kwargs else 0
-  freeze_bn_delay = None # This value will not be used
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+def experimental_create_direct_quant_training_graph(input_graph=None,
+                                                    weight_bits=8,
+                                                    activation_bits=8,
+                                                    quant_delay=0,
+                                                    inplace=True,
+                                                    extra_quantize_option=None):
+  freeze_bn_delay = None
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -120,12 +121,11 @@ def experimental_create_direct_quant_training_graph(*args, **kwargs):
     return input_graph
 
 
-def experimental_create_direct_quant_eval_graph(*args, **kwargs):
-  weight_bits = kwargs['weight_bits'] if 'weight_bits' in kwargs else 8
-  activation_bits = kwargs['activation_bits'] if 'activation_bits' in kwargs else 8
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+def experimental_create_direct_quant_eval_graph(input_graph=None,
+                                                weight_bits=8,
+                                                activation_bits=8,
+                                                inplace=True,
+                                                extra_quantize_option=None):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -157,13 +157,13 @@ def experimental_create_direct_quant_eval_graph(*args, **kwargs):
 
 
 # APIs for pre-quantize
-def create_training_graph(*args, **kwargs):
+def create_training_graph(input_graph=None,
+                          quant_delay=0,
+                          inplace=True,
+                          extra_quantize_option=None):
   weight_bits = 8
   activation_bits = 8
-  quant_delay = kwargs['quant_delay'] if 'quant_delay' in kwargs else 0
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -199,10 +199,9 @@ def create_training_graph(*args, **kwargs):
     return input_graph
 
 
-def create_eval_graph(*args, **kwargs):
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+def create_eval_graph(input_graph=None,
+                      inplace=True,
+                      extra_quantize_option=None):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -233,14 +232,13 @@ def create_eval_graph(*args, **kwargs):
     return input_graph
 
 
-def experimental_create_training_graph(*args, **kwargs):
-  weight_bits = kwargs['weight_bits'] if 'weight_bits' in kwargs else 8
-  activation_bits = kwargs['activation_bits'] if 'activation_bits' in kwargs else 8
-  quant_delay = kwargs['quant_delay'] if 'quant_delay' in kwargs else 0
-  freeze_bn_delay = kwargs['freeze_bn_delay'] if 'freeze_bn_delay' in kwargs else 0
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+def experimental_create_training_graph(input_graph=None,
+                                       weight_bits=8,
+                                       activation_bits=8,
+                                       quant_delay=0,
+                                       freeze_bn_delay=int(2e5),
+                                       inplace=True,
+                                       extra_quantize_option=None):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -271,12 +269,11 @@ def experimental_create_training_graph(*args, **kwargs):
     return input_graph
 
 
-def experimental_create_eval_graph(*args, **kwargs):
-  weight_bits = kwargs['weight_bits'] if 'weight_bits' in kwargs else 8
-  activation_bits = kwargs['activation_bits'] if 'activation_bits' in kwargs else 8
-  input_graph = kwargs['input_graph'] if 'input_graph' in kwargs else None
-  inplace = kwargs['inplace'] if 'inplace' in kwargs else True
-  extra_quantize_option = kwargs['extra_quantize_option'] if 'extra_quantize_option' in kwargs else None
+def experimental_create_eval_graph(input_graph=None,
+                                   weight_bits=8,
+                                   activation_bits=8,
+                                   inplace=True,
+                                   extra_quantize_option=None):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
