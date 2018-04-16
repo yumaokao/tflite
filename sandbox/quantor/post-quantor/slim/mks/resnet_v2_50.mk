@@ -78,8 +78,7 @@ quantor_resnet_v2_50_frozen:
 		--output_node_name=resnet_v2_50/predictions/Reshape_1 \
 		--input_size=224 --preprocess_name=inception \
 		--output_dir=$(QUANTOR_BASE)/resnet_v2_50/quantor \
-		--max_num_batches=20 \
-		--batch_size=1
+		--max_num_batches=200
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v2_50/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v2_50/quantor/model.ckpt \
@@ -92,8 +91,7 @@ quantor_resnet_v2_50_frozen:
 		--output_node_name=resnet_v2_50/predictions/Reshape_1 \
 		--input_size=224 --preprocess_name=inception \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v2_50/quantor/frozen.pb \
-		--max_num_batches=20 \
-		--batch_size=1
+		--max_num_batches=200
 
 toco_quantor_resnet_v2_50:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v2_50/quantor/dots
@@ -104,7 +102,7 @@ toco_quantor_resnet_v2_50:
 		--mean_values=128 --std_values=127 \
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
-		--output_arrays=resnet_v2_50/predictions/Reshape_1 --input_shapes=1,224,224,3 \
+		--output_arrays=resnet_v2_50/predictions/Reshape_1 --input_shapes=10,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/resnet_v2_50/quantor/dots
 
 toco_resnet_v2_50:
@@ -127,7 +125,7 @@ eval_quantor_resnet_v2_50_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v2_50/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--preprocess_name=inception \
-		--max_num_batches=10000 --input_size=224 --batch_size=1
+		--max_num_batches=1000 --input_size=224 --batch_size=10
 
 eval_resnet_v2_50_tflite:
 	@ echo $@
