@@ -122,7 +122,7 @@ def main():
     print(d)
 
   print()
-  print('detection_boxes_all[0:{}]'.format(len(detections)))
+  print('detection_boxes[0:{}]'.format(len(detections)))
   for l in range(len(detections)):
     print('({}, {}, {}, {})'.format(l, detection_classes[l],
                                detection_scores[l], detection_boxes[l]))
