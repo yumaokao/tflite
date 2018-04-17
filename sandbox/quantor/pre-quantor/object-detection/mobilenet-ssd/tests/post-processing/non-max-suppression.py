@@ -130,8 +130,8 @@ def main():
                                detection_scores[l], detection_boxes[l]))
 
   # detection_boxes_all = np.squeeze(detection_boxes_all)
-  import ipdb
-  ipdb.set_trace()
+  # import ipdb
+  # ipdb.set_trace()
   # print(detection_boxes_all)
 
 

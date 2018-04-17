@@ -1,7 +1,8 @@
 .PHONY: all clean build
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
 .PHONY: download_pets prepare_pets
-.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_test
+.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets
+.PHONY: export_mobilenet_ssd_pets eval_mobilenet_ssd_pets_test
 .PHONY: train_mobilenet_ssd_pets_quant
 
 ifeq ($(TFLITE_ROOT_PATH),)
@@ -81,8 +82,7 @@ train_mobilenet_ssd_pets:
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
 # run this in docker env.
-# needed to view mAP in tensorboard
-#     PascalBoxes_Precision/mAP@0.5IOU: @ckpt-371443 78.29%
+# PascalBoxes_Precision/mAP@0.5IOU: @ckpt-371443 78.29%
 eval_mobilenet_ssd_pets:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python $(TF_OBJDECT_BASE)/eval.py \
@@ -92,12 +92,19 @@ eval_mobilenet_ssd_pets:
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
 # run this in docker env.
-train_mobilenet_ssd_pets_quant:
+export_mobilenet_ssd_pets:
+	@ rm -rf export_mobilenet_ssd_pets
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
-		python ./train.py \
-			--train_dir train_mobilenet_ssd_pets_quant \
+		python $(TF_OBJDECT_BASE)/export_inference_graph.py \
+			--input_type image_tensor \
+			--output_directory export_mobilenet_ssd_pets \
+			--trained_checkpoint_prefix train_mobilenet_ssd_pets/model.ckpt-371443 \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+	@ save_summaries export_mobilenet_ssd_pets/frozen_inference_graph.pb
 
+
+# run this in docker env.
+# PascalBoxes_Precision/mAP@0.5IOU: 0.783982
 eval_mobilenet_ssd_pets_test:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./eval.py \
@@ -106,4 +113,11 @@ eval_mobilenet_ssd_pets_test:
 			--logtostderr \
 			--checkpoint_dir train_mobilenet_ssd_pets \
 			--eval_dir eval_mobilenet_ssd_pets_test \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# run this in docker env.
+train_mobilenet_ssd_pets_quant:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./train.py \
+			--train_dir train_mobilenet_ssd_pets_quant \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
