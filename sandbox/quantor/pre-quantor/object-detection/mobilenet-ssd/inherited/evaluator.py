@@ -331,12 +331,21 @@ def _extract_anchros_and_losses(model,
           fields.DetectionResultFields.detection_classes not in detections),
       scale_to_absolute=True)
 
+  # model.preprocess
+  result_dict['preprocessed_image'] = preprocessed_image
+  result_dict['true_image_shapes'] = true_image_shapes
+
+  # model.predict
   result_dict['class_predictions_with_background'] = (
-      prediction_dict['class_predictions_with_background'][0])
+      prediction_dict['class_predictions_with_background'])
+  result_dict['feature_maps'] = prediction_dict['feature_maps']
   result_dict['preprocessed_inputs'] = prediction_dict['preprocessed_inputs']
-  result_dict['box_encodings'] = prediction_dict['box_encodings'][0]
+  result_dict['box_encodings'] = prediction_dict['box_encodings']
   result_dict['anchors'] = prediction_dict['anchors']
+
+  # model.detections DEBUG ONLY
   result_dict['detection_boxes_all'] = detections['detection_boxes_all']
+
   # print('YMK in _extract_anchros_and_losses')
   # import ipdb
   # ipdb.set_trace()
@@ -379,6 +388,101 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       create_input_dict_fn=create_input_dict_fn,
       ignore_groundtruth=eval_config.ignore_groundtruth)
 
+  def _process_batch_steps(tensor_dict, sess, batch_index, counters,
+                           losses_dict=None):
+    # first step: model.preprocess,
+    #   with some fields keep in tensor_dict from input_fn
+    preprocess_tensor_dict = {}
+    preprocess_keys = ['preprocessed_image', 'true_image_shapes']
+    preprocess_keys.extend(['original_image', 'key',
+                            'groundtruth_is_crowd', 'groundtruth_is_crowd',
+                            'groundtruth_group_of', 'groundtruth_classes',
+                            'groundtruth_boxes', 'groundtruth_difficult'])
+    for k in preprocess_keys:
+      preprocess_tensor_dict[k] = tensor_dict[k]
+    preprocess_result_dict = sess.run(preprocess_tensor_dict)
+
+    feed_dict = {}
+    # second step: model.predict
+    for k in preprocess_keys:
+      feed_dict[preprocess_tensor_dict[k]] = preprocess_result_dict[k]
+
+    predict_tensor_dict = {}
+    predict_keys = ['class_predictions_with_background', 'feature_maps',
+                     'preprocessed_inputs', 'box_encodings', 'anchors']
+    for k in predict_keys:
+      predict_tensor_dict[k] = tensor_dict[k]
+    predict_result_dict = sess.run(predict_tensor_dict,
+            feed_dict=feed_dict)
+
+    # third step: model.postprocess
+    # predict_feed_dict = {}
+    for k in predict_keys:
+      if type(predict_tensor_dict[k]) == list:
+        # print(type(predict_tensor_dict[k]))
+        for i, a in enumerate(predict_tensor_dict[k]):
+          # print(a)
+          # print(predict_result_dict[k][i].shape)
+          feed_dict[a] = predict_result_dict[k][i]
+      else:
+        # print(predict_tensor_dict[k])
+        feed_dict[predict_tensor_dict[k]] = predict_result_dict[k]
+
+    # just get all tensor_dict with feed_dict={prediction_dict}
+    try:
+      result_dict, result_losses_dict = sess.run([tensor_dict, {}],
+                                                 feed_dict=feed_dict)
+      counters['success'] += 1
+    except tf.errors.InvalidArgumentError:
+      logging.info('Skipping image')
+      counters['skipped'] += 1
+      return {}
+
+    '''
+    try:
+     if not losses_dict:
+       losses_dict = {}
+     result_dict, result_losses_dict = sess.run([tensor_dict, losses_dict])
+     counters['success'] += 1
+    except tf.errors.InvalidArgumentError:
+     logging.info('Skipping image')
+     counters['skipped'] += 1
+     return {}
+    '''
+
+    # print(result_dict.keys())
+    # print('YMK original_image.shape {}'.format(result_dict['original_image'].shape))
+    # print('YMK anchors[0] {}'.format(result_dict['anchors'][0]))
+    # save to npys
+    # import numpy as np
+    # for k in result_dict.keys():
+    #   if k == 'feature_maps':
+    #     continue
+    #   np.save('tests/post-processing/npys/{}.npy'.format(k), result_dict[k])
+    # import ipdb
+    # ipdb.set_trace()
+
+    global_step = tf.train.global_step(sess, tf.train.get_global_step())
+    if batch_index < eval_config.num_visualizations:
+      tag = 'image-{}'.format(batch_index)
+      eval_util.visualize_detection_results(
+          result_dict,
+          tag,
+          global_step,
+          categories=categories,
+          summary_dir=eval_dir,
+          export_dir=eval_config.visualization_export_dir,
+          show_groundtruth=eval_config.visualize_groundtruth_boxes,
+          groundtruth_box_visualization_color=eval_config.
+          groundtruth_box_visualization_color,
+          min_score_thresh=eval_config.min_score_threshold,
+          max_num_predictions=eval_config.max_num_boxes_to_visualize,
+          skip_scores=eval_config.skip_scores,
+          skip_labels=eval_config.skip_labels,
+          keep_image_id_for_visualization_export=eval_config.
+          keep_image_id_for_visualization_export)
+    return result_dict, result_losses_dict
+
   def _process_batch(tensor_dict, sess, batch_index, counters,
                      losses_dict=None):
     """Evaluates tensors in tensor_dict, losses_dict and visualizes examples.
@@ -411,14 +515,6 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       logging.info('Skipping image')
       counters['skipped'] += 1
       return {}
-    print('YMK original_image.shape {}'.format(result_dict['original_image'].shape))
-    print('YMK anchors[0] {}'.format(result_dict['anchors'][0]))
-    # save to npys
-    import numpy as np
-    for k in result_dict.keys():
-      np.save('tests/post-processing/npys/{}.npy'.format(k), result_dict[k])
-    import ipdb
-    ipdb.set_trace()
 
     global_step = tf.train.global_step(sess, tf.train.get_global_step())
     if batch_index < eval_config.num_visualizations:
@@ -459,11 +555,13 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
   if not evaluator_list:
     evaluator_list = get_evaluators(eval_config, categories)
 
+      # batch_processor=_process_batch,
+      # losses_dict=losses_dict)
   metrics = eval_util.repeated_checkpoint_run(
       tensor_dict=tensor_dict,
       summary_dir=eval_dir,
       evaluators=evaluator_list,
-      batch_processor=_process_batch,
+      batch_processor=_process_batch_steps,
       checkpoint_dirs=[checkpoint_dir],
       variables_to_restore=None,
       restore_fn=_restore_latest_checkpoint,
@@ -475,6 +573,6 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       master=eval_config.eval_master,
       save_graph=eval_config.save_graph,
       save_graph_dir=(eval_dir if eval_config.save_graph else ''),
-      losses_dict=losses_dict)
+      losses_dict=None)
 
   return metrics
