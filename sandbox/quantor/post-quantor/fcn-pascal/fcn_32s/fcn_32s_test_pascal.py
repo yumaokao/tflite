@@ -6,7 +6,6 @@ import os, sys
 import argparse
 
 parser = argparse.ArgumentParser(description='FCN 32s Test')
-parser.add_argument('--checkpoints_dir', default='./vgg_16_ckpts', help='checkpoints_dir')
 parser.add_argument('--log_dir', default='./fcn_32s/logs', help='log_dir')
 parser.add_argument('--save_dir', default='./fcn_32s/ckpts', help='save_dir')
 parser.add_argument('--slim_dir', default='/home/tflite/models/research/slim', help='slim_dir')

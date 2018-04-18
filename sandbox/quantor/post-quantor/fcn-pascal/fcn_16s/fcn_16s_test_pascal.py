@@ -7,7 +7,6 @@ sys.path.append("./tf-image-segmentation")
 sys.path.append("/home/tflite/models/research/slim")
 
 parser = argparse.ArgumentParser(description='FCN 16s Test')
-parser.add_argument('--checkpoints_dir', default='./vgg_16_ckpts', help='checkpoints_dir')
 parser.add_argument('--log_dir', default='./fcn_16s/logs', help='log_dir')
 parser.add_argument('--save_dir', default='./fcn_16s/ckpts', help='save_dir')
 FLAGS = parser.parse_args()
@@ -66,30 +65,30 @@ initializer = tf.local_variables_initializer()
 saver = tf.train.Saver()
 
 with tf.Session() as sess:
-    
+
     sess.run(initializer)
 
     saver.restore(sess, FLAGS.save_dir + "/model_fcn16s_final.ckpt")
-    
+
     coord = tf.train.Coordinator()
     threads = tf.train.start_queue_runners(coord=coord)
-    
+
     # There are 904 images in restricted validation dataset
     for i in xrange(904):
         print('val {}'.format(i))
-        
+
         image_np, annotation_np, pred_np, tmp = sess.run([image, annotation, pred, update_op])
-        
+
         # Display the image and the segmentation result
         #upsampled_predictions = pred_np.squeeze()
         #plt.imshow(image_np)
         #plt.show()
-        
+
         #visualize_segmentation_adaptive(upsampled_predictions, pascal_voc_lut)
-        
+
     coord.request_stop()
     coord.join(threads)
-    
+
     res = sess.run(miou)
-    
+
     print("Pascal VOC 2012 Restricted (RV-VOC12) Mean IU: " + str(res))

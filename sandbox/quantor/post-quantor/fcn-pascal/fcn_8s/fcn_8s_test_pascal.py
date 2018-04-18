@@ -7,7 +7,6 @@ sys.path.append("./tf-image-segmentation")
 sys.path.append("/home/tflite/models/research/slim")
 
 parser = argparse.ArgumentParser(description='FCN 8s Test')
-parser.add_argument('--checkpoints_dir', default='./vgg_16_ckpts', help='checkpoints_dir')
 parser.add_argument('--log_dir', default='./fcn_8s/logs', help='log_dir')
 parser.add_argument('--save_dir', default='./fcn_8s/ckpts', help='save_dir')
 FLAGS = parser.parse_args()

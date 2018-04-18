@@ -8,12 +8,10 @@ sys.path.append("/home/tflite/models/research/slim")
 
 # replace with python argsparse
 parser = argparse.ArgumentParser(description='FCN 8s Train')
-parser.add_argument('--checkpoints_dir', default='./vgg_16_ckpts', help='checkpoints_dir')
 parser.add_argument('--log_dir', default='./fcn_8s/logs', help='log_dir')
 parser.add_argument('--save_dir', default='./fcn_8s/ckpts', help='save_dir')
 FLAGS = parser.parse_args()
 
-checkpoints_dir = FLAGS.checkpoints_dir
 log_folder = FLAGS.log_dir
 
 slim = tf.contrib.slim
