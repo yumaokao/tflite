@@ -5,7 +5,7 @@ import os, sys
 import argparse
 import tfquantor as qg
 
-parser = argparse.ArgumentParser(description='FCN 32s Quantor')
+parser = argparse.ArgumentParser(description='FCN 16s Quantor')
 parser.add_argument('--frozen_pb', default=None, help='Frozen model to be quantized')
 parser.add_argument('--input_node_name', default=None, help='Input node name')
 parser.add_argument('--output_node_name', default=None, help='Output node name')

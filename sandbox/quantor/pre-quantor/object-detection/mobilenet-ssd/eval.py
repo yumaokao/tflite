@@ -79,6 +79,8 @@ flags.DEFINE_string('model_config_path', '',
 flags.DEFINE_boolean('run_once', False, 'Option to only run a single pass of '
                      'evaluation. Overrides the `max_evals` parameter in the '
                      'provided config.')
+flags.DEFINE_boolean('evaluate_with_anchors', False, 'Option to evaluate with anchors. '
+                     'postprocess and detection are run seperately. ')
 FLAGS = flags.FLAGS
 
 
@@ -130,8 +132,14 @@ def main(unused_argv):
     eval_config.max_evals = 1
 
   logging.basicConfig(level=logging.INFO)
-  evaluator.evaluate(create_input_dict_fn, model_fn, eval_config, categories,
-                     FLAGS.checkpoint_dir, FLAGS.eval_dir)
+  if FLAGS.evaluate_with_anchors:
+    evaluator.evaluate_with_anchors(create_input_dict_fn, model_fn,
+                                    eval_config, categories,
+                                    FLAGS.checkpoint_dir,
+                                    FLAGS.eval_dir)
+  else:
+    evaluator.evaluate(create_input_dict_fn, model_fn, eval_config, categories,
+                       FLAGS.checkpoint_dir, FLAGS.eval_dir)
 
 
 if __name__ == '__main__':

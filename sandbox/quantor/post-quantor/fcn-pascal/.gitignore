@@ -19,11 +19,13 @@ fcn_32s.tar.gz
 fcn_32s/models
 
 # fcn_16s
-fcn_16s/ckpts/
-fcn_16s/logs/
+fcn_16s/ckpts
+fcn_16s/logs
 fcn_16s.tar.gz
+fcn_16s/models
 
 # fcn_8s
-fcn_8s/ckpts/
-fcn_8s/logs/
+fcn_8s/ckpts
+fcn_8s/logs
 fcn_8s.tar.gz
+fcn_8s/models

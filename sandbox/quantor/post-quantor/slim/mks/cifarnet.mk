@@ -58,7 +58,7 @@ eval_cifarnet_frozen:
 quantor_cifarnet_frozen:
 	@ quantor_frozen \
 		--summary_dir=$(QUANTOR_BASE)/cifarnet/summary/$@ \
-		--dataset_name=cifar10 --dataset_split_name=test \
+		--dataset_name=cifar10 --max_num_batches=200 \
 		--dataset_dir=$(DATASET_BASE)/cifar10 \
 		--output_node_name=CifarNet/Predictions/Reshape \
 		--frozen_pb=$(QUANTOR_BASE)/cifarnet/frozen_cifarnet.pb \

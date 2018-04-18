@@ -5,14 +5,12 @@ import os, sys
 import argparse
 import tfquantor as qg
 
-parser = argparse.ArgumentParser(description='FCN 32s Quantor')
+parser = argparse.ArgumentParser(description='FCN 16s Quantor')
 parser.add_argument('--frozen_pb', default=None, help='Frozen model to be quantized')
 parser.add_argument('--input_node_name', default=None, help='Input node name')
 parser.add_argument('--output_node_name', default=None, help='Output node name')
 parser.add_argument('--slim_dir', default=None, help='slim_dir')
 parser.add_argument('--output_dir', default=None, help='output_dir')
-parser.add_argument('--summary_dir', default=None, help='summary_dir')
-parser.add_argument('--num_batches', type=int, default=1000, help='Number of batches')
 FLAGS = parser.parse_args()
 
 sys.path.append("./tf-image-segmentation")
@@ -26,7 +24,7 @@ from tf_image_segmentation.utils.tf_records import read_tfrecord_and_decode_into
 
 pascal_voc_lut = pascal_segmentation_lut()
 
-tfrecord_filename = './datasets/pascal_augmented_train.tfrecords'
+tfrecord_filename = './datasets/pascal_augmented_val.tfrecords'
 
 number_of_classes = 21
 vgg_mean = [123.680, 116.779, 103.939]
@@ -38,16 +36,9 @@ def load_graph_def(pb):
     graph_def.ParseFromString(f.read())
   return graph_def
 
-# Quantized the graph (for both training and inference) and export the inference quantized graph
 graph_def = load_graph_def(FLAGS.frozen_pb)
-origin_graph = tf.Graph()
-with tf.Session(graph=origin_graph) as sess:
+with tf.Session() as sess:
   tf.import_graph_def(graph_def, name='')
-  quantized_graph = qg.create_direct_quant_training_graph(sess.graph, inplace=False, extra_quantize_option='all')
-  quantized_inf_graph = qg.create_direct_quant_eval_graph(sess.graph, inplace=False, extra_quantize_option='all')
-  tf.train.write_graph(quantized_inf_graph, FLAGS.output_dir, 'quantor.pb', as_text=False)
-
-with tf.Session(graph=quantized_graph) as sess:
 
   filename_queue = tf.train.string_input_producer(
     [tfrecord_filename], num_epochs=1)
@@ -96,20 +87,8 @@ with tf.Session(graph=quantized_graph) as sess:
   # get x and y
   x = sess.graph.get_tensor_by_name('{}:0'.format(FLAGS.input_node_name))
   y = sess.graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
-  # summary all min/max variables
-  # print(graph.get_collection('variables')[3].eval())
-  for var in quantized_graph.get_collection('variables'):
-    varname = var.name[:-2] if var.name[-2] == ':' else var.name
-    tf.summary.scalar(varname, var)
-  summaries = tf.summary.merge_all()
 
-  # Prepare saver and summary_writer
-  saver = tf.train.Saver()
-  if FLAGS.summary_dir:
-    tf.logging.info('Prepare summary writer')
-    summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
-
-  for i in xrange(FLAGS.num_batches):
+  for i in xrange(904):
     print('val {}'.format(i))
 
     image_np, shape_np, annotation_np, weight_np = sess.run([resized_and_process_input, org_shape, annotation_batch_tensor, weights])
@@ -120,18 +99,11 @@ with tf.Session(graph=quantized_graph) as sess:
       _ = sess.run(update_op, feed_dict={logits_holder: ys, annotation_batch_tensor: annotation_np, weights: weight_np, org_shape: shape_np})
       num_process_image += 1
 
-      summary = sess.run(summaries)
-      if FLAGS.summary_dir:
-        summary_writer.add_summary(summary, num_process_image)
-
     # Display the image and the segmentation result
     # upsampled_predictions = pred_np.squeeze()
     #plt.imshow(image_np)
     #plt.show()
     #visualize_segmentation_adaptive(upsampled_predictions, pascal_voc_lut)
-
-  if FLAGS.summary_dir:
-    summary_writer.add_graph(quantized_graph)
 
   coord.request_stop()
   coord.join(threads)
@@ -139,5 +111,3 @@ with tf.Session(graph=quantized_graph) as sess:
   res = sess.run(miou)
 
   print("Pascal VOC 2012 Restricted (RV-VOC12) Mean IU: " + str(res) + '(' + str(num_process_image) + ' images)')
-
-  saver.save(sess, os.path.join(FLAGS.output_dir, "model.ckpt"))

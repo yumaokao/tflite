@@ -48,23 +48,24 @@ def FCN_16s(image_batch_tensor,
         checkpoint file. Look at ipython notebook for examples.
     """
 
-    # Convert image to float32 before subtracting the
-    # mean pixel value
-    image_batch_float = tf.to_float(image_batch_tensor)
-
-    # Subtract the mean pixel value from each pixel
-    mean_centered_image_batch = image_batch_float - [_R_MEAN, _G_MEAN, _B_MEAN]
-
-    upsample_filter_factor_2_np = bilinear_upsample_weights(factor=2,
-                                                            number_of_classes=number_of_classes)
-
-    upsample_filter_factor_16_np = bilinear_upsample_weights(factor=16,
-                                                             number_of_classes=number_of_classes)
-
-    upsample_filter_factor_2_tensor = tf.constant(upsample_filter_factor_2_np)
-    upsample_filter_factor_16_tensor = tf.constant(upsample_filter_factor_16_np)
-
     with tf.variable_scope("fcn_16s")  as fcn_16s_scope:
+
+        # Convert image to float32 before subtracting the
+        # mean pixel value
+        image_batch_float = tf.to_float(image_batch_tensor)
+
+        # Subtract the mean pixel value from each pixel
+        mean_centered_image_batch = image_batch_float - [_R_MEAN, _G_MEAN, _B_MEAN]
+
+        upsample_filter_factor_2_np = bilinear_upsample_weights(factor=2,
+                                                                number_of_classes=number_of_classes)
+
+        upsample_filter_factor_16_np = bilinear_upsample_weights(factor=16,
+                                                                 number_of_classes=number_of_classes)
+
+        upsample_filter_factor_2_tensor = tf.constant(upsample_filter_factor_2_np)
+        upsample_filter_factor_16_tensor = tf.constant(upsample_filter_factor_16_np)
+
         # Define the model that we want to use -- specify to use only two classes at the last layer
         # TODO: make pull request to get this custom vgg feature accepted
         # to avoid using custom slim repo.
@@ -128,7 +129,8 @@ def FCN_16s(image_batch_tensor,
             fused_last_layer_and_pool4_upsampled_by_factor_16_logits = tf.nn.conv2d_transpose(fused_last_layer_and_pool4_logits,
                                                                         upsample_filter_factor_16_tensor,
                                                                         output_shape=fused_last_layer_and_pool4_upsampled_by_factor_16_logits_shape,
-                                                                        strides=[1, 16, 16, 1])
+                                                                        strides=[1, 16, 16, 1],
+                                                                        name='prediction')
 
             fcn_32s_variables_mapping = {}
 
