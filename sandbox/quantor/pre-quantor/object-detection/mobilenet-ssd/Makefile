@@ -65,7 +65,7 @@ download_pets:
 	@ cd datasets/pets && wget http://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz
 	@ cd datasets/pets && tar zxvf images.tar.gz
 	@ cd datasets/pets && tar zxvf annotations.tar.gz
-	@ cd datasets/pets && $(TF_OBJDECT_BASE)/data/pet_label_map.pbtxt ./
+	@ cd datasets/pets && cp $(TF_OBJDECT_BASE)/data/pet_label_map.pbtxt ./
 
 # run this in docker env.
 prepare_pets:
