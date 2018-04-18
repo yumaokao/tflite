@@ -62,7 +62,7 @@ freeze_vgg_16:
 	@ save_summaries $(QUANTOR_BASE)/vgg_16/frozen_vgg_16.pb
 
 convert_vgg_16_fc:
-	@ python $(QUANTOR_BASE)/vgg_conv_to_fc.py \
+	@ python $(QUANTOR_BASE)/vgg_16_convert.py \
 		--frozen_pb=$(QUANTOR_BASE)/vgg_16/frozen_vgg_16.pb \
 		--output_pb=$(QUANTOR_BASE)/vgg_16/frozen_vgg_16_fc.pb
 
