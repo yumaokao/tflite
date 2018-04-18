@@ -2,7 +2,7 @@
 Model_zoo
 Data_zoo
 logs
-model/
+model
 
 # python modules
 *.pyc
