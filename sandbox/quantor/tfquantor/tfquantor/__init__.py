@@ -12,7 +12,8 @@ from .quantize import copy_graph
 def create_direct_quant_training_graph(input_graph=None,
                                        quant_delay=0,
                                        inplace=True,
-                                       extra_quantize_option=None):
+                                       extra_quantize_option=None,
+                                       fold_batchnorms=True):
   weight_bits = 8
   activation_bits = 8
   freeze_bn_delay = None
@@ -24,10 +25,11 @@ def create_direct_quant_training_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=freeze_bn_delay,
-        is_training=False) # Since this is post-quantize
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=freeze_bn_delay,
+          is_training=False) # Since this is post-quantize
     quantize.Quantize(
         input_graph,
         is_training=True,
@@ -49,7 +51,8 @@ def create_direct_quant_training_graph(input_graph=None,
 
 def create_direct_quant_eval_graph(input_graph=None,
                                    inplace=True,
-                                   extra_quantize_option=None):
+                                   extra_quantize_option=None,
+                                   fold_batchnorms=True):
 
   weight_bits = 8
   activation_bits = 8
@@ -61,10 +64,11 @@ def create_direct_quant_eval_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=None,
-        is_training=False)
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=None,
+          is_training=False)
     quantize.Quantize(
         input_graph,
         is_training=False,
@@ -88,7 +92,8 @@ def experimental_create_direct_quant_training_graph(input_graph=None,
                                                     activation_bits=8,
                                                     quant_delay=0,
                                                     inplace=True,
-                                                    extra_quantize_option=None):
+                                                    extra_quantize_option=None,
+                                                    fold_batchnorms=True):
   freeze_bn_delay = None
 
   if input_graph is None:
@@ -98,10 +103,11 @@ def experimental_create_direct_quant_training_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=freeze_bn_delay,
-        is_training=False) # Since this is post-quantize
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=freeze_bn_delay,
+          is_training=False) # Since this is post-quantize
     quantize.Quantize(
         input_graph,
         is_training=True,
@@ -125,7 +131,8 @@ def experimental_create_direct_quant_eval_graph(input_graph=None,
                                                 weight_bits=8,
                                                 activation_bits=8,
                                                 inplace=True,
-                                                extra_quantize_option=None):
+                                                extra_quantize_option=None,
+                                                fold_batchnorms=True):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -133,10 +140,11 @@ def experimental_create_direct_quant_eval_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=None,
-        is_training=False)
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=None,
+          is_training=False)
     quantize.Quantize(
         input_graph,
         is_training=False,
@@ -160,7 +168,8 @@ def experimental_create_direct_quant_eval_graph(input_graph=None,
 def create_training_graph(input_graph=None,
                           quant_delay=0,
                           inplace=True,
-                          extra_quantize_option=None):
+                          extra_quantize_option=None,
+                          fold_batchnorms=True):
   weight_bits = 8
   activation_bits = 8
 
@@ -176,10 +185,11 @@ def create_training_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=freeze_bn_delay,
-        is_training=True)
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=freeze_bn_delay,
+          is_training=True)
     quantize.Quantize(
         input_graph,
         is_training=True,
@@ -201,7 +211,8 @@ def create_training_graph(input_graph=None,
 
 def create_eval_graph(input_graph=None,
                       inplace=True,
-                      extra_quantize_option=None):
+                      extra_quantize_option=None,
+                      fold_batchnorms=True):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -209,10 +220,11 @@ def create_eval_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=None,
-        is_training=False)
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=None,
+          is_training=False)
     quantize.Quantize(
         input_graph,
         is_training=False,
@@ -238,7 +250,8 @@ def experimental_create_training_graph(input_graph=None,
                                        quant_delay=0,
                                        freeze_bn_delay=int(2e5),
                                        inplace=True,
-                                       extra_quantize_option=None):
+                                       extra_quantize_option=None,
+                                       fold_batchnorms=True):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -246,10 +259,11 @@ def experimental_create_training_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=freeze_bn_delay,
-        is_training=True)
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=freeze_bn_delay,
+          is_training=True)
     quantize.Quantize(
         input_graph,
         is_training=True,
@@ -273,7 +287,8 @@ def experimental_create_eval_graph(input_graph=None,
                                    weight_bits=8,
                                    activation_bits=8,
                                    inplace=True,
-                                   extra_quantize_option=None):
+                                   extra_quantize_option=None,
+                                   fold_batchnorms=True):
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -281,10 +296,11 @@ def experimental_create_eval_graph(input_graph=None,
     input_graph = copy_graph.CopyGraph(input_graph)
 
   with input_graph.as_default():
-    fold_batch_norms.FoldBatchNorms(
-        input_graph,
-        freeze_batch_norm_delay=None,
-        is_training=False)
+    if fold_batchnorms:
+      fold_batch_norms.FoldBatchNorms(
+          input_graph,
+          freeze_batch_norm_delay=None,
+          is_training=False)
     quantize.Quantize(
         input_graph,
         is_training=False,
