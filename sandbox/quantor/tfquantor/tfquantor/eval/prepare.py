@@ -115,6 +115,19 @@ def prepare_imagenet_dataset(filenames, width, height,
     image = tf.subtract(image, 114.8)
     return image, label
 
+  def _preprocessing_vgg_caffe(image, label):
+    image = tf.to_float(image)
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [width, height],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
+    image = tf.subtract(image, 114.8)
+
+    red, green, blue = tf.split(image, 3, axis=-1)
+    image = tf.concat([blue, green, red], axis=-1)
+    return image, label
+
   def _preprocessing_vgg_official(image, label):
     image = tf.to_float(image)
     image = tf.image.central_crop(image, central_fraction=0.875)
@@ -124,6 +137,19 @@ def prepare_imagenet_dataset(filenames, width, height,
     image = tf.squeeze(image, [0])
     image = tf.subtract(image, 114.8)
     image = image / 255.0
+    return image, label
+
+  def _resize_imagenet_caffe(image, label):
+    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [width, height],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
+    image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
+
+    red, green, blue = tf.split(image, 3, axis=-1)
+    image = tf.concat([blue, green, red], axis=-1)
     return image, label
 
   def _resize_imagenet(image, label):
@@ -143,10 +169,15 @@ def prepare_imagenet_dataset(filenames, width, height,
       _preprocessing_func = _preprocessing_inception
     elif preprocess_name == 'vgg':
       _preprocessing_func = _preprocessing_vgg
+    elif preprocess_name == 'vgg_caffe':
+      _preprocessing_func = _preprocessing_vgg_caffe
     elif preprocess_name == 'vgg_official':
       _preprocessing_func = _preprocessing_vgg_official
   elif inference_type == 'uint8':
-    _preprocessing_func = _resize_imagenet
+    if preprocess_name == 'vgg_caffe':
+      _preprocessing_func = _resize_imagenet_caffe
+    else:
+      _preprocessing_func = _resize_imagenet
 
   # tf.Dataset
   dataset = tf.data.TFRecordDataset(filenames)
@@ -184,7 +215,7 @@ def prepare_dataset(filenames, dataset_name, input_size,
     if dataset_name not in ['imagenet', 'cifar10']:
       tf.logging.error('Could not find preprocessing for dataset {}'.format(dataset_name))
       return None
-    if preprocess_name not in ['inception', 'vgg', 'vgg_official']:
+    if preprocess_name not in ['inception', 'vgg', 'vgg_official', 'vgg_caffe']:
       tf.logging.error('Could not find preprocessing method {}'.format(preprocess_name))
       return None
     if inference_type not in ['float', 'uint8']:
