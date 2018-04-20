@@ -73,7 +73,7 @@ toco_quantor_googlenet:
 		--inference_type=QUANTIZED_UINT8 \
 		--inference_input_type=QUANTIZED_UINT8 --input_arrays=data \
 		--default_ranges_min=0 --default_ranges_max=140 --partial_quant \
-		--output_arrays=prob --input_shapes=10,224,224,3 \
+		--output_arrays=prob --input_shapes=1,224,224,3 \
 		--dump_graphviz=$(QUANTOR_BASE)/googlenet/quantor/dots
 
 toco_googlenet:
@@ -96,7 +96,7 @@ eval_quantor_googlenet_tflite:
 		--tflite_model=$(QUANTOR_BASE)/googlenet/quantor/model.lite \
 		--inference_type=uint8 --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
-		--max_num_batches=1000 --input_size=224 --batch_size=10
+		--max_num_batches=10000 --input_size=224 --batch_size=1
 
 eval_googlenet_tflite:
 	@ echo $@
