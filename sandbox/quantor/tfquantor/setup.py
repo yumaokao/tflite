@@ -21,6 +21,7 @@ setup(
            'tfquantor/eval/bin/eval_tflite',
            'tfquantor/eval/bin/quantor_frozen',
            'tfquantor/tools/bin/compare_toco',
+           'tfquantor/tools/bin/direct_quantor',
            'tfquantor/tools/bin/visualizer_qt4',
            'tfquantor/tools/bin/visualizer'],
   entry_points={
