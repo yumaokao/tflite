@@ -19,6 +19,9 @@ DetectionModel.
 """
 
 import logging
+import os
+import subprocess
+import numpy as np
 import tensorflow as tf
 
 # from object_detection import eval_util
@@ -355,7 +358,7 @@ def _extract_anchros_and_losses(model,
 # evaluate_with_anchors
 def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, categories,
              checkpoint_dir, eval_dir, graph_hook_fn=None, evaluator_list=None,
-             evaluate_with_run_tflite=False):
+             evaluate_with_run_tflite=False, tensorflow_dir=''):
   """Evaluation function for detection models.
 
   Args:
@@ -389,6 +392,14 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       create_input_dict_fn=create_input_dict_fn,
       ignore_groundtruth=eval_config.ignore_groundtruth)
 
+  def _prepare_run_tflite_commands(eval_dir, tflite_model, inference_type):
+	return [tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
+			'--tflite_file={}'.format(tflite_model),
+			'--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npz')),
+			'--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npz')),
+			'--use_npz={}'.format('true'),
+			'--inference_type={}'.format(inference_type)]
+
   def _process_batch_steps(tensor_dict, sess, batch_index, counters,
                            losses_dict=None):
     # first step: model.preprocess,
@@ -415,6 +426,26 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       predict_tensor_dict[k] = tensor_dict[k]
     predict_result_dict = sess.run(predict_tensor_dict,
             feed_dict=feed_dict)
+    if evaluate_with_run_tflite:
+        # save preprocessed_inputs to npz
+        run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
+        batch_xs_fn = os.path.join(run_tflite_dir, 'batch_xs.npz')
+        kwargs = {'Preprocessor/sub': predict_result_dict['preprocessed_inputs']}
+        np.savez(batch_xs_fn, **kwargs)
+
+        # get outputs with run_tflite
+        cmds = _prepare_run_tflite_commands(run_tflite_dir,
+			os.path.join(run_tflite_dir, 'float_model.lite'), 'float')
+        subprocess.check_output(cmds)
+
+        # read outputs where
+        #   'class_predictions_with_background' => 'concat_1'
+        #   'box_encodings' => 'Squeeze'
+        ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
+        predict_result_dict['class_predictions_with_background'] = ys['concat_1']
+        predict_result_dict['box_encodings'] = ys['Squeeze']
+        # import ipdb
+        # ipdb.set_trace()
 
     # third step: model.postprocess
     # predict_feed_dict = {}
