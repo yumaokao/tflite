@@ -143,7 +143,7 @@ freeze_resnet_v1_34:
 		--output_file=$(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb \
 		--inference_type=FLOAT \
 		--inference_input_type=FLOAT --input_arrays=IteratorGetNext \
-		--output_arrays=softmax_tensor --input_shapes=1,224,224,3
+		--output_arrays=softmax_tensor --input_shapes=50,224,224,3
 	@ save_summaries $(QUANTOR_BASE)/resnet_v1_34/frozen_toco.pb
 
 # Use IteratorGetNext will not work, FIXME
@@ -167,8 +167,8 @@ quantor_resnet_v1_34_frozen:
 		--input_node_name=IteratorGetNext \
 		--input_size=224 --preprocess_name=vgg \
 		--output_dir=$(QUANTOR_BASE)/resnet_v1_34/quantor \
-		--max_num_batches=1000 \
-		--batch_size=1
+		--max_num_batches=200 \
+		--batch_size=50
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/resnet_v1_34/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/resnet_v1_34/quantor/model.ckpt \
@@ -181,7 +181,7 @@ quantor_resnet_v1_34_frozen:
 		--output_node_name=softmax_tensor \
 		--input_node_name=IteratorGetNext_1 \
 		--input_size=224 --preprocess_name=vgg \
-		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb --max_num_batches=1000 --batch_size=1
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_34/quantor/frozen.pb --max_num_batches=20 --batch_size=50
 
 toco_quantor_resnet_v1_34:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_34/quantor/dots

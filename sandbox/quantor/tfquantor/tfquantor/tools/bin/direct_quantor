@@ -1,0 +1,175 @@
+#!/usr/bin/env python
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import sys
+import json
+import os
+import math
+import itertools
+import random
+import numpy as np
+import tensorflow as tf
+from tensorflow.python.framework import graph_util
+
+import tfquantor as qg
+
+tf.app.flags.DEFINE_string(
+    'data_dir', None, 'The directory where the numpy data files are stored.')
+tf.app.flags.DEFINE_string(
+    'data_prefix', None, 'The prefix string to identify data files in the data directory.')
+tf.app.flags.DEFINE_string(
+    'summary_dir', None, 'The directory where summaries save.')
+tf.app.flags.DEFINE_string(
+    'input_node_name', None, 'The name of the input node.')
+tf.app.flags.DEFINE_string(
+    'output_node_name', None, 'The name of the output node.')
+tf.app.flags.DEFINE_string(
+    'input_frozen_pb', None, 'The input frozen model to be quantized')
+tf.app.flags.DEFINE_string(
+    'preprocess_source', None, 'The python source file including function named \'preprocess\'')
+tf.app.flags.DEFINE_string(
+    'preprocess_option', '{}', 'The option (in json string) that would be passed to the preprocess function')
+tf.app.flags.DEFINE_string(
+    'postprocess_source', None, 'The python source file including function named \'postprocess\'')
+tf.app.flags.DEFINE_string(
+    'postprocess_option', '{}', 'The option (in json string) that would be passed to the postprocess function')
+tf.app.flags.DEFINE_string(
+    'output_dir', None, 'The output directory.')
+tf.app.flags.DEFINE_integer(
+    'num_inferences', 1000, 'The number of inferences for determining the minmax values.')
+FLAGS = tf.app.flags.FLAGS
+
+def parse_data_from_directory(data_dir, prefix, ext='.npy'):
+  def check_valid(file_name):
+    if os.path.splitext(file_name)[1] == ext:
+      if (prefix is None) or (file_name.startswith(prefix)):
+        return True
+
+  names = os.listdir(data_dir)
+  names = filter(check_valid, names)
+  if len(names) == 0:
+    raise ValueError('No valid data file in {}'.format(data_dir))
+
+  np.random.shuffle(names)
+  return itertools.cycle(names)
+
+def get_module_from_file(source_file_name):
+  source_path = os.path.dirname(os.path.abspath(source_file_name))
+  source_name = os.path.splitext(os.path.basename(source_file_name))[0]
+  sys.path.insert(0, source_path)
+  mod = __import__(source_name)
+  del sys.path[0]
+  return mod
+
+def main(_):
+  if not FLAGS.data_dir:
+    raise ValueError('Please supply the data directory with --data_dir')
+  if not FLAGS.output_dir:
+    raise ValueError('Please supply the output directory with --output_dir')
+  if not FLAGS.input_frozen_pb:
+    raise ValueError('Please supply the input frozen model with --input_frozen_pb')
+  if not FLAGS.input_node_name:
+    raise ValueError('Please supply the input node name with --input_node_name')
+  if not FLAGS.output_node_name:
+    raise ValueError('Please supply the output node name with --output_node_name')
+
+  # User function
+  if FLAGS.preprocess_source:
+    mod = get_module_from_file(FLAGS.preprocess_source)
+    preprocess_func = mod.preprocess
+    preprocess_option = json.loads(FLAGS.preprocess_option)
+    preprocess_init = mod.init
+    preprocess_close = mod.close
+
+  if FLAGS.postprocess_source:
+    mod = get_module_from_file(FLAGS.postprocess_source)
+    postprocess_func = mod.postprocess
+    postprocess_option = json.loads(FLAGS.postprocess_option)
+    postprocess_init = mod.init
+    postprocess_close = mod.close
+
+  tf.logging.set_verbosity(tf.logging.INFO)
+  tf.logging.info('Parsing the data files in {} ...'.format(FLAGS.data_dir))
+  file_generator = parse_data_from_directory(FLAGS.data_dir, FLAGS.data_prefix)
+
+  tf.logging.info('Loading the input graph ...')
+  with tf.gfile.GFile(FLAGS.input_frozen_pb, "rb") as f:
+    graph_def = tf.GraphDef()
+    graph_def.ParseFromString(f.read())
+
+  tf.logging.info('Quantizing the input graph ...')
+  with tf.Session() as sess:
+    tf.import_graph_def(graph_def, name='')
+    quantized_graph = qg.create_direct_quant_training_graph(sess.graph, inplace=False, extra_quantize_option='all')
+    quantized_inf_graph = qg.create_direct_quant_eval_graph(sess.graph, inplace=False, extra_quantize_option='all')
+
+  if FLAGS.preprocess_source:
+    preprocess_init(preprocess_option)
+  if FLAGS.postprocess_source:
+    postprocess_init(postprocess_option)
+
+  with tf.Session(graph=quantized_graph) as sess:
+    graph = sess.graph
+
+    tf.logging.info('Prepare saver')
+    saver = tf.train.Saver()
+
+    if FLAGS.summary_dir:
+      tf.logging.info('Prepare summary writer')
+      summary_writer = tf.summary.FileWriter(FLAGS.summary_dir)
+
+    # initialize
+    sess.run(tf.global_variables_initializer())
+    sess.run(tf.local_variables_initializer())
+
+    # get x and y
+    x = graph.get_tensor_by_name('{}:0'.format(FLAGS.input_node_name))
+    y = graph.get_tensor_by_name('{}:0'.format(FLAGS.output_node_name))
+
+    # summary all min/max variables
+    for var in graph.get_collection('variables'):
+      varname = var.name[:-2] if var.name[-2] == ':' else var.name
+      tf.summary.scalar(varname, var)
+    summaries = tf.summary.merge_all()
+
+    # general options for user function
+    general_option = {}
+    general_option['num_inferences'] = FLAGS.num_inferences
+
+    for idx in range(FLAGS.num_inferences):
+      fn = next(file_generator)
+      fn_path = os.path.join(FLAGS.data_dir, fn)
+
+      general_option['current_idx'] = idx
+      general_option['input_fn'] = fn_path
+      
+      xs = np.load(fn_path)
+
+      if FLAGS.preprocess_source:
+        xs = preprocess_func(xs, dict(general_option.items() + preprocess_option.items()))
+
+      ys = sess.run(y, feed_dict={x: xs})
+
+      if FLAGS.postprocess_source:
+        postprocess_func(ys, dict(general_option.items() + postprocess_option.items()))
+
+      summary = sess.run(summaries)
+      if FLAGS.summary_dir:
+        summary_writer.add_summary(summary, idx)
+
+    tf.logging.info('Store the quantized model')
+    freeze_graph_def = graph_util.convert_variables_to_constants(sess, quantized_inf_graph.as_graph_def(), [FLAGS.output_node_name])
+    if not os.path.exists(FLAGS.output_dir):
+      os.makedirs(FLAGS.output_dir)
+    with open(os.path.join(FLAGS.output_dir, 'quantized_frozen.pb'), 'wb') as f:
+        f.write(freeze_graph_def.SerializeToString())
+
+  if FLAGS.preprocess_source:
+    preprocess_close(preprocess_option)
+  if FLAGS.postprocess_source:
+    postprocess_close(postprocess_option)
+
+if __name__ == '__main__':
+  tf.app.run()

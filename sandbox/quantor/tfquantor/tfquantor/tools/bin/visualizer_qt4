@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import os
 import time
@@ -74,11 +75,13 @@ def createButtonWithText(text, set_fixed_width=False, set_min_width=False):
     btn.setMinimumWidth(width)
   return btn
 
-def saveFileDialogAndReturn(parent, filter_str=None):
+def saveFileDialogAndReturn(parent, filter_str=None, default_suffix=None):
   dialog = QFileDialog(parent, 'Save as', os.getcwd())
   dialog.setAcceptMode(QFileDialog.AcceptSave)
   if filter_str is not None:
     dialog.setNameFilter(QString(filter_str))
+  if default_suffix is not None:
+    dialog.setDefaultSuffix(QString(default_suffix))
   if dialog.exec_():
     return dialog.selectedFiles()[0]
   return None
@@ -315,7 +318,7 @@ class ModelExecutor:
 
   def saveNumpyResult(self, parent):
     if self.numpy_result is not None:
-      fn = saveFileDialogAndReturn(parent, filter_str='NumPy array file (*.npy)')
+      fn = saveFileDialogAndReturn(parent, filter_str='NumPy array file (*.npy)', default_suffix='npy')
       if fn is not None:
         np.save(str(fn), self.numpy_result)
     else:
@@ -405,6 +408,8 @@ class Visualizer(QMainWindow):
     self.tf_dir_btn.clicked.connect(lambda : openFileDialogAndDisplay(self.tf_dir_btn, self.tf_dir_edit, need_dir=True))
     self.display_mode = QLabel('Display mode')
     self.display_mode_box = QComboBox()
+    self.display_mode_box.addItem('')
+    self.display_mode_box.addItem('ABS difference')
     self.display_mode_box.addItem('Histogram (2D)')
     self.display_mode_box.addItem('Histogram (3D)')
     self.draw_btn = createButtonWithText('Draw', set_min_width=True)
@@ -448,7 +453,7 @@ class Visualizer(QMainWindow):
     config['display_mode'] = self.display_mode_box.currentIndex()
     config['model_a'] = self.model_a.exportConfig()
     config['model_b'] = self.model_b.exportConfig()
-    fn = saveFileDialogAndReturn(self, filter_str='JSON file (*.json)')
+    fn = saveFileDialogAndReturn(self, filter_str='JSON file (*.json)', default_suffix='json')
     if fn is not None:
       with open(str(fn), 'w') as f:
         json.dump(config, f)
@@ -498,7 +503,28 @@ class Visualizer(QMainWindow):
     kde_list = [getGaussianKdeFromData(data, kde_xs) for data in data_list]
 
     self.figure.clf()
-    if self.display_mode_box.currentText() == 'Histogram (2D)':
+    if self.display_mode_box.currentText() == 'ABS difference':
+      if len(data_list) != 2:
+        self.errorReporter('You should calculate the result of both models first!')
+      elif result_a.shape != result_b.shape:
+        self.errorReporter('Shapes of the two outputs are not equal!')
+        return
+
+      data_list.append((abs(data_list[1] - data_list[0])).flatten())
+      fn_list.append('ABS difference')
+      ax_list = self.figure.subplots(len(fn_list), sharex='col', sharey='col')
+
+      org_shape = result_a.shape
+      xs = list(range(len(data_list[0])))
+
+      for fn, ax, data in zip(fn_list, ax_list, data_list):
+        ax.plot(xs, data)
+        ax.set_ylabel('Value')
+        ax.title.set_text(fn)
+        if fn == fn_list[-1]:
+          ax.set_xlabel('Index in {} tensor'.format(org_shape))
+
+    elif self.display_mode_box.currentText() == 'Histogram (2D)':
       ax_list = self.figure.subplots(len(fn_list), sharex='col', sharey='col')
       if len(fn_list) == 1:
         ax_list = [ax_list] # make it iterable
@@ -515,7 +541,6 @@ class Visualizer(QMainWindow):
 
     elif self.display_mode_box.currentText() == 'Histogram (3D)':
       zpos_iter = itertools.count()
-      #color_iter = itertools.cycle(['red', 'orange', 'yellow', 'green', 'blue', 'megenta', 'purple', 'black'])
       color_iter = itertools.cycle(['red', 'green'])
       ax = self.figure.add_subplot(111, projection='3d')
       for fn, hist, kde in zip(fn_list, hist_list, kde_list):
