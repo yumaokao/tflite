@@ -1,7 +1,7 @@
 .PHONY: all clean build
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
 .PHONY: download_pets prepare_pets
-.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets
+.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
 .PHONY: export_mobilenet_ssd_pets toco_mobilenet_ssd_pets
 .PHONY: eval_mobilenet_ssd_pets_test
 .PHONY: train_mobilenet_ssd_pets_quant
@@ -94,6 +94,18 @@ eval_mobilenet_ssd_pets:
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
 # run this in docker env.
+# PascalBoxes_Precision/mAP@0.5IOU: 0.783982
+eval_mobilenet_ssd_pets_anchors:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--evaluate_with_anchors \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir train_mobilenet_ssd_pets \
+			--eval_dir eval_mobilenet_ssd_pets_test \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# run this in docker env.
 export_mobilenet_ssd_pets:
 	@ rm -rf export_mobilenet_ssd_pets
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
@@ -124,8 +136,8 @@ toco_mobilenet_ssd_pets:
                 --dump_graphviz=export_mobilenet_ssd_pets/dots
 
 
-# run this in docker env.
 # PascalBoxes_Precision/mAP@0.5IOU: 0.783982
+# run this in docker env.
 eval_mobilenet_ssd_pets_test:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./eval.py \
@@ -136,6 +148,7 @@ eval_mobilenet_ssd_pets_test:
 			--eval_dir eval_mobilenet_ssd_pets_test \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
+# TODO(yumaokao): modified for tfquantor
 # run this in docker env.
 train_mobilenet_ssd_pets_quant:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \

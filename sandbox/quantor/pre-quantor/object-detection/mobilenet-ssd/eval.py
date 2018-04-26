@@ -81,6 +81,9 @@ flags.DEFINE_boolean('run_once', False, 'Option to only run a single pass of '
                      'provided config.')
 flags.DEFINE_boolean('evaluate_with_anchors', False, 'Option to evaluate with anchors. '
                      'postprocess and detection are run seperately. ')
+flags.DEFINE_boolean('evaluate_with_run_tflite', False, 'Option to evaluate with anchors. '
+                     'anchors are executed with run_tflite, '
+                     'postprocess and detection are run seperately. ')
 FLAGS = flags.FLAGS
 
 
@@ -136,7 +139,8 @@ def main(unused_argv):
     evaluator.evaluate_with_anchors(create_input_dict_fn, model_fn,
                                     eval_config, categories,
                                     FLAGS.checkpoint_dir,
-                                    FLAGS.eval_dir)
+                                    FLAGS.eval_dir,
+                                    FLAGS.evaluate_with_run_tflite)
   else:
     evaluator.evaluate(create_input_dict_fn, model_fn, eval_config, categories,
                        FLAGS.checkpoint_dir, FLAGS.eval_dir)
