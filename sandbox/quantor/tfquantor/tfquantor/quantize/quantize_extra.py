@@ -31,7 +31,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
 
-_EXTRA_QUANTIZE_OPTION_LIST=['deconvolution', 'convolution', 'batchnorm']
+_EXTRA_QUANTIZE_OPTION_LIST=['deconvolution', 'convolution', 'batchnorm', 'concat', 'leaky_relu']
 
 
 def Quantize(graph,
@@ -109,4 +109,8 @@ def _FindLayersToQuantize(graph, extra_option):
     total_generator = itertools.chain(total_generator, deconvolution_generator(graph))
   if 'convolution' in option_list or 'all' in option_list:
     total_generator = itertools.chain(total_generator, convolution_generator(graph))
+  if 'concat' in option_list or 'all' in option_list:
+    total_generator = itertools.chain(total_generator, concat_generator(graph))
+  if 'leaky_relu' in option_list or 'all' in option_list:
+    total_generator = itertools.chain(total_generator, leaky_relu_generator(graph))
   return total_generator
