@@ -103,8 +103,8 @@ def Quantize(graph,
 def _FindLayersToQuantize(graph, extra_option):
   option_list = extra_option.split()
   total_generator = itertools.chain(default_generator(graph))
-  if 'batchnorm' in option_list or 'all' in option_list:
-    total_generator = itertools.chain(total_generator, batchnorm_generator(graph))
+  if 'preact' in option_list or 'all' in option_list:
+    total_generator = itertools.chain(total_generator, preact_generator(graph))
   if 'deconvolution' in option_list or 'all' in option_list:
     total_generator = itertools.chain(total_generator, deconvolution_generator(graph))
   if 'convolution' in option_list or 'all' in option_list:

@@ -1,7 +1,7 @@
 from tfquantor.quantize import graph_matcher
 from tfquantor.quantize.extra.common import ExtraLayerMatch
 
-def batchnorm_generator(graph):
+def preact_generator(graph):
   _ACTIVATION_TYPES = {'Relu', 'Relu6', 'Identity'}
 
   input_pattern = graph_matcher.OpTypePattern('*')
