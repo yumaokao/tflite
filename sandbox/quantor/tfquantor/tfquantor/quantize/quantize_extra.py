@@ -66,14 +66,14 @@ def Quantize(graph,
   input_to_ops_map = input_to_ops.InputToOps(graph)
   for layer_match in _FindLayersToQuantize(graph, extra_option):
 
-    # Quantize the weights.
-    for weight_op in layer_match.weight_ops:
-      context = quantize._GetContextFromOp(weight_op)
-      consumer_ops = input_to_ops_map.ConsumerOperations(weight_op)
+    # Last value quants
+    for last_value_quant_op, name in zip(layer_match.last_value_quant_ops, layer_match.last_value_quant_names):
+      context = quantize._GetContextFromOp(last_value_quant_op)
+      consumer_ops = input_to_ops_map.ConsumerOperations(last_value_quant_op)
       quantize._InsertQuantOp(
           context,
-          'weights_quant',
-          weight_op,
+          name if name is not None else 'weights_quant',
+          last_value_quant_op,
           consumer_ops,
           is_training,
           moving_avg=False,
@@ -83,14 +83,14 @@ def Quantize(graph,
           vars_collection=vars_collection,
           bits=weight_bits)
 
-    # Quantize the activations.
-    for act_op in layer_match.act_ops:
-      context = quantize._GetContextFromOp(act_op)
-      consumer_ops = input_to_ops_map.ConsumerOperations(act_op)
+    # Moving average quants.
+    for moving_avg_quant_op, name in zip(layer_match.moving_avg_quant_ops, layer_match.moving_avg_quant_names):
+      context = quantize._GetContextFromOp(moving_avg_quant_op)
+      consumer_ops = input_to_ops_map.ConsumerOperations(moving_avg_quant_op)
       quantize._InsertQuantOp(
           context,
-          'act_quant',
-          act_op,
+          name if name is not None else 'act_quant',
+          moving_avg_quant_op,
           consumer_ops,
           is_training,
           moving_avg=True,
@@ -103,8 +103,8 @@ def Quantize(graph,
 def _FindLayersToQuantize(graph, extra_option):
   option_list = extra_option.split()
   total_generator = itertools.chain(default_generator(graph))
-  if 'batchnorm' in option_list or 'all' in option_list:
-    total_generator = itertools.chain(total_generator, batchnorm_generator(graph))
+  if 'preact' in option_list or 'all' in option_list:
+    total_generator = itertools.chain(total_generator, preact_generator(graph))
   if 'deconvolution' in option_list or 'all' in option_list:
     total_generator = itertools.chain(total_generator, deconvolution_generator(graph))
   if 'convolution' in option_list or 'all' in option_list:
