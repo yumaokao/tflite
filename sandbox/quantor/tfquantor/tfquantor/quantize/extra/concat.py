@@ -10,4 +10,4 @@ def concat_generator(graph):
   for match_result in concat_matcher.match_graph(graph):
     concat_op = match_result.get_op(concat_pattern)
     print('FIND CONCAT OP: {}'.format(concat_op.name))
-    yield ExtraLayerMatch([], [concat_op])
+    yield ExtraLayerMatch([], [concat_op], None, ['concat_quant'])

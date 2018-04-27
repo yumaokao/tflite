@@ -29,7 +29,7 @@ def leaky_relu_generator(graph):
     max_op = match_result.get_op(max_1_pattern)
     if input_1_op.name == input_2_op.name:
       print('FIND LEAKY_RELU TYPE 1 OP: {}'.format(max_op.name))
-      yield ExtraLayerMatch([], [max_op])
+      yield ExtraLayerMatch([], [max_op], None, ['leaky_relu_quant'])
 
   max_2_matcher = graph_matcher.GraphMatcher(max_2_pattern)
   for match_result in max_2_matcher.match_graph(graph):
@@ -38,4 +38,4 @@ def leaky_relu_generator(graph):
     max_op = match_result.get_op(max_2_pattern)
     if input_1_op.name == input_2_op.name:
       print('FIND LEAKY_RELU TYPE 2 OP: {}'.format(max_op.name))
-      yield ExtraLayerMatch([], [max_op])
+      yield ExtraLayerMatch([], [max_op], None, ['leaky_relu_quant'])

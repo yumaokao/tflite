@@ -22,4 +22,4 @@ def batchnorm_generator(graph):
     add_op = match_result.get_op(batchnorm_add_pattern)
     act_op = match_result.get_op(preact_pattern)
     # No need to quantize add_op since it will be folded by the following act_op
-    yield ExtraLayerMatch([], [mul_op, act_op])
+    yield ExtraLayerMatch([], [mul_op, act_op], None, ['preact_mul_quant', 'preact_quant'])
