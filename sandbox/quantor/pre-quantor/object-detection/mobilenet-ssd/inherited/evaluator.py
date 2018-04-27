@@ -19,6 +19,9 @@ DetectionModel.
 """
 
 import logging
+import os
+import subprocess
+import numpy as np
 import tensorflow as tf
 
 # from object_detection import eval_util
@@ -354,7 +357,8 @@ def _extract_anchros_and_losses(model,
 
 # evaluate_with_anchors
 def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, categories,
-             checkpoint_dir, eval_dir, graph_hook_fn=None, evaluator_list=None):
+             checkpoint_dir, eval_dir, graph_hook_fn=None, evaluator_list=None,
+             evaluate_with_run_tflite=False, tensorflow_dir=''):
   """Evaluation function for detection models.
 
   Args:
@@ -388,6 +392,14 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       create_input_dict_fn=create_input_dict_fn,
       ignore_groundtruth=eval_config.ignore_groundtruth)
 
+  def _prepare_run_tflite_commands(eval_dir, tflite_model, inference_type):
+	return [tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
+			'--tflite_file={}'.format(tflite_model),
+			'--batch_xs={}'.format(os.path.join(eval_dir, 'batch_xs.npz')),
+			'--batch_ys={}'.format(os.path.join(eval_dir, 'output_ys.npz')),
+			'--use_npz={}'.format('true'),
+			'--inference_type={}'.format(inference_type)]
+
   def _process_batch_steps(tensor_dict, sess, batch_index, counters,
                            losses_dict=None):
     # first step: model.preprocess,
@@ -414,6 +426,26 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
       predict_tensor_dict[k] = tensor_dict[k]
     predict_result_dict = sess.run(predict_tensor_dict,
             feed_dict=feed_dict)
+    if evaluate_with_run_tflite:
+        # save preprocessed_inputs to npz
+        run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
+        batch_xs_fn = os.path.join(run_tflite_dir, 'batch_xs.npz')
+        kwargs = {'Preprocessor/sub': predict_result_dict['preprocessed_inputs']}
+        np.savez(batch_xs_fn, **kwargs)
+
+        # get outputs with run_tflite
+        cmds = _prepare_run_tflite_commands(run_tflite_dir,
+			os.path.join(run_tflite_dir, 'float_model.lite'), 'float')
+        subprocess.check_output(cmds)
+
+        # read outputs where
+        #   'class_predictions_with_background' => 'concat_1'
+        #   'box_encodings' => 'Squeeze'
+        ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
+        predict_result_dict['class_predictions_with_background'] = ys['concat_1']
+        predict_result_dict['box_encodings'] = ys['Squeeze']
+        # import ipdb
+        # ipdb.set_trace()
 
     # third step: model.postprocess
     # predict_feed_dict = {}
@@ -461,60 +493,6 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
     #   np.save('tests/post-processing/npys/{}.npy'.format(k), result_dict[k])
     # import ipdb
     # ipdb.set_trace()
-
-    global_step = tf.train.global_step(sess, tf.train.get_global_step())
-    if batch_index < eval_config.num_visualizations:
-      tag = 'image-{}'.format(batch_index)
-      eval_util.visualize_detection_results(
-          result_dict,
-          tag,
-          global_step,
-          categories=categories,
-          summary_dir=eval_dir,
-          export_dir=eval_config.visualization_export_dir,
-          show_groundtruth=eval_config.visualize_groundtruth_boxes,
-          groundtruth_box_visualization_color=eval_config.
-          groundtruth_box_visualization_color,
-          min_score_thresh=eval_config.min_score_threshold,
-          max_num_predictions=eval_config.max_num_boxes_to_visualize,
-          skip_scores=eval_config.skip_scores,
-          skip_labels=eval_config.skip_labels,
-          keep_image_id_for_visualization_export=eval_config.
-          keep_image_id_for_visualization_export)
-    return result_dict, result_losses_dict
-
-  def _process_batch(tensor_dict, sess, batch_index, counters,
-                     losses_dict=None):
-    """Evaluates tensors in tensor_dict, losses_dict and visualizes examples.
-
-    This function calls sess.run on tensor_dict, evaluating the original_image
-    tensor only on the first K examples and visualizing detections overlaid
-    on this original_image.
-
-    Args:
-      tensor_dict: a dictionary of tensors
-      sess: tensorflow session
-      batch_index: the index of the batch amongst all batches in the run.
-      counters: a dictionary holding 'success' and 'skipped' fields which can
-        be updated to keep track of number of successful and failed runs,
-        respectively.  If these fields are not updated, then the success/skipped
-        counter values shown at the end of evaluation will be incorrect.
-      losses_dict: Optional dictonary of scalar loss tensors.
-
-    Returns:
-      result_dict: a dictionary of numpy arrays
-      result_losses_dict: a dictionary of scalar losses. This is empty if input
-        losses_dict is None.
-    """
-    try:
-      if not losses_dict:
-        losses_dict = {}
-      result_dict, result_losses_dict = sess.run([tensor_dict, losses_dict])
-      counters['success'] += 1
-    except tf.errors.InvalidArgumentError:
-      logging.info('Skipping image')
-      counters['skipped'] += 1
-      return {}
 
     global_step = tf.train.global_step(sess, tf.train.get_global_step())
     if batch_index < eval_config.num_visualizations:

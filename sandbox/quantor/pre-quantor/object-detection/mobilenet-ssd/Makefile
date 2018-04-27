@@ -1,8 +1,9 @@
 .PHONY: all clean build
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
 .PHONY: download_pets prepare_pets
-.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets
-.PHONY: export_mobilenet_ssd_pets eval_mobilenet_ssd_pets_test
+.PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
+.PHONY: export_mobilenet_ssd_pets toco_mobilenet_ssd_pets
+.PHONY: eval_mobilenet_ssd_pets_anchors_tflite
 .PHONY: train_mobilenet_ssd_pets_quant
 
 ifeq ($(TFLITE_ROOT_PATH),)
@@ -20,6 +21,7 @@ all:
 
 build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
+	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:optimize_for_inference
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:summarize_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/tools/graph_transforms:transform_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
@@ -92,6 +94,18 @@ eval_mobilenet_ssd_pets:
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
 # run this in docker env.
+# PascalBoxes_Precision/mAP@0.5IOU: 0.783982
+eval_mobilenet_ssd_pets_anchors:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--evaluate_with_anchors \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir train_mobilenet_ssd_pets \
+			--eval_dir eval_mobilenet_ssd_pets_anchors \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# run this in docker env.
 export_mobilenet_ssd_pets:
 	@ rm -rf export_mobilenet_ssd_pets
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
@@ -101,20 +115,45 @@ export_mobilenet_ssd_pets:
 			--trained_checkpoint_prefix train_mobilenet_ssd_pets/model.ckpt-371443 \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 	@ save_summaries export_mobilenet_ssd_pets/frozen_inference_graph.pb
+	@ $(TF_BASE)/bazel-bin/tensorflow/python/tools/optimize_for_inference \
+		--input=export_mobilenet_ssd_pets/frozen_inference_graph.pb \
+		--output=export_mobilenet_ssd_pets/optimized_inference_graph.pb \
+		--input_names=Preprocessor/sub \
+		--output_names=concat_1,Squeeze
+	@ save_summaries export_mobilenet_ssd_pets/optimized_inference_graph.pb
 
 
 # run this in docker env.
+toco_mobilenet_ssd_pets:
+	@ mkdir -p export_mobilenet_ssd_pets/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+                --input_file=export_mobilenet_ssd_pets/optimized_inference_graph.pb \
+                --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+                --output_file=export_mobilenet_ssd_pets/float_model.lite \
+                --inference_type=FLOAT \
+                --inference_input_type=FLOAT --input_arrays=Preprocessor/sub \
+                --output_arrays=concat_1,Squeeze --input_shapes=1,300,300,3 \
+                --dump_graphviz=export_mobilenet_ssd_pets/dots
+
+
+# TODO(yumaokao): too many export_* eval_*, should move to a mobilenet_ssd_pets
 # PascalBoxes_Precision/mAP@0.5IOU: 0.783982
-eval_mobilenet_ssd_pets_test:
+# run this in docker env.
+eval_mobilenet_ssd_pets_anchors_tflite:
+	@ mkdir -p eval_mobilenet_ssd_pets_anchors_tflite/run_tflite
+	@ cp export_mobilenet_ssd_pets/float_model.lite eval_mobilenet_ssd_pets_anchors_tflite/run_tflite
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./eval.py \
 			--evaluate_with_anchors \
+			--evaluate_with_run_tflite \
+			--tensorflow_dir $(TF_BASE) \
 			--run_once \
 			--logtostderr \
 			--checkpoint_dir train_mobilenet_ssd_pets \
-			--eval_dir eval_mobilenet_ssd_pets_test \
+			--eval_dir eval_mobilenet_ssd_pets_anchors_tflite \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
+# TODO(yumaokao): modified for tfquantor
 # run this in docker env.
 train_mobilenet_ssd_pets_quant:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
