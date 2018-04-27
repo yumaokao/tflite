@@ -31,7 +31,7 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
 
-_EXTRA_QUANTIZE_OPTION_LIST=['deconvolution', 'convolution', 'batchnorm', 'concat', 'leaky_relu']
+_EXTRA_QUANTIZE_OPTION_LIST=['deconvolution', 'convolution', 'preact', 'concat', 'leaky_relu']
 
 
 def Quantize(graph,
