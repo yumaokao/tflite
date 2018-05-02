@@ -166,6 +166,7 @@ quant_train_mobilenet_ssd_pets:
 			--train_dir mobilenet_ssd_pets_quant/train \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
+# original float eval
 # model.ckpt-351175: PascalBoxes_Precision/mAP@0.5IOU: 0.764092
 # run this in docker env.
 quant_eval_mobilenet_ssd_pets:
@@ -177,12 +178,13 @@ quant_eval_mobilenet_ssd_pets:
 			--eval_dir mobilenet_ssd_pets_quant/eval \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
-# model.ckpt-351175: PascalBoxes_Precision/mAP@0.5IOU: 0.761920
+# model.ckpt-351175: PascalBoxes_Precision/mAP@0.5IOU: 0.762136
 # run this in docker env.
 quant_eval_mobilenet_ssd_pets_anchors:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./eval.py \
 			--evaluate_with_anchors \
+			--quantize \
 			--run_once \
 			--logtostderr \
 			--checkpoint_dir mobilenet_ssd_pets_quant/train \

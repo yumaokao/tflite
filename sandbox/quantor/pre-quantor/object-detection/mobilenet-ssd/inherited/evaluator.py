@@ -273,6 +273,7 @@ def evaluate(create_input_dict_fn, create_model_fn, eval_config, categories,
 # _extract_anchros_and_losses
 def _extract_anchros_and_losses(model,
                                 create_input_dict_fn,
+                                quantize=False,
                                 ignore_groundtruth=False):
   """Constructs tensorflow detection graph and returns output tensors.
 
@@ -296,6 +297,12 @@ def _extract_anchros_and_losses(model,
       tf.to_float(original_image))
   prediction_dict = model.predict(preprocessed_image, true_image_shapes)
   detections = model.postprocess(prediction_dict, true_image_shapes)
+
+  if quantize:
+    from tensorflow.contrib.quantize import experimental_create_eval_graph
+    experimental_create_eval_graph()
+    # g = tf.get_default_graph()
+    # print(g.get_operations())
 
   groundtruth = None
   losses_dict = {}
@@ -358,7 +365,7 @@ def _extract_anchros_and_losses(model,
 # evaluate_with_anchors
 def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, categories,
              checkpoint_dir, eval_dir, graph_hook_fn=None, evaluator_list=None,
-             evaluate_with_run_tflite=False, tensorflow_dir=''):
+             evaluate_with_run_tflite=False, quantize=False, tensorflow_dir=''):
   """Evaluation function for detection models.
 
   Args:
@@ -390,6 +397,7 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
   tensor_dict, losses_dict = _extract_anchros_and_losses(
       model=model,
       create_input_dict_fn=create_input_dict_fn,
+      quantize=quantize,
       ignore_groundtruth=eval_config.ignore_groundtruth)
 
   def _prepare_run_tflite_commands(eval_dir, tflite_model, inference_type):
