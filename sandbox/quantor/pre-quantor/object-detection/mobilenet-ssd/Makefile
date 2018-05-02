@@ -7,6 +7,7 @@
 # quant_train_mobilenet_ssd_pets
 .PHONY: quant_train_mobilenet_ssd_pets
 .PHONY: quant_eval_mobilenet_ssd_pets quant_eval_mobilenet_ssd_pets_anchors
+.PHONY: quant_export_mobilenet_ssd_pets quant_toco_mobilenet_ssd_pets
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -208,3 +209,15 @@ quant_export_mobilenet_ssd_pets:
 		--input_names=Preprocessor/sub \
 		--output_names=concat_1,Squeeze
 	@ save_summaries mobilenet_ssd_pets_quant/export/optimized_inference_graph.pb
+
+# run this in docker env.
+quant_toco_mobilenet_ssd_pets:
+	@ mkdir -p mobilenet_ssd_pets_quant/export/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+                --input_file=mobilenet_ssd_pets_quant/export/optimized_inference_graph.pb \
+                --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+                --output_file=export_mobilenet_ssd_pets/float_model.lite \
+                --inference_type=QUANTIZED_UINT8 --inference_input_type=QUANTIZED_UINT8 \
+		--input_arrays=Preprocessor/sub --mean_values=128 --std_values=127 \
+                --output_arrays=concat_1,Squeeze --input_shapes=1,300,300,3 \
+                --dump_graphviz=mobilenet_ssd_pets_quant/export/dots
