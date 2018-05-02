@@ -7,6 +7,7 @@ from tensorflow.python.framework import ops
 from .quantize import quantize_graph, fold_batch_norms, quantize, quantize_extra
 from .quantize import input_to_ops
 from .quantize import copy_graph
+from .version  import __version__
 
 
 # APIs for post-quantize
@@ -320,7 +321,50 @@ def experimental_create_eval_graph(input_graph=None,
   if inplace is False:
     return input_graph
 
+
 # Other APIs
+def create_custom_eval_graph(target_nodes,
+                             input_graph=None,
+                             inplace=True):
+  if input_graph is None:
+    input_graph = ops.get_default_graph()
+
+  if inplace is False:
+    input_graph = copy_graph.CopyGraph(input_graph)
+
+  for node in target_nodes:
+    # For each node, create a following moving average fakequant node
+    add_custom_fakequant_node(node,
+                              input_graph=input_graph,
+                              is_training=False,
+                              inplace=True)
+
+  if inplace is False:
+    return input_graph
+
+
+def create_custom_training_graph(target_nodes,
+                                 input_graph=None,
+                                 quant_delay=0,
+                                 inplace=True):
+  if input_graph is None:
+    input_graph = ops.get_default_graph()
+
+  if inplace is False:
+    input_graph = copy_graph.CopyGraph(input_graph)
+
+  for node in target_nodes:
+    # For each node, create a following moving average fakequant node
+    add_custom_fakequant_node(node,
+                              input_graph=input_graph,
+                              quant_delay=quant_delay,
+                              is_training=True,
+                              inplace=True)
+
+  if inplace is False:
+    return input_graph
+
+
 def add_custom_fakequant_node(target_node,
                               input_graph=None,
                               context=None,
