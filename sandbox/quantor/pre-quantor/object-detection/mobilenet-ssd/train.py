@@ -81,6 +81,8 @@ flags.DEFINE_string('input_config_path', '',
                     'Path to an input_reader_pb2.InputReader config file.')
 flags.DEFINE_string('model_config_path', '',
                     'Path to a model_pb2.DetectionModel config file.')
+flags.DEFINE_boolean('quantize', False,
+                     'Use tensorflow/contrib/quantize for training. ')
 
 FLAGS = flags.FLAGS
 
@@ -161,7 +163,8 @@ def main(_):
 
   trainer.train(create_input_dict_fn, model_fn, train_config, master, task,
                 FLAGS.num_clones, worker_replicas, FLAGS.clone_on_cpu, ps_tasks,
-                worker_job_name, is_chief, FLAGS.train_dir)
+                worker_job_name, is_chief, FLAGS.train_dir,
+                quantize=FLAGS.quantize)
 
 
 if __name__ == '__main__':

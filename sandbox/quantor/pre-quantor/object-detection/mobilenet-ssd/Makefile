@@ -4,7 +4,9 @@
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
 .PHONY: export_mobilenet_ssd_pets toco_mobilenet_ssd_pets
 .PHONY: eval_mobilenet_ssd_pets_anchors_tflite
-.PHONY: train_mobilenet_ssd_pets_quant
+# quant_train_mobilenet_ssd_pets
+.PHONY: quant_train_mobilenet_ssd_pets
+.PHONY: quant_eval_mobilenet_ssd_pets quant_eval_mobilenet_ssd_pets_anchors
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -153,10 +155,36 @@ eval_mobilenet_ssd_pets_anchors_tflite:
 			--eval_dir eval_mobilenet_ssd_pets_anchors_tflite \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
 
-# TODO(yumaokao): modified for tfquantor
+#################################
+# quantized 			#
+#################################
 # run this in docker env.
-train_mobilenet_ssd_pets_quant:
+quant_train_mobilenet_ssd_pets:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./train.py \
-			--train_dir train_mobilenet_ssd_pets_quant \
+			--quantize \
+			--train_dir mobilenet_ssd_pets_quant/train \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# model.ckpt-351175: PascalBoxes_Precision/mAP@0.5IOU: 0.764092
+# run this in docker env.
+quant_eval_mobilenet_ssd_pets:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_pets_quant/train \
+			--eval_dir mobilenet_ssd_pets_quant/eval \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# model.ckpt-351175: PascalBoxes_Precision/mAP@0.5IOU: 0.761920
+# run this in docker env.
+quant_eval_mobilenet_ssd_pets_anchors:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--evaluate_with_anchors \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_pets_quant/train \
+			--eval_dir mobilenet_ssd_pets_quant/eval_anchors \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
