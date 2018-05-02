@@ -196,6 +196,7 @@ quant_export_mobilenet_ssd_pets:
 	@ rm -rf mobilenet_ssd_pets_quant/export
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python ./export_inference_graph.py \
+			--quantize \
 			--input_type image_tensor \
 			--output_directory mobilenet_ssd_pets_quant/export \
 			--trained_checkpoint_prefix mobilenet_ssd_pets_quant/train/model.ckpt-351175 \

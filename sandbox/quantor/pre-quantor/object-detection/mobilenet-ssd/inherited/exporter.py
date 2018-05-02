@@ -330,7 +330,7 @@ def _get_outputs_from_inputs(input_tensors, detection_model,
 
 
 def _build_detection_graph(input_type, detection_model, input_shape,
-                           output_collection_name, graph_hook_fn):
+                           output_collection_name, graph_hook_fn, quantize):
   """Build the detection graph."""
   if input_type not in input_placeholder_fn_map:
     raise ValueError('Unknown input type: {}'.format(input_type))
@@ -352,6 +352,12 @@ def _build_detection_graph(input_type, detection_model, input_shape,
 
   if graph_hook_fn: graph_hook_fn()
 
+  if quantize:
+    from tensorflow.contrib.quantize import experimental_create_eval_graph
+    experimental_create_eval_graph()
+    # g = tf.get_default_graph()
+    # print(g.get_operations())
+
   return outputs, placeholder_tensor
 
 
@@ -363,7 +369,8 @@ def _export_inference_graph(input_type,
                             additional_output_tensor_names=None,
                             input_shape=None,
                             output_collection_name='inference_op',
-                            graph_hook_fn=None):
+                            graph_hook_fn=None,
+                            quantize=False):
   """Export helper."""
   tf.gfile.MakeDirs(output_directory)
   frozen_graph_path = os.path.join(output_directory,
@@ -376,7 +383,8 @@ def _export_inference_graph(input_type,
       detection_model=detection_model,
       input_shape=input_shape,
       output_collection_name=output_collection_name,
-      graph_hook_fn=graph_hook_fn)
+      graph_hook_fn=graph_hook_fn,
+      quantize=quantize)
 
   saver_kwargs = {}
   if use_moving_averages:
@@ -427,7 +435,8 @@ def export_inference_graph(input_type,
                            output_directory,
                            input_shape=None,
                            output_collection_name='inference_op',
-                           additional_output_tensor_names=None):
+                           additional_output_tensor_names=None,
+                           quantize=False):
   """Exports inference graph for the model specified in the pipeline config.
 
   Args:
@@ -450,7 +459,7 @@ def export_inference_graph(input_type,
                           trained_checkpoint_prefix,
                           output_directory, additional_output_tensor_names,
                           input_shape, output_collection_name,
-                          graph_hook_fn=None)
+                          graph_hook_fn=None, quantize=quantize)
   pipeline_config.eval_config.use_moving_averages = False
   config_text = text_format.MessageToString(pipeline_config)
   with tf.gfile.Open(

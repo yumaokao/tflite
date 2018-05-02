@@ -121,6 +121,8 @@ flags.DEFINE_string('output_directory', None, 'Path to write outputs.')
 flags.DEFINE_string('config_override', '',
                     'pipeline_pb2.TrainEvalPipelineConfig '
                     'text proto to override pipeline_config_path.')
+flags.DEFINE_boolean('quantize', False,
+                     'Use tensorflow/contrib/quantize to export. ')
 tf.app.flags.mark_flag_as_required('pipeline_config_path')
 tf.app.flags.mark_flag_as_required('trained_checkpoint_prefix')
 tf.app.flags.mark_flag_as_required('output_directory')
@@ -141,7 +143,8 @@ def main(_):
     input_shape = None
   exporter.export_inference_graph(FLAGS.input_type, pipeline_config,
                                   FLAGS.trained_checkpoint_prefix,
-                                  FLAGS.output_directory, input_shape)
+                                  FLAGS.output_directory, input_shape,
+                                  quantize=FLAGS.quantize)
 
 
 if __name__ == '__main__':
