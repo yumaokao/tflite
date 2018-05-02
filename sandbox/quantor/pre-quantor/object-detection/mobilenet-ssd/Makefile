@@ -223,7 +223,7 @@ quant_toco_mobilenet_ssd_pets:
                 --output_arrays=concat_1,Squeeze --input_shapes=1,300,300,3 \
                 --dump_graphviz=mobilenet_ssd_pets_quant/export/dots
 
-# PascalBoxes_Precision/mAP@0.5IOU: 0.??????
+# PascalBoxes_Precision/mAP@0.5IOU: 0.761788
 # run this in docker env.
 quant_eval_mobilenet_ssd_pets_anchors_tflite:
 	@ mkdir -p mobilenet_ssd_pets_quant/eval_anchors_tflite/run_tflite
