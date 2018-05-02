@@ -111,7 +111,7 @@ eval_mobilenet_ssd_pets_anchors:
 export_mobilenet_ssd_pets:
 	@ rm -rf export_mobilenet_ssd_pets
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
-		python $(TF_OBJDECT_BASE)/export_inference_graph.py \
+		python ./export_inference_graph.py \
 			--input_type image_tensor \
 			--output_directory export_mobilenet_ssd_pets \
 			--trained_checkpoint_prefix train_mobilenet_ssd_pets/model.ckpt-371443 \
@@ -190,3 +190,20 @@ quant_eval_mobilenet_ssd_pets_anchors:
 			--checkpoint_dir mobilenet_ssd_pets_quant/train \
 			--eval_dir mobilenet_ssd_pets_quant/eval_anchors \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
+# run this in docker env.
+quant_export_mobilenet_ssd_pets:
+	@ rm -rf mobilenet_ssd_pets_quant/export
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./export_inference_graph.py \
+			--input_type image_tensor \
+			--output_directory mobilenet_ssd_pets_quant/export \
+			--trained_checkpoint_prefix mobilenet_ssd_pets_quant/train/model.ckpt-351175 \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+	@ save_summaries mobilenet_ssd_pets_quant/export/frozen_inference_graph.pb
+	@ $(TF_BASE)/bazel-bin/tensorflow/python/tools/optimize_for_inference \
+		--input=mobilenet_ssd_pets_quant/export/frozen_inference_graph.pb \
+		--output=mobilenet_ssd_pets_quant/export/optimized_inference_graph.pb \
+		--input_names=Preprocessor/sub \
+		--output_names=concat_1,Squeeze
+	@ save_summaries mobilenet_ssd_pets_quant/export/optimized_inference_graph.pb
