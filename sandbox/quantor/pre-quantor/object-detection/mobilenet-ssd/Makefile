@@ -8,6 +8,7 @@
 .PHONY: quant_train_mobilenet_ssd_pets
 .PHONY: quant_eval_mobilenet_ssd_pets quant_eval_mobilenet_ssd_pets_anchors
 .PHONY: quant_export_mobilenet_ssd_pets quant_toco_mobilenet_ssd_pets
+.PHONY: quant_eval_mobilenet_ssd_pets_anchors_tflite
 
 ifeq ($(TFLITE_ROOT_PATH),)
 TFLITE_ROOT_PATH := /home/tflite
@@ -216,8 +217,25 @@ quant_toco_mobilenet_ssd_pets:
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
                 --input_file=mobilenet_ssd_pets_quant/export/optimized_inference_graph.pb \
                 --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
-                --output_file=export_mobilenet_ssd_pets/float_model.lite \
+                --output_file=mobilenet_ssd_pets_quant/export//uint8_model.lite \
                 --inference_type=QUANTIZED_UINT8 --inference_input_type=QUANTIZED_UINT8 \
 		--input_arrays=Preprocessor/sub --mean_values=128 --std_values=127 \
                 --output_arrays=concat_1,Squeeze --input_shapes=1,300,300,3 \
                 --dump_graphviz=mobilenet_ssd_pets_quant/export/dots
+
+# PascalBoxes_Precision/mAP@0.5IOU: 0.??????
+# run this in docker env.
+quant_eval_mobilenet_ssd_pets_anchors_tflite:
+	@ mkdir -p mobilenet_ssd_pets_quant/eval_anchors_tflite/run_tflite
+	@ cp mobilenet_ssd_pets_quant/export/uint8_model.lite mobilenet_ssd_pets_quant/eval_anchors_tflite/run_tflite
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--quantize \
+			--evaluate_with_anchors \
+			--evaluate_with_run_tflite \
+			--tensorflow_dir $(TF_BASE) \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_pets_quant/train \
+			--eval_dir mobilenet_ssd_pets_quant/eval_anchors_tflite \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config

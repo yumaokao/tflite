@@ -435,6 +435,35 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
     predict_result_dict = sess.run(predict_tensor_dict,
             feed_dict=feed_dict)
     if evaluate_with_run_tflite:
+      if quantize:
+        # save quantized [-1.0, 1.0] preprocessed_inputs to npz
+        #   real_value = (quantized_input_value - mean_value) / std_value
+        #   => quantized_input_value = real_value * std_value + mean_value
+        #   => q = uint8(r * 127.0 + 128.0)
+        run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
+        batch_xs_fn = os.path.join(run_tflite_dir, 'batch_xs.npz')
+        inputs_r =  predict_result_dict['preprocessed_inputs']
+        inputs_q = inputs_r * 127.0 + 128.0
+        inputs_q = inputs_q.astype('uint8')
+        kwargs = {'Preprocessor/sub': inputs_q}
+        np.savez(batch_xs_fn, **kwargs)
+
+        # get outputs with run_tflite
+        cmds = _prepare_run_tflite_commands(run_tflite_dir,
+			os.path.join(run_tflite_dir, 'uint8_model.lite'), 'uint8')
+        print(' '.join(cmds))
+        subprocess.check_output(cmds)
+        # TODO(yumaokao): concat's inputs have same min/max,
+        #                 but scale/zero_point are not changed
+        # import ipdb
+        # ipdb.set_trace()
+
+        # read outputs where
+        #   'class_predictions_with_background' => 'concat_1'
+        #   'box_encodings' => 'Squeeze'
+        ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
+        print(ys)
+      else:
         # save preprocessed_inputs to npz
         run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
         batch_xs_fn = os.path.join(run_tflite_dir, 'batch_xs.npz')
