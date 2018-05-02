@@ -37,8 +37,8 @@ _EXTRA_QUANTIZE_OPTION_LIST=['deconvolution', 'convolution', 'preact', 'concat',
 def Quantize(graph,
              is_training,
              extra_option,
-             weight_bits=8,
-             activation_bits=8,
+             weight_bits=8, # For last value quantize
+             activation_bits=8, # For moving avg quantize
              ema_decay=0.999,
              quant_delay=None,
              vars_collection=ops.GraphKeys.MOVING_AVERAGE_VARIABLES):
