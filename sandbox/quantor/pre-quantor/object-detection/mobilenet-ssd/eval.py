@@ -84,6 +84,8 @@ flags.DEFINE_boolean('evaluate_with_anchors', False, 'Option to evaluate with '
 flags.DEFINE_boolean('evaluate_with_run_tflite', False, 'Option to evaluate '
                      'with anchors. anchors are executed with run_tflite, '
                      'postprocess and detection are run seperately. ')
+flags.DEFINE_boolean('quantize', False,
+                     'Use tensorflow/contrib/quantize for evaluate. ')
 #TODO: uses PATH outside
 flags.DEFINE_string('tensorflow_dir', None, 'The directory where the '
                     'tensorflow are stored')
@@ -145,7 +147,7 @@ def main(unused_argv):
     evaluator.evaluate_with_anchors(create_input_dict_fn, model_fn,
         eval_config, categories, FLAGS.checkpoint_dir, FLAGS.eval_dir,
         evaluate_with_run_tflite=FLAGS.evaluate_with_run_tflite,
-        tensorflow_dir=FLAGS.tensorflow_dir)
+        quantize=FLAGS.quantize, tensorflow_dir=FLAGS.tensorflow_dir)
   else:
     evaluator.evaluate(create_input_dict_fn, model_fn, eval_config, categories,
         FLAGS.checkpoint_dir, FLAGS.eval_dir)

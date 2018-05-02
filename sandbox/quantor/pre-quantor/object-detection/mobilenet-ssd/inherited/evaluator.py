@@ -273,6 +273,7 @@ def evaluate(create_input_dict_fn, create_model_fn, eval_config, categories,
 # _extract_anchros_and_losses
 def _extract_anchros_and_losses(model,
                                 create_input_dict_fn,
+                                quantize=False,
                                 ignore_groundtruth=False):
   """Constructs tensorflow detection graph and returns output tensors.
 
@@ -296,6 +297,12 @@ def _extract_anchros_and_losses(model,
       tf.to_float(original_image))
   prediction_dict = model.predict(preprocessed_image, true_image_shapes)
   detections = model.postprocess(prediction_dict, true_image_shapes)
+
+  if quantize:
+    from tensorflow.contrib.quantize import experimental_create_eval_graph
+    experimental_create_eval_graph()
+    # g = tf.get_default_graph()
+    # print(g.get_operations())
 
   groundtruth = None
   losses_dict = {}
@@ -358,7 +365,7 @@ def _extract_anchros_and_losses(model,
 # evaluate_with_anchors
 def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, categories,
              checkpoint_dir, eval_dir, graph_hook_fn=None, evaluator_list=None,
-             evaluate_with_run_tflite=False, tensorflow_dir=''):
+             evaluate_with_run_tflite=False, quantize=False, tensorflow_dir=''):
   """Evaluation function for detection models.
 
   Args:
@@ -390,6 +397,7 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
   tensor_dict, losses_dict = _extract_anchros_and_losses(
       model=model,
       create_input_dict_fn=create_input_dict_fn,
+      quantize=quantize,
       ignore_groundtruth=eval_config.ignore_groundtruth)
 
   def _prepare_run_tflite_commands(eval_dir, tflite_model, inference_type):
@@ -427,6 +435,35 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
     predict_result_dict = sess.run(predict_tensor_dict,
             feed_dict=feed_dict)
     if evaluate_with_run_tflite:
+      if quantize:
+        # save quantized [-1.0, 1.0] preprocessed_inputs to npz
+        #   real_value = (quantized_input_value - mean_value) / std_value
+        #   => quantized_input_value = real_value * std_value + mean_value
+        #   => q = uint8(r * 127.0 + 128.0)
+        run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
+        batch_xs_fn = os.path.join(run_tflite_dir, 'batch_xs.npz')
+        inputs_r =  predict_result_dict['preprocessed_inputs']
+        inputs_q = inputs_r * 127.0 + 128.0
+        inputs_q = inputs_q.astype('uint8')
+        kwargs = {'Preprocessor/sub': inputs_q}
+        np.savez(batch_xs_fn, **kwargs)
+
+        # get outputs with run_tflite
+        cmds = _prepare_run_tflite_commands(run_tflite_dir,
+			os.path.join(run_tflite_dir, 'uint8_model.lite'), 'uint8')
+        print(' '.join(cmds))
+        subprocess.check_output(cmds)
+        # TODO(yumaokao): concat's inputs have same min/max,
+        #                 but scale/zero_point are not changed
+        # import ipdb
+        # ipdb.set_trace()
+
+        # read outputs where
+        #   'class_predictions_with_background' => 'concat_1'
+        #   'box_encodings' => 'Squeeze'
+        ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
+        print(ys)
+      else:
         # save preprocessed_inputs to npz
         run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
         batch_xs_fn = os.path.join(run_tflite_dir, 'batch_xs.npz')
