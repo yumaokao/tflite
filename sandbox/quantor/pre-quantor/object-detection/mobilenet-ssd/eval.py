@@ -89,6 +89,11 @@ flags.DEFINE_boolean('quantize', False,
 #TODO: uses PATH outside
 flags.DEFINE_string('tensorflow_dir', None, 'The directory where the '
                     'tensorflow are stored')
+flags.DEFINE_string('tflite_outputs', None, 'The string to assign '
+                    'outputs mapping and scale/zero_point. '
+                    'Mapping only with evaluate_with_run_tflite, '
+                    'scale/zero with quantize. '
+                    'e.g. box_encoding,Squeeze,0.0692892,154,... ')
 FLAGS = flags.FLAGS
 
 
@@ -143,11 +148,20 @@ def main(unused_argv):
   if FLAGS.evaluate_with_anchors:
     if FLAGS.evaluate_with_run_tflite:
       assert FLAGS.tensorflow_dir, '`tensorflow_dir` is missing.'
+      if FLAGS.quantize:
+        assert FLAGS.tflite_outputs, '`tflite_outputs` is missing.'
+        qouts = FLAGS.tflite_outputs.split(',')
+        if len(qouts) % 4 > 0:
+          assert FLAGS.tflite_outputs, '`tflite_outputs` is not given right with size.'
+        tflite_outputs = [(qouts[i * 4], qouts[i * 4 + 1],
+                          float(qouts[i * 4 + 2]), int(qouts[i * 4 + 3]))
+                          for i in range(len(qouts) // 4)]
 
     evaluator.evaluate_with_anchors(create_input_dict_fn, model_fn,
         eval_config, categories, FLAGS.checkpoint_dir, FLAGS.eval_dir,
         evaluate_with_run_tflite=FLAGS.evaluate_with_run_tflite,
-        quantize=FLAGS.quantize, tensorflow_dir=FLAGS.tensorflow_dir)
+        quantize=FLAGS.quantize, tflite_outputs=tflite_outputs,
+        tensorflow_dir=FLAGS.tensorflow_dir)
   else:
     evaluator.evaluate(create_input_dict_fn, model_fn, eval_config, categories,
         FLAGS.checkpoint_dir, FLAGS.eval_dir)
