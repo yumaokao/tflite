@@ -1,5 +1,6 @@
 .PHONY: all clean build
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
+.PHONY: download_mscoco
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
 .PHONY: export_mobilenet_ssd_pets toco_mobilenet_ssd_pets
@@ -64,6 +65,18 @@ test_installation:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python $(TF_RESEARCH_BASE)/object_detection/builders/model_builder_test.py
 
+#################################
+# dataset mscoco		#
+#################################
+download_mscoco:
+	@ mkdir -p datasets/mscoco
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		bash download_and_preprocess_mscoco.sh datasets/mscoco $(TF_RESEARCH_BASE)
+
+
+#################################
+# dataset pets			#
+#################################
 # download and prepare Oxford-IIIT Pets dataset
 download_pets:
 	@ mkdir -p datasets/pets
@@ -82,7 +95,7 @@ prepare_pets:
 
 
 #################################
-# float 			#
+# float pets			#
 #################################
 # run this in docker env.
 train_mobilenet_ssd_pets:
@@ -162,7 +175,7 @@ eval_mobilenet_ssd_pets_anchors_tflite:
 
 
 #################################
-# quantized 			#
+# uint8 pets			#
 #################################
 # run this in docker env.
 quant_train_mobilenet_ssd_pets:
