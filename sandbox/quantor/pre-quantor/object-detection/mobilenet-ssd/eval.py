@@ -146,6 +146,7 @@ def main(unused_argv):
 
   logging.basicConfig(level=logging.INFO)
   if FLAGS.evaluate_with_anchors:
+    tflite_outputs = None
     if FLAGS.evaluate_with_run_tflite:
       assert FLAGS.tensorflow_dir, '`tensorflow_dir` is missing.'
       if FLAGS.quantize:
