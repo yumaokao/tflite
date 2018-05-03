@@ -149,14 +149,13 @@ def main(unused_argv):
     tflite_outputs = None
     if FLAGS.evaluate_with_run_tflite:
       assert FLAGS.tensorflow_dir, '`tensorflow_dir` is missing.'
-      if FLAGS.quantize:
-        assert FLAGS.tflite_outputs, '`tflite_outputs` is missing.'
-        qouts = FLAGS.tflite_outputs.split(',')
-        if len(qouts) % 4 > 0:
-          assert FLAGS.tflite_outputs, '`tflite_outputs` is not given right with size.'
-        tflite_outputs = [(qouts[i * 4], qouts[i * 4 + 1],
-                          float(qouts[i * 4 + 2]), int(qouts[i * 4 + 3]))
-                          for i in range(len(qouts) // 4)]
+      assert FLAGS.tflite_outputs, '`tflite_outputs` is missing.'
+      qouts = FLAGS.tflite_outputs.split(',')
+      if len(qouts) % 4 > 0:
+        assert FLAGS.tflite_outputs, '`tflite_outputs` is not given right with size.'
+      tflite_outputs = [(qouts[i * 4], qouts[i * 4 + 1],
+                        float(qouts[i * 4 + 2]), int(qouts[i * 4 + 3]))
+                        for i in range(len(qouts) // 4)]
 
     evaluator.evaluate_with_anchors(create_input_dict_fn, model_fn,
         eval_config, categories, FLAGS.checkpoint_dir, FLAGS.eval_dir,

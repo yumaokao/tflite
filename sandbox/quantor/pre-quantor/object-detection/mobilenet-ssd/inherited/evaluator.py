@@ -487,10 +487,12 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
         #   'class_predictions_with_background' => 'concat_1'
         #   'box_encodings' => 'Squeeze'
         ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
+        for output in tflite_outputs:
+          predict_result_dict[output[0]] = ys[output[1]]
+        '''
         predict_result_dict['class_predictions_with_background'] = ys['concat_1']
         predict_result_dict['box_encodings'] = ys['Squeeze']
-        # import ipdb
-        # ipdb.set_trace()
+        '''
 
     # third step: model.postprocess
     # predict_feed_dict = {}

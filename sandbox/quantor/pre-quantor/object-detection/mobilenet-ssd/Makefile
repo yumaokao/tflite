@@ -152,6 +152,7 @@ eval_mobilenet_ssd_pets_anchors_tflite:
 		python ./eval.py \
 			--evaluate_with_anchors \
 			--evaluate_with_run_tflite \
+			--tflite_outputs box_encodings,Squeeze,0.0692892,154,class_predictions_with_background,concat_1,0.374646,153 \
 			--tensorflow_dir $(TF_BASE) \
 			--run_once \
 			--logtostderr \
