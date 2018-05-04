@@ -72,6 +72,7 @@ download_mscoco:
 	@ mkdir -p datasets/mscoco
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		bash download_and_preprocess_mscoco.sh datasets/mscoco $(TF_RESEARCH_BASE)
+	@ cd datasets/mscoco && cp $(TF_OBJDECT_BASE)/data/mscoco_label_map.pbtxt	./
 
 #################################
 # float mscoco			#
@@ -81,7 +82,7 @@ train_mobilenet_ssd_mscoco:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python $(TF_OBJDECT_BASE)/train.py \
 			--train_dir mobilenet_ssd_coco/train \
-			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
 
 
 #################################

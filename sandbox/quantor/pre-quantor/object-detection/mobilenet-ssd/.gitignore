@@ -4,6 +4,9 @@ datasets
 # cocoapi
 cocoapi
 
+# mobilenet-ssd-coco
+mobilenet_ssd_coco/*
+
 # mobilenet-ssd-pets
 mobilenet_ssd_pets/*
 
