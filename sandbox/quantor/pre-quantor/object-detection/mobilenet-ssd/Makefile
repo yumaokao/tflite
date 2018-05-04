@@ -73,6 +73,16 @@ download_mscoco:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		bash download_and_preprocess_mscoco.sh datasets/mscoco $(TF_RESEARCH_BASE)
 
+#################################
+# float mscoco			#
+#################################
+# run this in docker env.
+train_mobilenet_ssd_mscoco:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python $(TF_OBJDECT_BASE)/train.py \
+			--train_dir mobilenet_ssd_coco/train \
+			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
+
 
 #################################
 # dataset pets			#
