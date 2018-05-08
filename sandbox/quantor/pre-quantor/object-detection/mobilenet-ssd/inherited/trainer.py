@@ -185,7 +185,7 @@ def _create_losses(input_queue, create_model_fn, train_config):
 
 def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
           num_clones, worker_replicas, clone_on_cpu, ps_tasks, worker_job_name,
-          is_chief, train_dir, graph_hook_fn=None):
+          is_chief, train_dir, graph_hook_fn=None, quantize=False):
   """Training function for detection models.
 
   Args:
@@ -325,6 +325,12 @@ def train(create_tensor_dict_fn, create_model_fn, train_config, master, task,
     if graph_hook_fn:
       with tf.device(deploy_config.variables_device()):
         graph_hook_fn()
+
+    if quantize:
+      from tensorflow.contrib.quantize import experimental_create_training_graph
+      experimental_create_training_graph(freeze_bn_delay=None)
+      # g = tf.get_default_graph()
+      # print(g.get_operations())
 
     # Add summaries.
     for model_var in slim.get_model_variables():

@@ -2,10 +2,11 @@
 # vim:fileencoding=UTF-8:ts=2:sw=2:sta:et:sts=2:ai
 
 from distutils.core import setup
+from tfquantor.version import __version__
 
 setup(
   name='tfquantor',
-  version='1.8.1',
+  version=__version__,
   author='yumaokao',
   author_email='yumao.kao@mediatek.com',
   description='Quantization module for tensorflow with FakeQuant*',
