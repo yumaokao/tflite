@@ -18,7 +18,7 @@
 #      +            concat1, predict2 = upsampling_block(concat2, conv1, 64, 32, 64)
 #
 # 3. Add extra argument to decide whether to use correlation
-# 4. Do not shuffle the test data
+# 4. Do not shuffle the test data in test mode
 #
 
 ifeq ($(TFLITE_ROOT_PATH),)
@@ -42,7 +42,7 @@ train_dispflownet:
 		--batch_size=4 \
 		--log_step=100 \
 		--save_step=10000 \
-		--n_steps=500000
+		--n_steps=1000000
 
 # 4.323850
 test_dispflownet:
@@ -51,3 +51,8 @@ test_dispflownet:
 		--ckpt=$(DISPFLOW_BASE)/model/ckpts \
 		--batch_size=1 \
 		--log_step=100
+
+export_dispflownet:
+	@ python export.py \
+		--ckpt=$(DISPFLOW_BASE)/model/ckpts \
+		--output=$(DISPFLOW_BASE)/model

@@ -239,7 +239,7 @@ class DispNet(object):
                 train_pipeline = input_pipeline(self.dataset["TRAIN"], input_size=self.input_size,
                                                 batch_size=self.batch_size)
                 val_pipeline = input_pipeline(self.dataset["TEST"], input_size=self.input_size,
-                                              batch_size=self.batch_size, shuffle=False)
+                                              batch_size=self.batch_size)
                 self.training_mode = tf.placeholder_with_default(shape=(), input=True,
                                                                  name="training_mode")
                 self.inputs = tf.cond(self.training_mode,
@@ -250,10 +250,10 @@ class DispNet(object):
                                                batch_size=self.batch_size, shuffle=False)
                 self.inputs = test_pipeline
             elif self.mode == "inference":
-                h, w, c = input_size
+                h, w, c = self.input_size
                 self.inputs = (tf.placeholder(tf.float32, shape=(1, h, w, c), name="left_img"),
                                tf.placeholder(tf.float32, shape=(1, h, w, c), name="right_img"),
-                               tf.placeholder_with_default(tf.float32, shape=(1, h, w, 1),
+                               tf.placeholder_with_default(shape=(1, h, w, 1),
                                                            name="disp_gt",
                                                            input=tf.zeros(shape=(1, h, w, 1),
                                                                           dtype=tf.float32)))
