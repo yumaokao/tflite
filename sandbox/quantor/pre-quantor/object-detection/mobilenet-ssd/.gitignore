@@ -4,12 +4,13 @@ datasets
 # cocoapi
 cocoapi
 
-# mobilenet-ssd-pets
-train_mobilenet_ssd_pets*
-eval_mobilenet_ssd_pets*
-export_mobilenet_ssd_pets*
+# mobilenet-ssd-coco
+mobilenet_ssd_coco/*
 
-# mobilenet_ssd_pets_quant/*
+# mobilenet-ssd-pets
+mobilenet_ssd_pets/*
+
+# mobilenet_ssd_pets_quant
 mobilenet_ssd_pets_quant/*
 
 # pyc

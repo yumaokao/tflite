@@ -365,7 +365,8 @@ def _extract_anchros_and_losses(model,
 # evaluate_with_anchors
 def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, categories,
              checkpoint_dir, eval_dir, graph_hook_fn=None, evaluator_list=None,
-             evaluate_with_run_tflite=False, quantize=False, tensorflow_dir=''):
+             evaluate_with_run_tflite=False, quantize=False, tflite_outputs=None,
+             tensorflow_dir=''):
   """Evaluation function for detection models.
 
   Args:
@@ -451,18 +452,25 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
         # get outputs with run_tflite
         cmds = _prepare_run_tflite_commands(run_tflite_dir,
 			os.path.join(run_tflite_dir, 'uint8_model.lite'), 'uint8')
-        print(' '.join(cmds))
         subprocess.check_output(cmds)
-        # TODO(yumaokao): concat's inputs have same min/max,
-        #                 but scale/zero_point are not changed
-        # import ipdb
-        # ipdb.set_trace()
 
         # read outputs where
-        #   'class_predictions_with_background' => 'concat_1'
-        #   'box_encodings' => 'Squeeze'
         ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
-        print(ys)
+        for output in tflite_outputs:
+          qv = ys[output[1]]
+          fv = qv.astype('float32')
+          fv = (fv - output[3]) * output[2]
+          predict_result_dict[output[0]] = fv
+        '''
+        q_class = ys['concat_1']
+        f_class = q_class.astype('float32')
+        f_class = (f_class - 153) * 0.374646
+        predict_result_dict['class_predictions_with_background'] = f_class
+        q_box = ys['Squeeze']
+        f_box = q_box.astype('float32')
+        f_box = (f_box- 154) * 0.0692892
+        predict_result_dict['box_encodings'] = f_box
+        '''
       else:
         # save preprocessed_inputs to npz
         run_tflite_dir = os.path.join(eval_dir, 'run_tflite')
@@ -479,10 +487,12 @@ def evaluate_with_anchors(create_input_dict_fn, create_model_fn, eval_config, ca
         #   'class_predictions_with_background' => 'concat_1'
         #   'box_encodings' => 'Squeeze'
         ys = np.load(os.path.join(run_tflite_dir, 'output_ys.npz'))
+        for output in tflite_outputs:
+          predict_result_dict[output[0]] = ys[output[1]]
+        '''
         predict_result_dict['class_predictions_with_background'] = ys['concat_1']
         predict_result_dict['box_encodings'] = ys['Squeeze']
-        # import ipdb
-        # ipdb.set_trace()
+        '''
 
     # third step: model.postprocess
     # predict_feed_dict = {}
