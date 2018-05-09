@@ -39,12 +39,19 @@ def prepare_run_tflite_commands(eval_dir):
           '--inference_type=uint8']
 
 def get_tflite_quantization_info():
-  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', FLAGS.tflite_model]
+  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', FLAGS.tflite_model, 'tensors']
   out = subprocess.check_output(cmd)
-  for line in out.splitlines():
-    if FLAGS.output_node_name + ' type' in line:
-      result = re.search('quantization \((?P<scale>[0-9\.]+) (?P<zero>[0-9\.]+)\)', line)
-      return float(result.group('scale')), int(result.group('zero'))
+  lines = out.splitlines()
+  for idx, line in enumerate(lines):
+    if '[name] {}'.format(FLAGS.output_node_name) in line:
+      for q_idx in range(idx + 1, len(lines)):
+        q_line = lines[q_idx]
+        if '[name]' in q_line:
+          raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
+        elif '[quantization]' in q_line:
+          result = re.search('scale=(?P<scale>[0-9\.]+), zero_point=(?P<zero>[0-9\.]+)', q_line)
+          return float(result.group('scale')), int(result.group('zero'))
+      raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
   raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
 
 def main(argv=None):
