@@ -151,12 +151,19 @@ class Executor(QThread):
 
     def processTfliteModelFloat(model_fn, input_fn, input_node, output_node):
       def getTfliteNodeIndex(model_fn, node_name):
-        cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn]
+        cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn, 'tensors']
         out = subprocess.check_output(cmd)
-        for line in out.splitlines():
-          if 'name ' + node_name in line:
-            result = re.search('(?P<index>[0-9]+): name ' + node_name, line)
-            return int(result.group('index'))
+        lines = out.splitlines()
+        for idx, line in enumerate(lines):
+          if '[name] {}'.format(node_name) in line:
+            for i_idx in range(idx - 1, -1, -1):
+              i_line = lines[i_idx]
+              if '[name]' in i_line:
+                raise ValueError('The given output node is not found inside the TFLITE model')
+              result = re.search('^\s*(?P<idx>\d+)\s*$', i_line)
+              if result:
+                return int(result.group('idx'))
+            raise ValueError('The given output node is not found inside the TFLITE model')
         raise ValueError('The given output node is not found inside the TFLITE model')
 
       output_index = getTfliteNodeIndex(model_fn, output_node)
@@ -173,16 +180,39 @@ class Executor(QThread):
       return output_data
 
     def processTfliteModelUint8(model_fn, input_fn, input_node, output_node):
-      def getTfliteNodeIndexAndQuantizationInfo(model_fn, node_name):
-        cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn]
+      def getTfliteNodeIndex(model_fn, node_name):
+        cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn, 'tensors']
         out = subprocess.check_output(cmd)
-        for line in out.splitlines():
-          if 'name ' + node_name in line:
-            result = re.search('(?P<index>[0-9]+): name ' + node_name + '.*quantization \((?P<scale>[0-9\.]+) (?P<zero>[0-9\.]+)\)', line)
-            return int(result.group('index')), float(result.group('scale')), int(result.group('zero'))
+        lines = out.splitlines()
+        for idx, line in enumerate(lines):
+          if '[name] {}'.format(node_name) in line:
+            for i_idx in range(idx - 1, -1, -1):
+              i_line = lines[i_idx]
+              if '[name]' in i_line:
+                raise ValueError('The given output node is not found inside the TFLITE model')
+              result = re.search('^\s*(?P<idx>\d+)\s*$', i_line)
+              if result:
+                return int(result.group('idx'))
+            raise ValueError('The given output node is not found inside the TFLITE model')
+        raise ValueError('The given output node is not found inside the TFLITE model')
+      def getTfliteNodeQuantizationInfo(model_fn, node_name):
+        cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model_fn, 'tensors']
+        out = subprocess.check_output(cmd)
+        lines = out.splitlines()
+        for idx, line in enumerate(lines):
+          if '[name] {}'.format(node_name) in line:
+            for q_idx in range(idx + 1, len(lines)):
+              q_line = lines[q_idx]
+              if '[name]' in q_line:
+                raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
+              elif '[quantization]' in q_line:
+                result = re.search('scale=(?P<scale>[0-9\.]+), zero_point=(?P<zero>[0-9\.]+)', q_line)
+                return float(result.group('scale')), int(result.group('zero'))
+            raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
         raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
 
-      output_index, scale, zero_point = getTfliteNodeIndexAndQuantizationInfo(model_fn, output_node)
+      scale, zero_point = getTfliteNodeQuantizationInfo(model_fn, output_node)
+      output_index = getTfliteNodeIndex(model_fn, output_node)
       tmp_output_fn = input_fn + '.out.tmp'
       cmd = [self.param['tensorflow_dir'] + '/bazel-bin/tensorflow/contrib/lite/utils/run_tflite',
           '--tflite_file={}'.format(model_fn),

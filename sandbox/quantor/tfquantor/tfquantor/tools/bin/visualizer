@@ -175,24 +175,36 @@ def get_visualizer(mode):
     return DistributionVisualizer(mode)
 
 def get_tflite_quantization_info(model, node_name):
-  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite',
-          '{}'.format(model)]
+  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model, 'tensors']
   out = subprocess.check_output(cmd)
-  for line in out.splitlines():
-    if 'name ' + node_name in line:
-      result = re.search('quantization \((?P<scale>[0-9\.]+) (?P<zero>[0-9\.]+)\)', line)
-      return float(result.group('scale')), int(result.group('zero'))
+  lines = out.splitlines()
+  for idx, line in enumerate(lines):
+    if '[name] {}'.format(node_name) in line:
+      for q_idx in range(idx + 1, len(lines)):
+        q_line = lines[q_idx]
+        if '[name]' in q_line:
+          raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
+        elif '[quantization]' in q_line:
+          result = re.search('scale=(?P<scale>[0-9\.]+), zero_point=(?P<zero>[0-9\.]+)', q_line)
+          return float(result.group('scale')), int(result.group('zero'))
+      raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
   raise ValueError('Quantization of the output node is not embedded inside the TFLite model')
 
 def get_tflite_tensor_index(model, tensor_name):
-  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite',
-          '{}'.format(model)]
+  cmd = [FLAGS.tensorflow_dir + '/bazel-bin/tensorflow/contrib/lite/utils/dump_tflite', model, 'tensors']
   out = subprocess.check_output(cmd)
-  for line in out.splitlines():
-    if 'name ' + tensor_name in line:
-      result = re.search('(?P<index>[0-9]+): name ' + tensor_name, line)
-      return int(result.group('index'))
-  raise ValueError('Tensor name \'{}\' is not defined in the TFLite model'.format(tensor_name))
+  lines = out.splitlines()
+  for idx, line in enumerate(lines):
+    if '[name] {}'.format(node_name) in line:
+      for i_idx in range(idx - 1, -1, -1):
+        i_line = lines[i_idx]
+        if '[name]' in i_line:
+          raise ValueError('The given output node is not found inside the TFLITE model')
+        result = re.search('^\s*(?P<idx>\d+)\s*$', i_line)
+        if result:
+          return int(result.group('idx'))
+      raise ValueError('Tensor name \'{}\' is not found inside the TFLITE model'.format(tensor_name))
+  raise ValueError('Tensor name \'{}\' is not found inside the TFLITE model'.format(tensor_name))
 
 def process_tflite_model_with_data_and_type(model_fn, input_data_fn, output_idx, inference_type_str):
   tmp_output_fn = 'output_tmp.npy'
