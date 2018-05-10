@@ -19,6 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import re
+from tfquantor.settings import _ignored_nodes_for_quantization
 from tensorflow.contrib import graph_editor
 from tfquantor.quantize import common
 from tfquantor.quantize import graph_matcher
@@ -367,6 +368,10 @@ def _InsertQuantOp(context,
     ValueError: When producer operation is not directly connected to the
       consumer operation.
   """
+  if producer.name in _ignored_nodes_for_quantization:
+    # print('Fakequant insertion after \'{}\' node is ignored'.format(producer.name))
+    return
+
   name_prefix = _AddContextToName(context, name)
   inputs = producer.outputs[0]
   if moving_avg:

@@ -8,6 +8,23 @@ from .quantize import quantize_graph, fold_batch_norms, quantize, quantize_extra
 from .quantize import input_to_ops
 from .quantize import copy_graph
 from .version  import __version__
+from .settings import _ignored_nodes_for_quantization
+
+
+def reset_ignored_nodes():
+  _ignored_nodes_for_quantization.clear()
+
+def set_ignored_nodes(nodes):
+  reset_ignored_nodes()
+  add_ignored_nodes(nodes)
+
+def add_ignored_nodes(nodes):
+  if not isinstance(nodes, (list)):
+    raise ValueError('nodes should be a list')
+  _ignored_nodes_for_quantization.update(nodes)
+
+def get_ignored_nodes():
+  return list(_ignored_nodes_for_quantization) # clone it
 
 
 # APIs for post-quantize
@@ -326,6 +343,10 @@ def experimental_create_eval_graph(input_graph=None,
 def create_custom_eval_graph(target_nodes,
                              input_graph=None,
                              inplace=True):
+
+  if not isinstance(target_nodes, (list)):
+    raise ValueError('target_nodes should be a list')
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
@@ -347,6 +368,10 @@ def create_custom_training_graph(target_nodes,
                                  input_graph=None,
                                  quant_delay=0,
                                  inplace=True):
+
+  if not isinstance(target_nodes, (list)):
+    raise ValueError('target_nodes should be a list')
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
