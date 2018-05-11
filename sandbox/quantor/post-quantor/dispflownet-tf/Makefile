@@ -42,7 +42,8 @@ train_dispflownet:
 		--batch_size=4 \
 		--log_step=100 \
 		--save_step=10000 \
-		--n_steps=1000000
+		--n_steps=1000000 \
+		--weight_schedule
 
 test_dispflownet:
 	@ python test_flyingthings.py \
