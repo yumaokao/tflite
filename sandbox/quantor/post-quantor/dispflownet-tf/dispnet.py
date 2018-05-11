@@ -192,7 +192,7 @@ def build_main_graph(left_image_batch, right_image_batch, is_corr=True):
 
 
 def L1_loss(x, y):
-    return tf.reduce_mean(tf.abs(x - y))
+    return tf.reduce_mean(tf.cast(tf.abs(x - y), tf.float32))
 
 
 def build_loss(predictions, target, loss_weights, weight_decay):
