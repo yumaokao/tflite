@@ -2,7 +2,7 @@
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
 .PHONY: download_mscoco
 .PHONY: train_mobilenet_ssd_mscoco eval_mobilenet_ssd_mscoco
-.PHONY: quant_train_mobilenet_ssd_mscoco
+.PHONY: quant_train_mobilenet_ssd_mscoco quant_eval_mobilenet_ssd_mscoco
 
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
@@ -68,6 +68,7 @@ test_installation:
 	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
 		python $(TF_RESEARCH_BASE)/object_detection/builders/model_builder_test.py
 
+
 #################################
 # dataset mscoco		#
 #################################
@@ -109,6 +110,17 @@ quant_train_mobilenet_ssd_mscoco:
 			--train_dir mobilenet_ssd_coco_quant/train \
 			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
 
+# original float eval
+# run this in docker env.
+quant_eval_mobilenet_ssd_mscoco:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_coco_quant/train \
+			--eval_dir mobilenet_ssd_coco_quant/eval \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
+
 
 #################################
 # dataset pets			#
@@ -128,7 +140,6 @@ prepare_pets:
 		python $(TF_RESEARCH_BASE)/object_detection/dataset_tools/create_pet_tf_record.py \
 			-label_map_path=$(TF_RESEARCH_BASE)/object_detection/data/pet_label_map.pbtxt \
 			--data_dir=datasets/pets --output_dir=datasets/pets
-
 
 #################################
 # float pets			#
@@ -208,7 +219,6 @@ eval_mobilenet_ssd_pets_anchors_tflite:
 			--checkpoint_dir mobilenet_ssd_pets/train \
 			--eval_dir mobilenet_ssd_pets/eval_anchors_tflite \
 			--pipeline_config_path configs/ssd_mobilenet_v1_pets.config
-
 
 #################################
 # uint8 pets			#
