@@ -10,6 +10,7 @@ from .quantize import copy_graph
 from .version  import __version__
 from .settings import _ignored_nodes_for_quantization
 
+# TODO: rename extra_quantize_option to extra_quantize_options
 
 def reset_ignored_nodes():
   _ignored_nodes_for_quantization.clear()
@@ -232,6 +233,9 @@ def create_eval_graph(input_graph=None,
                       inplace=True,
                       extra_quantize_option=None,
                       fold_batchnorms=True):
+  weight_bits = 8
+  activation_bits = 8
+
   if input_graph is None:
     input_graph = ops.get_default_graph()
 
