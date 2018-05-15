@@ -73,7 +73,6 @@ def create_direct_quant_eval_graph(input_graph=None,
                                    inplace=True,
                                    extra_quantize_option=None,
                                    fold_batchnorms=True):
-
   weight_bits = 8
   activation_bits = 8
 
