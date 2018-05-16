@@ -32,6 +32,25 @@ dataset_imagenet:
 		&& cd $(TF_SLIM_BASE) \
 		&& $(TF_SLIM_BASE)/bazel-bin/download_and_convert_imagenet "$(DATASET_BASE)/imagenet"
 
+# This command extracts some images from TFRecord, converts them
+# to jpeg format, while guaranteeing the same image count across
+# all the 1000 classes (if possible).
+generate_imagenet_validation_jpeg:
+	@ mkdir -p $(DATASET_BASE)/imagenet/validation_raw_jpeg
+	@ python $(QUANTOR_BASE)/imagenet_jpeg/imagenet_to_jpeg.py \
+		--output_dir $(DATASET_BASE)/imagenet/validation_raw_jpeg \
+		--dataset_dir $(DATASET_BASE)/imagenet \
+		--count -1 \
+		--data_prefix validation \
+		--label_file $(QUANTOR_BASE)/imagenet_jpeg/imagenet_labels.txt
+	@ mkdir -p $(DATASET_BASE)/imagenet_jpeg
+	@ python $(QUANTOR_BASE)/imagenet_jpeg/extract_jpeg.py \
+		--jpeg_dir $(DATASET_BASE)/imagenet/validation_raw_jpeg \
+		--output_dir $(DATASET_BASE)/imagenet_jpeg \
+		--count 10000 \
+		--output_prefix imagenet_validation
+	@ rm -rf $(DATASET_BASE)/imagenet/validation_raw_jpeg
+
 dataset_cifar10:
 	@ python $(TF_SLIM_BASE)/download_and_convert_data.py \
 		--dataset_name=cifar10 --dataset_dir="$(DATASET_BASE)/cifar10"
