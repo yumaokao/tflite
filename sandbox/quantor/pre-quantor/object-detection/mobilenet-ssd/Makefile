@@ -3,6 +3,7 @@
 .PHONY: download_mscoco
 .PHONY: train_mobilenet_ssd_mscoco eval_mobilenet_ssd_mscoco
 .PHONY: quant_train_mobilenet_ssd_mscoco quant_eval_mobilenet_ssd_mscoco
+.PHONY: quant_eval_mobilenet_ssd_mscoco_anchors
 
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
@@ -119,6 +120,19 @@ quant_eval_mobilenet_ssd_mscoco:
 			--logtostderr \
 			--checkpoint_dir mobilenet_ssd_coco_quant/train \
 			--eval_dir mobilenet_ssd_coco_quant/eval \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
+
+# model.ckpt-??????
+# run this in docker env.
+quant_eval_mobilenet_ssd_mscoco_anchors:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--evaluate_with_anchors \
+			--quantize \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_coco_quant/train \
+			--eval_dir mobilenet_ssd_coco_quant/eval_anchors \
 			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
 
 
