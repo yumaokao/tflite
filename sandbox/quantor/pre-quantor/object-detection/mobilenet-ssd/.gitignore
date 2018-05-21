@@ -7,6 +7,9 @@ cocoapi
 # mobilenet-ssd-coco
 mobilenet_ssd_coco/*
 
+# mobilenet-ssd-coco-pretrained
+mobilenet_ssd_coco_pretrained/*
+
 # mobilenet_ssd_coco_quant
 mobilenet_ssd_coco_quant/*
 
