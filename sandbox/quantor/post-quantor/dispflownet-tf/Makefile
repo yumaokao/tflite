@@ -42,9 +42,9 @@ train_dispflownet:
 		--batch_size=4 \
 		--log_step=100 \
 		--save_step=10000 \
-		--n_steps=1000000
+		--n_steps=1000000 \
+		--weight_schedule
 
-# 4.323850
 test_dispflownet:
 	@ python test_flyingthings.py \
 		--data_path=$(DISPFLOW_BASE)/datasets/flyingthings3d/ \
@@ -52,7 +52,37 @@ test_dispflownet:
 		--batch_size=1 \
 		--log_step=100
 
+# 2.197989 [1000000-without-schedule]
+# 2.114056 [1000000-with-schedule]
 export_dispflownet:
 	@ python export.py \
 		--ckpt=$(DISPFLOW_BASE)/model/ckpts \
 		--output=$(DISPFLOW_BASE)/model
+	@ python eval_frozen.py \
+		--data_path=$(DISPFLOW_BASE)/datasets/flyingthings3d \
+		--frozen_model=$(DISPFLOW_BASE)/model/frozen.pb \
+		--input_nodes=left_img:right_img \
+		--batch_size=1 \
+		--log_step=100 \
+		--output_node=prediction/conv/BiasAdd
+
+# 6.450870 [1000000-with-schedule] @ 10000-direct_quant
+direct_quantize_dispflownet:
+	@ mkdir -p $(DISPFLOW_BASE)/model/quantor
+	@ python direct_quantize_frozen.py \
+		--data_path=$(DISPFLOW_BASE)/datasets/flyingthings3d \
+		--frozen_model=$(DISPFLOW_BASE)/model/frozen.pb \
+		--input_nodes=left_img:right_img \
+		--batch_size=1 \
+		--num_batches=10000 \
+		--log_step=100 \
+		--output_dir=$(DISPFLOW_BASE)/model/quantor \
+		--output_node=prediction/conv/act_quant/FakeQuantWithMinMaxVars
+	@ save_summaries $(DISPFLOW_BASE)/model/quantor/frozen.pb
+	@ python eval_frozen.py \
+		--data_path=$(DISPFLOW_BASE)/datasets/flyingthings3d \
+		--frozen_model=$(DISPFLOW_BASE)/model/quantor/frozen.pb \
+		--input_nodes=left_img:right_img \
+		--batch_size=1 \
+		--log_step=100 \
+		--output_node=prediction/conv/act_quant/FakeQuantWithMinMaxVars

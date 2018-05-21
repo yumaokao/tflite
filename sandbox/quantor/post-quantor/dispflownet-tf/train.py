@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--n_steps", dest="n_steps", type=int, default=500000,
                         help='test steps')
     parser.add_argument('--use_corr', action='store_true', default=False)
+    parser.add_argument('--weight_schedule', action='store_true', default=False)
 
     args = parser.parse_args()
 
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     ckpt = tf.train.latest_checkpoint(args.checkpoint_path)
     if not ckpt:
         if not os.path.exists(args.checkpoint_path):
-            os.mkdir(args.checkpoint_path)
+            os.makedirs(args.checkpoint_path)
     model_name = "DispNet"
     if args.use_corr:
         model_name += "Corr1D"
@@ -46,13 +47,17 @@ if __name__ == '__main__':
     writer = tf.summary.FileWriter(args.checkpoint_path)
 
     schedule_step = 50000
-    weights_schedule = [[0., 0., 0., 0., .2, 1.],
-                        [0., 0., 0., .2, 1., .5],
-                        [0., 0., .2, 1., .5, 0.],
-                        [0., .2, 1., .5, 0., 0.],
-                        [.2, 1., .5, 0., 0., 0.],
-                        [1., .5, 0., 0., 0., 0.],
-                        [1., 0., 0., 0., 0., 0.]]
+    if args.weight_schedule is True:
+      weights_schedule = [[0., 0., 0., 0., .2, 1.],
+                          [0., 0., 0., .2, 1., .5],
+                          [0., 0., .2, 1., .5, 0.],
+                          [0., .2, 1., .5, 0., 0.],
+                          [.2, 1., .5, 0., 0., 0.],
+                          [1., .5, 0., 0., 0., 0.],
+                          [1., 0., 0., 0., 0., 0.]]
+    else:
+      weights_schedule = [[1., 1., 1., 1., 1., 1.]]
+
     lr_schedule = [1e-4] * 5
     for i in range(20):
         lr_schedule.extend([(lr_schedule[-1] / 2.)] * 3)

@@ -12,15 +12,15 @@ INPUT_SIZE = (384, 768, 3)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--data_path", dest="dataset_path", required=True, type=str,
+    parser.add_argument("--data_path", dest="dataset_path", required=True, type=str,
             metavar="FILE", help='path to FlyingThings3D dataset')
-    parser.add_argument("-c", "--ckpt", dest="checkpoint_path", required=True, type=str,
+    parser.add_argument("--ckpt", dest="checkpoint_path", required=True, type=str,
             metavar="FILE", help='model checkpoint path')
-    parser.add_argument("-l", "--log_step", dest="log_step", type=int, default=100,
+    parser.add_argument("--log_step", dest="log_step", type=int, default=100,
             help='log step size')
-    parser.add_argument("-b", "--batch_size", dest="batch_size", default=4, type=int,
+    parser.add_argument("--batch_size", dest="batch_size", default=4, type=int,
                         help='batch size')
-    parser.add_argument("-n", "--n_steps", dest="n_steps", type=int, default=None,
+    parser.add_argument("--n_steps", dest="n_steps", type=int, default=None,
             help='test steps')
     parser.add_argument('--use_corr', action='store_true', default=False)
 
@@ -58,12 +58,13 @@ if __name__ == '__main__':
             test_err = 0
             start = time.time()
             for i in range(N_test / args.batch_size):
+                cur_step = i + 1
                 err = sess.run([dispnet.error], feed_dict=feed_dict)
                 test_err += err[0]
-                if i % log_step == 0 and i > 0:
+                if cur_step % log_step == 0:
                     logging.debug("iter: %d, average forward pass time: %f, error %f" %
-                                  (i, ((time.time() - start) / float(log_step)),
-                                   test_err / float(i)))
+                                  (cur_step, ((time.time() - start) / float(log_step)),
+                                   test_err / float(cur_step)))
                     start = time.time()
             test_err = test_err / float(N_test / args.batch_size)
             logging.info("Test error %f" % test_err)
