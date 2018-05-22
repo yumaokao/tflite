@@ -30,7 +30,6 @@ def get_ignored_nodes():
 
 # APIs for post-quantize
 def create_direct_quant_training_graph(input_graph=None,
-                                       quant_delay=0,
                                        inplace=True,
                                        extra_quantize_option=None,
                                        fold_batchnorms=True):
@@ -53,7 +52,7 @@ def create_direct_quant_training_graph(input_graph=None,
     quantize.Quantize(
         input_graph,
         is_training=True,
-        quant_delay=quant_delay,
+        quant_delay=0, # Since this is post-quantize
         weight_bits=weight_bits,
         activation_bits=activation_bits)
     if extra_quantize_option is not None:
@@ -61,7 +60,7 @@ def create_direct_quant_training_graph(input_graph=None,
           input_graph,
           is_training=True,
           extra_option=extra_quantize_option,
-          quant_delay=quant_delay,
+          quant_delay=0, # Since this is post-quantize
           weight_bits=weight_bits,
           activation_bits=activation_bits)
 
@@ -109,7 +108,6 @@ def create_direct_quant_eval_graph(input_graph=None,
 def experimental_create_direct_quant_training_graph(input_graph=None,
                                                     weight_bits=8,
                                                     activation_bits=8,
-                                                    quant_delay=0,
                                                     inplace=True,
                                                     extra_quantize_option=None,
                                                     fold_batchnorms=True):
@@ -130,7 +128,7 @@ def experimental_create_direct_quant_training_graph(input_graph=None,
     quantize.Quantize(
         input_graph,
         is_training=True,
-        quant_delay=quant_delay,
+        quant_delay=0, # Since this is post-quantize
         weight_bits=weight_bits,
         activation_bits=activation_bits)
     if extra_quantize_option is not None:
@@ -138,7 +136,7 @@ def experimental_create_direct_quant_training_graph(input_graph=None,
           input_graph,
           is_training=True,
           extra_option=extra_quantize_option,
-          quant_delay=quant_delay,
+          quant_delay=0, # Since this is post-quantize
           weight_bits=weight_bits,
           activation_bits=activation_bits)
 
