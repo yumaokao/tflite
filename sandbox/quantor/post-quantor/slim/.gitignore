@@ -11,5 +11,8 @@ googlenet
 mobilenet_softmax
 resnet34
 
+# the archived models
+*_model.tar.gz
+
 # python modules
 *.pyc

@@ -65,6 +65,23 @@ eval_inception_v3_frozen:
 		--frozen_pb=$(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb --max_num_batches=200
 		# --summary_dir=$(QUANTOR_BASE)/inception_v3/summary/$@
 
+eval_inception_v3_frozen_jpeg:
+	@ echo $@
+	@ python process_frozen_jpeg.py \
+		--frozen_pb=$(QUANTOR_BASE)/inception_v3/frozen_inception_v3.pb \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=50 \
+		--log_step=10 \
+		--num_batches=200 \
+		--labels_offset=0 \
+		--preprocess_name=inception \
+		--input_node_name=input \
+		--output_node_name=InceptionV3/Predictions/Reshape \
+		--input_size=299
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/inception_v3/dump_frozen_jpeg \
+		--num_batches=200
+
 quantor_inception_v3_frozen:
 	@ quantor_frozen \
 		--dataset_name=imagenet \
@@ -73,7 +90,6 @@ quantor_inception_v3_frozen:
 		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
 		--output_dir=$(QUANTOR_BASE)/inception_v3/quantor --max_num_batches=200
-		# --summary_dir=$(QUANTOR_BASE)/inception_v3/summary/$@
 	@ python $(TF_BASE)/bazel-bin/tensorflow/python/tools/freeze_graph \
 		--input_graph=$(QUANTOR_BASE)/inception_v3/quantor/quantor.pb \
 		--input_checkpoint=$(QUANTOR_BASE)/inception_v3/quantor/model.ckpt \
@@ -86,9 +102,24 @@ quantor_inception_v3_frozen:
 		--output_node_name=InceptionV3/Predictions/Reshape \
 		--input_size=299 \
 		--frozen_pb=$(QUANTOR_BASE)/inception_v3/quantor/frozen.pb --max_num_batches=200
-		# --summary_dir=$(QUANTOR_BASE)/inception_v3/quantor/summary/$@
 
-# TODO(yumaokao): should remove --allow_custom_ops after QUANTIZED is added
+eval_quantor_inception_v3_frozen_jpeg:
+	@ echo $@
+	@ python process_frozen_jpeg.py \
+		--frozen_pb=$(QUANTOR_BASE)/inception_v3/quantor/frozen.pb \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=50 \
+		--log_step=10 \
+		--num_batches=200 \
+		--labels_offset=0 \
+		--preprocess_name=inception \
+		--input_node_name=input \
+		--output_node_name=InceptionV3/Predictions/Reshape \
+		--input_size=299
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/inception_v3/quantor/dump_frozen_jpeg \
+		--num_batches=200
+
 toco_quantor_inception_v3:
 	@ mkdir -p $(QUANTOR_BASE)/inception_v3/quantor/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -131,6 +162,43 @@ eval_inception_v3_tflite:
 		--tflite_model=$(QUANTOR_BASE)/inception_v3/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--max_num_batches=10000 --input_size=299
 
+eval_inception_v3_tflite_jpeg:
+	@ echo $@
+	@ python process_tflite_jpeg.py \
+		--tflite_model=$(QUANTOR_BASE)/inception_v3/float_model.lite \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=1 \
+		--log_step=1000 \
+		--num_batches=10000 \
+		--labels_offset=0 \
+		--preprocess_name=inception \
+		--input_node_name=input \
+		--inference_type=float \
+		--tensorflow_dir=$(TF_BASE) \
+		--output_node_name=InceptionV3/Predictions/Reshape \
+		--input_size=299
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/inception_v3/dump_tflite_jpeg \
+		--num_batches=10000
+
+eval_quantor_inception_v3_tflite_jpeg:
+	@ echo $@
+	@ python process_tflite_jpeg.py \
+		--tflite_model=$(QUANTOR_BASE)/inception_v3/quantor/model.lite \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=1 \
+		--log_step=1000 \
+		--num_batches=10000 \
+		--labels_offset=0 \
+		--preprocess_name=inception \
+		--input_node_name=input \
+		--inference_type=uint8 \
+		--tensorflow_dir=$(TF_BASE) \
+		--output_node_name=InceptionV3/Predictions/Reshape \
+		--input_size=299
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/inception_v3/quantor/dump_tflite_jpeg \
+		--num_batches=10000
 
 ########################################################
 # compare_toco
