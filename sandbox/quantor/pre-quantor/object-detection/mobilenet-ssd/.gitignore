@@ -13,6 +13,9 @@ mobilenet_ssd_coco_pretrained/*
 # mobilenet_ssd_coco_quant
 mobilenet_ssd_coco_quant/*
 
+# mobilenet-ssd-coco-pretrained-mobilenet
+mobilenet_ssd_mscoco_quant_pretrained_mobilenet/*
+
 # mobilenet-ssd-pets
 mobilenet_ssd_pets/*
 

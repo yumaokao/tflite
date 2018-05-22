@@ -11,6 +11,9 @@
 .PHONY: download_pretrained_mscoco
 .PHONY: pretrained_eval_mobilenet_ssd_mscoco
 
+.PHONY: download_pretrained_mobilenet
+.PHONY: quant_finetune_mobilenet_ssd_mscoco
+
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
 .PHONY: export_mobilenet_ssd_pets toco_mobilenet_ssd_pets
@@ -138,6 +141,21 @@ eval_mobilenet_ssd_mscoco:
 			--checkpoint_dir mobilenet_ssd_coco/train \
 			--eval_dir mobilenet_ssd_coco/eval \
 			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
+
+#################################
+# uint8 mscoco with mobilenet	#
+#################################
+download_pretrained_mobilenet:
+	@ mkdir -p mobilenet_ssd_mscoco_quant_pretrained_mobilenet
+	@ echo "Download MobileNet from SWRD and untar it"
+	@ echo "scp mtkslt:/proj/mtk06790/shared/models/quantor-train/train_mobilenet_v1_quantize.tar.gz ./"
+
+quant_finetune_mobilenet_ssd_mscoco:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./train.py \
+			--quantize \
+			--train_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/train \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_mobilenet.config
 
 #################################
 # uint8 mscoco			#
