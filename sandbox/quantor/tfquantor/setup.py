@@ -23,6 +23,7 @@ setup(
            'tfquantor/eval/bin/quantor_frozen',
            'tfquantor/tools/bin/compare_toco',
            'tfquantor/tools/bin/direct_quantor',
+           'tfquantor/tools/bin/replace_name',
            'tfquantor/tools/bin/visualizer_qt4',
            'tfquantor/tools/bin/visualizer'],
   entry_points={
