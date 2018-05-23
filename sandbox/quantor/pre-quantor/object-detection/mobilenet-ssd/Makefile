@@ -16,6 +16,8 @@
 
 .PHONY: quant_eval_mobilenet_ssd_mscoco_pretrained_float_ssd
 .PHONY: quant_eval_mobilenet_ssd_mscoco_pretrained_float_ssd_anchors
+.PHONY: quant_export_mobilenet_ssd_mscoco_pretrained_float_ssd quant_toco_mobilenet_ssd_mscoco_pretrained_float_ssd
+.PHONY: quant_eval_mobilenet_ssd_mscoco_pretrained_float_ssd_anchors_tflite
 
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
@@ -186,6 +188,54 @@ quant_eval_mobilenet_ssd_mscoco_pretrained_float_ssd_anchors:
 			--logtostderr \
 			--checkpoint_dir mobilenet_ssd_coco_quant_pretrained_float_ssd/train \
 			--eval_dir mobilenet_ssd_coco_quant_pretrained_float_ssd/eval_anchors \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_float_ssd.config
+
+# run this in docker env.
+quant_export_mobilenet_ssd_mscoco_pretrained_float_ssd:
+	@ rm -rf mobilenet_ssd_coco_quant_pretrained_float_ssd/export
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./export_inference_graph.py \
+			--quantize \
+			--input_type image_tensor \
+			--output_directory mobilenet_ssd_coco_quant_pretrained_float_ssd/export \
+			--trained_checkpoint_prefix mobilenet_ssd_coco_quant_pretrained_float_ssd/train/model.ckpt-615434 \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_float_ssd.config
+	@ save_summaries mobilenet_ssd_coco_quant_pretrained_float_ssd/export/frozen_inference_graph.pb
+	@ $(TF_BASE)/bazel-bin/tensorflow/python/tools/optimize_for_inference \
+		--input=mobilenet_ssd_coco_quant_pretrained_float_ssd/export/frozen_inference_graph.pb \
+		--output=mobilenet_ssd_coco_quant_pretrained_float_ssd/export/optimized_inference_graph.pb \
+		--input_names=Preprocessor/sub \
+		--output_names=concat_1,Squeeze
+	@ save_summaries mobilenet_ssd_coco_quant_pretrained_float_ssd/export/optimized_inference_graph.pb
+
+# run this in docker env.
+quant_toco_mobilenet_ssd_mscoco_pretrained_float_ssd:
+	@ mkdir -p mobilenet_ssd_coco_quant_pretrained_float_ssd/export/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+                --input_file=mobilenet_ssd_coco_quant_pretrained_float_ssd/export/optimized_inference_graph.pb \
+                --input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+                --output_file=mobilenet_ssd_coco_quant_pretrained_float_ssd/export/uint8_model.lite \
+                --inference_type=QUANTIZED_UINT8 --inference_input_type=QUANTIZED_UINT8 \
+		--input_arrays=Preprocessor/sub --mean_values=128 --std_values=127 \
+                --output_arrays=concat_1,Squeeze --input_shapes=1,300,300,3 \
+                --dump_graphviz=mobilenet_ssd_coco_quant_pretrained_float_ssd/export/dots
+
+# model.ckpt-615434: DetectionBoxes_Precision/mAP: 0.225208
+# run this in docker env.
+quant_eval_mobilenet_ssd_mscoco_pretrained_float_ssd_anchors_tflite:
+	@ mkdir -p mobilenet_ssd_coco_quant_pretrained_float_ssd/eval_anchors_tflite/run_tflite
+	@ cp mobilenet_ssd_coco_quant_pretrained_float_ssd/export/uint8_model.lite mobilenet_ssd_coco_quant_pretrained_float_ssd/eval_anchors_tflite/run_tflite
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--quantize \
+			--tflite_outputs box_encodings,Squeeze,0.0814979,190,class_predictions_with_background,concat_1,0.131631,184 \
+			--evaluate_with_anchors \
+			--evaluate_with_run_tflite \
+			--tensorflow_dir $(TF_BASE) \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_coco_quant_pretrained_float_ssd/train \
+			--eval_dir mobilenet_ssd_coco_quant_pretrained_float_ssd/eval_anchors_tflite \
 			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_float_ssd.config
 
 #################################
