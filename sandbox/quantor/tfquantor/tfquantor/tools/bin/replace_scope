@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import argparse
+import tensorflow as tf
+
+def display_nodes(nodes):
+    for i, node in enumerate(nodes):
+        print('{} {} {}'.format(i, node.name, node.op))
+        for j, n in enumerate(node.input):
+            print('  = {} {}'.format(i, n))
+
+def main():
+    parser = argparse.ArgumentParser(description='replace all OPs in name scope "SCOPE" with a single custom OP')
+    parser.add_argument('--scope', help='Scope name to be replaced')
+    parser.add_argument('--frozen_pb', help='Frozen graph file (.pb)')
+    parser.add_argument('--output_pb', help='Output graph file after replacement')
+    parser.add_argument('--input_order', default='', help='Specify input tensor order by tensor name, ex: --input_order="tensorA,tensorB"')
+    parser.add_argument('--output_order', default='', help='Specify output tensor order by tensor name, ex: --output_order="tensorC,tensorD"')
+    args = parser.parse_args()
+
+    with tf.gfile.GFile(args.frozen_pb, "rb") as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+        nodes = graph_def.node
+        scope_nodes = filter(lambda n : n.name.startswith(args.scope), nodes)
+
+        # find out all input tensor to input name scope
+        input_tensor = []
+        for nds in scope_nodes:
+            for idx, i in enumerate(nds.input):
+                if not i.startswith(args.scope) and not i in input_tensor:
+                    input_tensor.append(i)
+
+        # find out all output nodes from input name scope
+        output_tensor = []
+        output_nodes = []
+        for n in filter(lambda n: not n.name.startswith(args.scope), nodes):
+            for i in n.input:
+                if i.startswith(args.scope):
+                    if not n in output_nodes:
+                        output_nodes.append(n)
+                    if not i in output_tensor:
+                        output_tensor.append(i)
+
+        '''
+        modify custom op name/op name/attribute here
+        '''
+        custom_node = tf.NodeDef()
+        custom_node.name = 'inception/cell/1'
+        custom_node.op = 'inception_cell'
+        custom_node.attr['max_disp'].i = 30
+        custom_node.attr['_output_quantized'].b = True
+        custom_node.attr['_output_types'].list.type.append(1) # DT_FLOAT
+
+        if len(input_tensor) > 1:
+            print('name scope ' + args.scope + ' has ' + str(len(input_tensor)) + ' input tensors: ' + str([n for n in input_tensor]))
+            if args.input_order == '':
+                print('please specify the input tensor order, for example: "' + ','.join([n for n in input_tensor]) + '"')
+                runtime_input_order = input('Enter your input tensor order: ')
+                input_order = runtime_input_order.split(',')
+            elif args.input_order == 'default':
+                input_order = [n for n in input_tensor]
+            else:
+                input_order = args.input_order.split(',')
+            print('input tensor order = ' + str(input_order))
+            for name in input_order:
+                custom_node.input.append(name)
+        else:
+            custom_node.input.append(input_tensor[0])
+
+        output_order = []
+        if len(output_tensor) > 1:
+            print('name scope ' + args.scope + ' has ' + str(len(output_tensor)) + ' output tensors: ' + str([n for n in output_tensor]))
+            if args.output_order == '':
+                print('please specify the output tensor order, for example: "' + ','.join([n for n in output_tensor]) + '"')
+                runtime_output_order = input('Enter your output tensor order: ')
+                output_order = runtime_output_order.split(',')
+            elif args.output_order == 'default':
+                output_order = [n for n in output_tensor]
+            else:
+                output_order = args.output_order.split(',')
+            print('output tensor order = ' + str(output_order))
+        else:
+            output_order = output_tensor
+
+        for node in output_nodes:
+            for idx, i in enumerate(node.input):
+                if i.startswith(args.scope):
+                    print('modify from ' + node.input[idx] + ' to ' + custom_node.name + ':' + str(output_order.index(i)))
+                    node.input[idx] = custom_node.name + ':' + str(output_order.index(i))
+
+        graph_def.node.extend([custom_node])
+
+        for nds in scope_nodes:
+          graph_def.node.remove(nds)
+
+        with tf.gfile.GFile(args.output_pb, "wb") as f:
+            f.write(graph_def.SerializeToString())
+
+if __name__ == '__main__':
+    main()
+

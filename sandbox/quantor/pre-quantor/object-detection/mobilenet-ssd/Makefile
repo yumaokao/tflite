@@ -1,11 +1,18 @@
 .PHONY: all clean build
 .PHONY: pip_install_dep coco_api_installation protobuf_compilation test_installation
+
 .PHONY: download_mscoco
 .PHONY: train_mobilenet_ssd_mscoco eval_mobilenet_ssd_mscoco
 .PHONY: quant_train_mobilenet_ssd_mscoco quant_eval_mobilenet_ssd_mscoco
 .PHONY: quant_eval_mobilenet_ssd_mscoco_anchors
 .PHONY: quant_export_mobilenet_ssd_mscoco quant_toco_mobilenet_ssd_mscoco
 .PHONY: quant_eval_mobilenet_ssd_mscoco_anchors_tflite
+
+.PHONY: download_pretrained_mscoco
+.PHONY: pretrained_eval_mobilenet_ssd_mscoco
+
+.PHONY: download_pretrained_mobilenet
+.PHONY: quant_finetune_mobilenet_ssd_mscoco
 
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
@@ -92,6 +99,29 @@ download_mscoco:
 	@ cd datasets/mscoco && cp $(TF_OBJDECT_BASE)/data/mscoco_label_map.pbtxt	./
 
 #################################
+# pretrained float mscoco	#
+#################################
+download_pretrained_mscoco:
+	@ mkdir -p mobilenet_ssd_coco_pretrained
+	@ cd mobilenet_ssd_coco_pretrained \
+		&& wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz
+	@ cd mobilenet_ssd_coco_pretrained \
+		tar zxvf ssd_mobilenet_v1_coco_2017_11_17.tar.gz
+	@ cd mobilenet_ssd_coco_pretrained \
+		mv ssd_mobilenet_v1_coco_2017_11_17 train
+
+# run this in docker env.
+# PascalBoxes_Precision/mAP@0.5IOU:
+pretrained_eval_mobilenet_ssd_mscoco:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python $(TF_OBJDECT_BASE)/eval.py \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_coco_pretrained/train \
+			--eval_dir mobilenet_ssd_coco_pretrained/eval \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained.config
+
+#################################
 # float mscoco			#
 #################################
 # run this in docker env.
@@ -111,6 +141,21 @@ eval_mobilenet_ssd_mscoco:
 			--checkpoint_dir mobilenet_ssd_coco/train \
 			--eval_dir mobilenet_ssd_coco/eval \
 			--pipeline_config_path configs/ssd_mobilenet_v1_coco.config
+
+#################################
+# uint8 mscoco with mobilenet	#
+#################################
+download_pretrained_mobilenet:
+	@ mkdir -p mobilenet_ssd_mscoco_quant_pretrained_mobilenet
+	@ echo "Download MobileNet from SWRD and untar it"
+	@ echo "scp mtkslt:/proj/mtk06790/shared/models/quantor-train/train_mobilenet_v1_quantize.tar.gz ./"
+
+quant_finetune_mobilenet_ssd_mscoco:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./train.py \
+			--quantize \
+			--train_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/train \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_mobilenet.config
 
 #################################
 # uint8 mscoco			#
