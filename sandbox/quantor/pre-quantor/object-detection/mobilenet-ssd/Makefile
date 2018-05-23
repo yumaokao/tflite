@@ -13,6 +13,8 @@
 
 .PHONY: download_pretrained_mobilenet
 .PHONY: quant_finetune_mobilenet_ssd_mscoco
+.PHONY: quant_eval_mobilenet_ssd_mscoco_pretrained_mobilenet
+.PHONY: quant_eval_mobilenet_ssd_mscoco_pretrained_mobilenet_anchors
 
 .PHONY: download_pets prepare_pets
 .PHONY: train_mobilenet_ssd_pets eval_mobilenet_ssd_pets eval_mobilenet_ssd_pets_anchors
@@ -155,6 +157,29 @@ quant_finetune_mobilenet_ssd_mscoco:
 		python ./train.py \
 			--quantize \
 			--train_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/train \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_mobilenet.config
+
+# original float eval
+# run this in docker env.
+quant_eval_mobilenet_ssd_mscoco_pretrained_mobilenet:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/train \
+			--eval_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/eval \
+			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_mobilenet.config
+
+# run this in docker env.
+quant_eval_mobilenet_ssd_mscoco_pretrained_mobilenet_anchors:
+	@ PYTHONPATH=$(TF_RESEARCH_BASE):$(TF_SLIM_BASE) \
+		python ./eval.py \
+			--evaluate_with_anchors \
+			--quantize \
+			--run_once \
+			--logtostderr \
+			--checkpoint_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/train \
+			--eval_dir mobilenet_ssd_mscoco_quant_pretrained_mobilenet/eval_anchors \
 			--pipeline_config_path configs/ssd_mobilenet_v1_coco_pretrained_mobilenet.config
 
 #################################
