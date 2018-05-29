@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import argparse
+import tensorflow as tf
+
+def display_nodes(nodes):
+    for i, node in enumerate(nodes):
+        print('{} {} {}'.format(i, node.name, node.op))
+        for j, n in enumerate(node.input):
+            print('  = {} {}'.format(i, n))
+
+def main():
+    parser = argparse.ArgumentParser(description='replace all OPs in name scope "SCOPE" and all specified Identity OPs with a single custom OP')
+    parser.add_argument('--scope', help='Scope name to be replaced')
+    parser.add_argument('--frozen_pb', help='Frozen graph file (.pb)')
+    parser.add_argument('--output_pb', help='Output graph file after replacement')
+    parser.add_argument('--input_order', help='Specify input Identity/Const OP order by op name, ex: --input_order="IdentityA,IdentityB"')
+    parser.add_argument('--output_order', help='Specify output Identity OP order by op name, ex: --output_order="IdentityC,IdentityD"')
+    args = parser.parse_args()
+
+    with tf.gfile.GFile(args.frozen_pb, "rb") as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+        nodes = graph_def.node
+        scope_nodes = filter(lambda n : n.name.startswith(args.scope) and n.name not in args.input_order and n.name not in args.output_order, nodes)
+        input_identity = filter(lambda n : n.name in args.input_order, nodes)
+        output_identity = filter(lambda n : n.name in args.output_order, nodes)
+        output_tensor = [n.name for n in output_identity]
+        output_nodes = []
+        for n in nodes:
+            for i in n.input:
+                if i in [nds.name for nds in output_identity]:
+                    if n not in output_nodes:
+                        output_nodes.append(n)
+
+        '''
+        modify custom op name/op name/attribute here
+        '''
+        custom_node = tf.NodeDef()
+        custom_node.name = 'custom/customOP_00'
+        custom_node.op = 'custom_op'
+        custom_node.attr['max_disp'].i = 30
+        custom_node.attr['_output_quantized'].b = True
+        custom_node.attr['_output_types'].list.type.append(1) # DT_FLOAT
+
+        for nds in input_identity:
+            if len(nds.input) > 0:
+                custom_node.input.append(nds.input[0])
+
+        for node in output_nodes:
+            for idx, i in enumerate(node.input):
+                if i in [nds.name for nds in output_identity]:
+                    print('modify from ' + node.input[idx] + ' to ' + custom_node.name + ':' + str(output_tensor.index(i)))
+                    node.input[idx] = custom_node.name + ':' + str(output_tensor.index(i))
+
+        graph_def.node.extend([custom_node])
+
+        for nds in scope_nodes:
+          graph_def.node.remove(nds)
+        for nds in input_identity:
+          graph_def.node.remove(nds)
+        for nds in output_identity:
+          graph_def.node.remove(nds)
+
+        with tf.gfile.GFile(args.output_pb, "wb") as f:
+            f.write(graph_def.SerializeToString())
+
+if __name__ == '__main__':
+    main()
+

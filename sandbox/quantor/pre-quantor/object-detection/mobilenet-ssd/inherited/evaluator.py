@@ -354,7 +354,7 @@ def _extract_anchros_and_losses(model,
   result_dict['anchors'] = prediction_dict['anchors']
 
   # model.detections DEBUG ONLY
-  result_dict['detection_boxes_all'] = detections['detection_boxes_all']
+  # result_dict['detection_boxes_all'] = detections['detection_boxes_all']
 
   # print('YMK in _extract_anchros_and_losses')
   # import ipdb
