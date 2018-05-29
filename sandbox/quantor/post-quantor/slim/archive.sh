@@ -51,11 +51,15 @@ if [ $? -ne 0 ]; then
 fi
 
 # TFLite UINT8
+# Search for model_jpeg.lite first (in case the model_jpeg.lite is different from model.lite)
 mkdir -p $DST_DIR/TFLite/UINT8/golden
-cp $ORG_DIR/quantor/model.lite $DST_DIR/TFLite/UINT8/uint8_model.lite
+cp $ORG_DIR/quantor/model_jpeg.lite $DST_DIR/TFLite/UINT8/uint8_model.lite
 if [ $? -ne 0 ]; then
-  rm -rf $DST_DIR
-  exit 1
+  cp $ORG_DIR/quantor/model.lite $DST_DIR/TFLite/UINT8/uint8_model.lite
+  if [ $? -ne 0 ]; then
+    rm -rf $DST_DIR
+    exit 1
+  fi
 fi
 cp $ORG_DIR/quantor/dots/toco_AFTER_TRANSFORMATIONS.dot.pdf $DST_DIR/TFLite/UINT8/
 if [ $? -ne 0 ]; then

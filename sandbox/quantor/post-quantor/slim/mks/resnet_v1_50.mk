@@ -69,6 +69,23 @@ eval_resnet_v1_50_frozen:
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb --max_num_batches=200
 
+eval_resnet_v1_50_frozen_jpeg:
+	@ echo $@
+	@ python process_frozen_jpeg.py \
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/frozen_resnet_v1_50.pb \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=50 \
+		--log_step=10 \
+		--num_batches=200 \
+		--labels_offset=1 \
+		--preprocess_name=vgg \
+		--input_node_name=input \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
+		--input_size=224
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/resnet_v1_50/dump_frozen_jpeg \
+		--num_batches=200
+
 quantor_resnet_v1_50_frozen:
 	@ quantor_frozen \
 		--dataset_name=imagenet \
@@ -90,7 +107,23 @@ quantor_resnet_v1_50_frozen:
 		--input_size=224 --labels_offset=1 --preprocess_name=vgg \
 		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb --max_num_batches=200
 
-# --default_ranges_min=0 --default_ranges_max=10
+eval_quantor_resnet_v1_50_frozen_jpeg:
+	@ echo $@
+	@ python process_frozen_jpeg.py \
+		--frozen_pb=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=50 \
+		--log_step=10 \
+		--num_batches=200 \
+		--labels_offset=1 \
+		--preprocess_name=vgg \
+		--input_node_name=input \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
+		--input_size=224
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/resnet_v1_50/quantor/dump_frozen_jpeg \
+		--num_batches=200
+
 toco_quantor_resnet_v1_50:
 	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_50/quantor/dots
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
@@ -134,6 +167,57 @@ eval_resnet_v1_50_tflite:
 		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/float_model.lite --tensorflow_dir=$(TF_BASE) \
 		--labels_offset=1 --preprocess_name=vgg \
 		--max_num_batches=10000 --input_size=224
+
+eval_resnet_v1_50_tflite_jpeg:
+	@ echo $@
+	@ python process_tflite_jpeg.py \
+		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/float_model.lite \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=1 \
+		--log_step=1000 \
+		--num_batches=10000 \
+		--labels_offset=1 \
+		--preprocess_name=vgg \
+		--input_node_name=input \
+		--inference_type=float \
+		--tensorflow_dir=$(TF_BASE) \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
+		--input_size=224
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/resnet_v1_50/dump_tflite_jpeg \
+		--num_batches=10000
+
+# This toco mean/std value is different from the origin one
+toco_quantor_resnet_v1_50_jpeg:
+	@ mkdir -p $(QUANTOR_BASE)/resnet_v1_50/quantor/dots
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/toco/toco \
+		--input_file=$(QUANTOR_BASE)/resnet_v1_50/quantor/frozen.pb \
+		--input_format=TENSORFLOW_GRAPHDEF  --output_format=TFLITE \
+		--output_file=$(QUANTOR_BASE)/resnet_v1_50/quantor/model_jpeg.lite \
+		--mean_values=114.8 --std_values=0.928 \
+		--inference_type=QUANTIZED_UINT8 \
+		--inference_input_type=QUANTIZED_UINT8 --input_arrays=input \
+		--output_arrays=resnet_v1_50/predictions/Reshape_1 --input_shapes=10,224,224,3 \
+		--dump_graphviz=$(QUANTOR_BASE)/resnet_v1_50/quantor/dots
+
+eval_quantor_resnet_v1_50_tflite_jpeg:
+	@ echo $@
+	@ python process_tflite_jpeg.py \
+		--tflite_model=$(QUANTOR_BASE)/resnet_v1_50/quantor/model_jpeg.lite \
+		--dataset_dir=/mnt/8TB/chialin/datasets/imagenet_jpeg \
+		--batch_size=1 \
+		--log_step=1000 \
+		--num_batches=10000 \
+		--labels_offset=1 \
+		--preprocess_name=vgg \
+		--input_node_name=input \
+		--inference_type=uint8 \
+		--tensorflow_dir=$(TF_BASE) \
+		--output_node_name=resnet_v1_50/predictions/Reshape_1 \
+		--input_size=224
+	@ python eval_image_classification.py \
+		--data_dir=$(QUANTOR_BASE)/resnet_v1_50/quantor/dump_tflite_jpeg \
+		--num_batches=10000
 
 
 ########################################################

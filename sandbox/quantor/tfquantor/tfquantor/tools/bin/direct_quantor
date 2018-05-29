@@ -164,7 +164,7 @@ def main(_):
     if not os.path.exists(FLAGS.output_dir):
       os.makedirs(FLAGS.output_dir)
     with open(os.path.join(FLAGS.output_dir, 'quantized_frozen.pb'), 'wb') as f:
-        f.write(freeze_graph_def.SerializeToString())
+      f.write(freeze_graph_def.SerializeToString())
 
   if FLAGS.preprocess_source:
     preprocess_close(preprocess_option)

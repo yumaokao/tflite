@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import math
 import random
+import shutil
 import numpy as np
 import tensorflow as tf
 
@@ -52,7 +53,7 @@ def tf_float_preprocess(fns):
   # Read and decode jpeg
   fn_queue = tf.train.string_input_producer(image_fns, shuffle=False, num_epochs=1)
   reader = tf.WholeFileReader()
-  _, content = reader.read(fn_queue)
+  image_name, content = reader.read(fn_queue)
   image = tf.image.decode_jpeg(content, channels=3)
 
   if FLAGS.preprocess_name == 'inception':
@@ -64,22 +65,69 @@ def tf_float_preprocess(fns):
     image = tf.subtract(image, 0.5) # value range [-0.5, 0.5]
     image = tf.multiply(image, 2.0) # value range [-1.0, 1.0]
 
+  elif FLAGS.preprocess_name == 'vgg':
+    _R_MEAN = 123.68
+    _G_MEAN = 116.78
+    _B_MEAN = 103.94
+
+    def _crop(image, offset_height, offset_width, crop_height, crop_width):
+      original_shape = tf.shape(image)
+      cropped_shape = tf.stack([crop_height, crop_width, original_shape[2]])
+      offsets = tf.to_int32(tf.stack([offset_height, offset_width, 0]))
+      image = tf.slice(image, offsets, cropped_shape)
+      return tf.reshape(image, cropped_shape)
+
+    def _smallest_size_at_least(height, width, smallest_side):
+      smallest_side = tf.convert_to_tensor(smallest_side, dtype=tf.int32)
+
+      height = tf.to_float(height)
+      width = tf.to_float(width)
+      smallest_side = tf.to_float(smallest_side)
+
+      scale = tf.cond(tf.greater(height, width),
+                      lambda: smallest_side / width,
+                      lambda: smallest_side / height)
+      new_height = tf.to_int32(tf.rint(height * scale))
+      new_width = tf.to_int32(tf.rint(width * scale))
+      return new_height, new_width
+
+    def _aspect_preserving_resize(image, smallest_side):
+      smallest_side = tf.convert_to_tensor(smallest_side, dtype=tf.int32)
+
+      shape = tf.shape(image)
+      height = shape[0]
+      width = shape[1]
+      new_height, new_width = _smallest_size_at_least(height, width, smallest_side)
+      image = tf.expand_dims(image, 0)
+      resized_image = tf.image.resize_bilinear(image, [new_height, new_width],
+                                               align_corners=False)
+      resized_image = tf.squeeze(resized_image)
+      resized_image.set_shape([None, None, 3])
+      return resized_image
+
+    def _central_crop(image, crop_height, crop_width):
+      image_height = tf.shape(image)[0]
+      image_width = tf.shape(image)[1]
+      offset_height = (image_height - crop_height) / 2
+      offset_width = (image_width - crop_width) / 2
+      return _crop(image, offset_height, offset_width, crop_height, crop_width)
+
+    def _mean_image_subtraction(image, means):
+      num_channels = image.get_shape().as_list()[-1]
+      channels = tf.split(axis=2, num_or_size_splits=num_channels, value=image)
+      for i in range(num_channels):
+        channels[i] -= means[i]
+      return tf.concat(axis=2, values=channels)
+
+    image = _aspect_preserving_resize(image, 256)
+    image = _central_crop(image, FLAGS.input_size, FLAGS.input_size)
+    image.set_shape([FLAGS.input_size, FLAGS.input_size, 3])
+    image = tf.to_float(image)
+    image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+
   # Make batches
-  label, image = tf.train.batch([label, image], FLAGS.batch_size)
-  return label, image
-
-def tf_float_metric():
-  preds_holder = tf.placeholder(tf.float32, [None, 1001 - FLAGS.labels_offset])
-  labels_holder = tf.placeholder(tf.int32, [None])
-
-  labels_holder -= FLAGS.labels_offset
-
-  # TODO: in tf.nn.in_top_k, if multiple classes have the same prediction value
-  # and straddle the top-k boundary, all of those classes are considered to be
-  # in the top k, which would be weird for quantize execution (most of the value be zero)
-  top1_acc, top1_acc_update = tf.metrics.accuracy(labels_holder, tf.argmax(preds_holder, 1))
-  top5_acc, top5_acc_update = tf.metrics.mean(tf.nn.in_top_k(predictions=preds_holder, targets=labels_holder, k=5))
-  return preds_holder, labels_holder, top1_acc, top5_acc, top1_acc_update, top5_acc_update
+  label, image, image_name = tf.train.batch([label, image, image_name], FLAGS.batch_size)
+  return label, image, image_name
 
 def load_graph_def(pb):
   with tf.gfile.GFile(pb, "rb") as f:
@@ -115,7 +163,7 @@ def main(_):
   random.shuffle(files)
 
   # Preprocess
-  next_label, next_batch = tf_float_preprocess(files)
+  next_label, next_batch, next_origin = tf_float_preprocess(files)
 
   # Load graphdef
   graph_def = load_graph_def(FLAGS.frozen_pb)
@@ -154,12 +202,17 @@ def main(_):
       if i != 0 and i % FLAGS.log_step == 0:
         print('Finish processing {} batches ...'.format(i))
 
-      label, image = sess.run([next_label, next_batch])
+      label, image, image_name = sess.run([next_label, next_batch, next_origin])
       pred = sess.run(y, feed_dict={x: image})
 
       if i < GOLDEN_COUNT:
-        np.save(os.path.join(eval_dir, 'input_{}.npy'.format(i)), image)
-        np.save(os.path.join(eval_dir, 'output_{}.npy'.format(i)), pred)
+        # store the first image in the batch
+        org_0 = image_name[0:1]
+        img_0 = image[0:1]
+        pred_0 = pred[0:1]
+        shutil.copy(org_0[0], os.path.join(eval_dir, 'origin_{}.jpeg'.format(i)))
+        np.save(os.path.join(eval_dir, 'input_{}.npy'.format(i)), img_0)
+        np.save(os.path.join(eval_dir, 'output_{}.npy'.format(i)), pred_0)
 
       np.save(os.path.join(dump_dir, '{}_pred.npy'.format(i)), pred)
       np.save(os.path.join(dump_dir, '{}_label.npy'.format(i)), label)
