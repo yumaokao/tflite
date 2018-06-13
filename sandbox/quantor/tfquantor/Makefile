@@ -12,4 +12,4 @@ pip_install_venv:
 	@ pip install --upgrade --no-deps --force-reinstall .
 
 run_tests:
-	@ python2 -m unittest discover tests "*_tests.py"
+	@ cd tests && python2 -m unittest discover -p "*_tests.py"
