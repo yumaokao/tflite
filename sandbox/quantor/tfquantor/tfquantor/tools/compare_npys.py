@@ -23,8 +23,8 @@ def compare_npypair(npypair):
     computed = npypair[1]
 
     # debug
-    computed[0][0][0][0] = 1.0
-    computed[0][2][3][4] = 0.5
+    # computed[0][0][0][0] = 1.0
+    # computed[0][2][3][4] = 0.5
 
     diff = np.abs(computed - reference)
 

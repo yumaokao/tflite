@@ -1,4 +1,5 @@
-.PHONY: all pip_install_user
+.PHONY: all pip_install_user pip_install_venv
+.PHONY: run_tests
 
 all:
 	@ echo "tensorflow quantize module"
@@ -9,3 +10,6 @@ pip_install_user:
 
 pip_install_venv:
 	@ pip install --upgrade --no-deps --force-reinstall .
+
+run_tests:
+	@ python2 -m unittest discover tests "*_tests.py"
