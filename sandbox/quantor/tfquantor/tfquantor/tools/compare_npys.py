@@ -7,48 +7,102 @@ import os
 import sys
 import numpy as np
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
-def compare_npypair(npypair):
-    # TODO: argument thresholds
-    # TODO: uint8
-    #   https://docs.python.org/2/library/stdtypes.html
-    #   Floating point numbers are usually implemented using double in C;
-    kRelativeThreshold = 1e-2
-    kAbsoluteThreshold = 1e-4
+class NumpyComparer:
+    '''
+        Numpy Compare Class
+    '''
 
-    # diff
-    reference = npypair[0]
-    computed = npypair[1]
+    def __init__(self, fnpairs=[],
+                 kRelativeThreshold=1e-2, kAbsoluteThreshold=1e-4):
+        self.fnpairs = fnpairs
+        # for float
+        self.kRelativeThreshold = kRelativeThreshold
+        self.kAbsoluteThreshold = kAbsoluteThreshold
 
-    # debug
-    # computed[0][0][0][0] = 1.0
-    # computed[0][2][3][4] = 0.5
+    def _append_npyarrays(self, fn, ref, com):
+        if ref.dtype != com.dtype:
+            return {'status': False,
+                    'message': 'reference data type != computed data type'}
+        if ref.dtype not in [np.float32, np.uint8]:
+            return {'status': False,
+                    'message': 'reference data type is not flaot32 or uint8'}
+        self.npypairs.append({'fn': fn, 'key': 'npy',
+                              'dtype': ref.dtype, 'pair': (ref, com)})
+        return {'status': True, 'message': 'OK'}
 
-    diff = np.abs(computed - reference)
+    def load_numpy_arrays(self):
+        # TODO: support npz
+        self.npypairs = []
+        for p in self.fnpairs:
+            reference = np.load(p[0])
+            computed = np.load(p[1])
+            ret = self._append_npyarrays(p[1], reference, computed)
+            if ret['status'] is False:
+                return ret
+        return {'status': True, 'message': 'OK'}
 
-    # prepare error thresholds
-    errthrs = np.where(reference < kRelativeThreshold,
-                kAbsoluteThreshold, reference * kRelativeThreshold)
+    def set_numpy_arrays(self, npypairs):
+        self.npypairs = []
+        for p in npypairs:
+            ret = self._append_npyarrays('set_numpy_arrays', p[0], p[1])
+            if ret['status'] is False:
+                return ret
+        return {'status': True, 'message': 'OK'}
 
-    # is_large
-    islarge = diff > errthrs
+    def compare(self):
+        results = []
+        for p in self.npypairs:
+            results.append({'pair': p,
+                            'result': self.compare_npypair(p['pair'])})
+        return results
 
-    return {'islarge': islarge, 'errthrs': errthrs}
+    def compare_npypair(self, npypair):
+        # TODO: argument thresholds
+        # TODO: uint8
+        reference = npypair[0]
+        computed = npypair[1]
 
+        #   https://docs.python.org/2/library/stdtypes.html
+        #   Floating point numbers are usually implemented using double in C;
+        kRelativeThreshold = 1e-2
+        kAbsoluteThreshold = 1e-4
 
-def compare_numpy_arrays(npypairs):
-    results = []
-    for p in npypairs:
-        results.append({'pair': p, 'result': compare_npypair(p['pair'])})
-    return results
+        # debug
+        # computed[0][0][0][0] = 1.0
+        # computed[0][2][3][4] = 0.5
 
+        # diff
+        diff = np.abs(computed - reference)
 
-def load_numpy_arrays(fnpairs):
-    # TODO: support npz
-    return [{'fn': p[1], 'key': 'npy',
-             'pair': (np.load(p[0]), np.load(p[1])) } for p in fnpairs]
+        # prepare error thresholds
+        errthrs = np.where(reference < kRelativeThreshold,
+                           kAbsoluteThreshold, reference * kRelativeThreshold)
+        # is_large
+        islarge = diff > errthrs
+        return {'islarge': islarge, 'errthrs': errthrs}
+    
+    @staticmethod
+    def show_results(results, verbose=1):
+        if verbose > 1:
+            for r in results:
+                islarge = r['result']['islarge']
+                errors = np.count_nonzero(islarge)
+                fn = r['pair']['fn']
+                key = r['pair']['key']
+                ref = r['pair']['pair'][0]
+                com = r['pair']['pair'][1]
+                print('Errors({}) in {}:{}'.format(errors, fn, key))
+                for errpos in np.transpose(np.nonzero(islarge)):
+                    if len(errpos) != len(com.shape):
+                        parser.exit(status=2, message="Error: shape are not matched\n")
+                    pos = tuple(errpos)
+                    print('    output{} did not match [{}] vs reference [{}]'.format(
+                        pos, com[pos], ref[pos]))
+                    if verbose < 3:
+                        break
 
 
 def main():
@@ -67,27 +121,14 @@ def main():
     if len(args.references) != len(args.computeds):
         parser.exit(status=2, message="Error: please give references and computeds in pairs\n")
 
-    npypairs = load_numpy_arrays(zip(args.references, args.computeds))
-    results = compare_numpy_arrays(npypairs)
+    comparer = NumpyComparer(zip(args.references, args.computeds))
+    result = comparer.load_numpy_arrays()
+    if result['status'] is False:
+        parser.exit(status=2, message="Error: {}\n".format(result['message']))
+    results = comparer.compare()
 
-    # TODO: print detail
-    if args.verbose > 1:
-        for r in results:
-            islarge = r['result']['islarge']
-            errors = np.count_nonzero(islarge)
-            fn = r['pair']['fn']
-            key = r['pair']['key']
-            ref = r['pair']['pair'][0]
-            com = r['pair']['pair'][1]
-            print('Errors({}) in {}:{}'.format(errors, fn, key))
-            for errpos in np.transpose(np.nonzero(islarge)):
-                if len(errpos) != len(com.shape):
-                    parser.exit(status=2, message="Error: shape are not matched\n")
-                pos = tuple(errpos)
-                print('    output{} did not match [{}] vs reference [{}]'.format(
-                    pos, com[pos], ref[pos]))
-                if args.verbose < 3:
-                    break
+    # print detail
+    comparer.show_results(results, verbose=args.verbose)
 
     # print result
     status = 0
