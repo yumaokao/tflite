@@ -1,8 +1,7 @@
 .PHONY: all build clean
 
 ifeq ($(TFLITE_ROOT_PATH),)
-# TFLITE_ROOT_PATH := /home/tflite
-TFLITE_ROOT_PATH := /home/weiche/workspace/tensor_lab/tflite
+TFLITE_ROOT_PATH := /home/tflite
 endif
 
 TF_BASE := $(TFLITE_ROOT_PATH)/tensorflow
@@ -52,7 +51,8 @@ define toco_dequantize
 	@ cd $1/dots && dot -Tpdf -O ./toco_*.dot
 endef
 
-define compare_tflite
+# TODO: run_tflite needes to add --input_type
+define compare_tflite_orig
 	@ echo "compare_tflite"
 	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/compare_tflite \
 		--tflite_file=$1/export/model.lite \

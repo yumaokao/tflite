@@ -39,10 +39,14 @@ endef
 
 define compare_tflite
 	@ echo "compare_tflite"
-	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/compare_tflite \
+	@ $(TF_BASE)/bazel-bin/tensorflow/contrib/lite/utils/run_tflite \
+		--inference_type="float" \
 		--tflite_file=$1/export/model.lite \
 		--batch_xs=$1/export/batch_xs.npy \
-		--batch_ys=$1/export/ys.npy $2
+		--batch_ys=$1/export/output_ys.npy
+	@ compare_npys -v \
+		--references $1/export/ys.npy \
+		--computeds $1/export/output_ys.npy
 endef
 
 
@@ -56,7 +60,6 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
-	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:compare_tflite
 
 images:
 	@ mkdir -p $@
@@ -87,4 +90,4 @@ mobilenet_1.0:
 # 	MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd 		Failed
 	@ python $@/$@.py $@/frozen-nodropout.pb --y MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd
 	$(call toco,$(MODELS_BASE)/$@,frozen-nodropout.pb,input,MobilenetV1/Logits/Conv2d_1c_1x1/BiasAdd,)
-	$(call compare_tflite,$(MODELS_BASE)/$@,--ignore 1)
+	$(call compare_tflite,$(MODELS_BASE)/$@)
