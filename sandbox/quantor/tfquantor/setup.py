@@ -32,6 +32,7 @@ setup(
       'drop_dropouts=tfquantor.tools.drop_dropouts:main',
       'rename_ops=tfquantor.tools.rename_ops:main',
       'npyhisto=tfquantor.tools.npyhisto:main',
+      'compare_npys=tfquantor.tools.compare_npys:main',
     ],
   },
   install_requires=[

@@ -105,7 +105,8 @@ class NumpyComparer:
                 key = r['pair']['key']
                 ref = r['pair']['pair'][0]
                 com = r['pair']['pair'][1]
-                print('Errors({}) in {}:{}'.format(errors, fn, key))
+                print('Running {}:{} => {}'.format(
+                    fn, key, 'FAILED' if errors > 0 else 'OK'))
                 for errpos in np.transpose(np.nonzero(islarge)):
                     if len(errpos) != len(com.shape):
                         parser.exit(status=2, message="Error: shape are not matched\n")
