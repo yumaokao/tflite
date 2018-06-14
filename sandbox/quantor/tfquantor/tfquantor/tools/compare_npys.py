@@ -16,11 +16,13 @@ class NumpyComparer:
     '''
 
     def __init__(self, fnpairs=[],
-                 kRelativeThreshold=1e-2, kAbsoluteThreshold=1e-4):
+                 kRelativeThreshold=1e-2, kAbsoluteThreshold=1e-4,
+                 u8AbsoluteThreshold=2):
         self.fnpairs = fnpairs
         # for float
         self.kRelativeThreshold = kRelativeThreshold
         self.kAbsoluteThreshold = kAbsoluteThreshold
+        self.u8AbsoluteThreshold = u8AbsoluteThreshold
 
     def _append_npyarrays(self, fn, ref, com):
         if ref.dtype != com.dtype:
@@ -53,36 +55,45 @@ class NumpyComparer:
         return {'status': True, 'message': 'OK'}
 
     def compare(self):
+        comparers = {'uint8': self._compare_uint8,
+                     'float32': self._compare_float32}
         results = []
         for p in self.npypairs:
-            results.append({'pair': p,
-                            'result': self.compare_npypair(p['pair'])})
+            dtype = p['dtype']
+            _comparer = comparers[str(dtype)]
+            results.append({'pair': p, 'result': _comparer(p['pair'])})
         return results
 
-    def compare_npypair(self, npypair):
-        # TODO: argument thresholds
-        # TODO: uint8
-        reference = npypair[0]
-        computed = npypair[1]
+    def _compare_uint8(self, npypair):
+        kAbsoluteThreshold = self.u8AbsoluteThreshold
+        # diff
+        reference = npypair[0].astype(np.int32)
+        computed = npypair[1].astype(np.int32)
+        diff = np.abs(computed - reference)
+        islarge = diff >= kAbsoluteThreshold
+        return {'islarge': islarge, 'diff': diff}
 
+    def _compare_float32(self, npypair):
         #   https://docs.python.org/2/library/stdtypes.html
         #   Floating point numbers are usually implemented using double in C;
-        kRelativeThreshold = 1e-2
-        kAbsoluteThreshold = 1e-4
+        kRelativeThreshold = self.kRelativeThreshold
+        kAbsoluteThreshold = self.kAbsoluteThreshold
+
+        # diff
+        reference = npypair[0]
+        computed = npypair[1]
+        diff = np.abs(computed - reference)
 
         # debug
         # computed[0][0][0][0] = 1.0
         # computed[0][2][3][4] = 0.5
-
-        # diff
-        diff = np.abs(computed - reference)
 
         # prepare error thresholds
         errthrs = np.where(reference < kRelativeThreshold,
                            kAbsoluteThreshold, reference * kRelativeThreshold)
         # is_large
         islarge = diff > errthrs
-        return {'islarge': islarge, 'errthrs': errthrs}
+        return {'islarge': islarge, 'diff': diff}
     
     @staticmethod
     def show_results(results, verbose=1):
@@ -112,6 +123,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='count', default=1, help='Verbose, more details')
     parser.add_argument('-V', '--version', action='version',
                         version=VERSION, help='show version infomation')
+    # TODO: add kRelativeThreshold,...
 
     args = parser.parse_args()
     if args.references is None:

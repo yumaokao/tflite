@@ -50,7 +50,7 @@ class TestCompareNumpys(unittest.TestCase):
         errpos = [list(pos) for pos in np.transpose(np.nonzero(islarge))]
         self.assertEqual(errpos, [[0], [1], [2], [3]])
 
-    def skip_test_uint8_1d_array_same(self):
+    def test_uint8_1d_array_same(self):
         ref = np.array([255, 128, 127, 0, 5, 6, 7, 8], dtype=np.uint8)
         com = np.array([255, 128, 127, 0, 5, 6, 7, 8], dtype=np.uint8)
         res = self.comparer.set_numpy_arrays([(ref, com)])
@@ -58,12 +58,19 @@ class TestCompareNumpys(unittest.TestCase):
         results = self.comparer.compare()
         islarge = results[0]['result']['islarge']
         numerrors = np.count_nonzero(islarge)
-        import ipdb
-        ipdb.set_trace()
         self.assertEqual(numerrors, 0)
 
-    def test_float_large_refrence(self):
-        self.assertEqual(True, True)
+    def test_uint8_1d_array_abs(self):
+        ref = np.array([255, 128, 127, 0, 5, 6, 7, 8], dtype=np.uint8)
+        com = np.array([129, 129, 129, 129, 6, 6, 6, 6], dtype=np.uint8)
+        res = self.comparer.set_numpy_arrays([(ref, com)])
+        self.assertEqual(res['status'], True)
+        results = self.comparer.compare()
+        islarge = results[0]['result']['islarge']
+        numerrors = np.count_nonzero(islarge)
+        self.assertEqual(numerrors, 4)
+        errpos = [list(pos) for pos in np.transpose(np.nonzero(islarge))]
+        self.assertEqual(errpos, [[0], [2], [3], [7]])
 
 
 if __name__ == '__main__':
