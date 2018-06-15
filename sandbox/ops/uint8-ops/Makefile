@@ -83,6 +83,7 @@ build:
 	@ cd $(TF_BASE) && bazel build //tensorflow/python/tools:freeze_graph
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/toco:toco
 	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:dump_tflite
+	@ cd $(TF_BASE) && bazel build //tensorflow/contrib/lite/utils:run_tflite
 
 $(VARIABLE_TARGETS):
 	@ mkdir -p $@/export
